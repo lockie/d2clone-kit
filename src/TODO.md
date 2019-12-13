@@ -52,6 +52,7 @@ cl-ode + ode. отд. компонент для 3d позиции, из кото
 однако же кодить и поддерживать эту залупу я точно заебусь, поэтому начну пока с 2d.
 
 с сишным интерфейсом только chipmunk ._.
+https://chipmunk-physics.net/release/ChipmunkLatest-Docs/
 
 про плеера см. https://chipmunk-physics.net/forum/viewtopic.php?t=316
 и https://chipmunk-physics.net/forum/viewtopic.php?f=1&t=3676
@@ -64,3 +65,5 @@ TODO : docstring в defcomponent?
 TODO Реклама, лол. Видос с бодрой музыкой и дергающимися скринами кода с подписями:
 LINGUISTIC ABSTRACTION (тут скрин из camera-system пачки вложенных with. ну или из map-system draw)
 MACRO-DEFINING MACRO (тут, понятно, скрин макроса defcomponent и ещё defoptions)
+INTERACTIVE DEVELOPMENT (показать как на ходу кот меняется, напр. отладочное что-нибудь)
+LIVE GAME INSPECTION (REPL)

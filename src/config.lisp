@@ -52,6 +52,7 @@
                                              (config ,(make-keyword s) ,(make-keyword k) ,d)))))
                             option-names section-names key-names
                             option-types option-defaults)))
+    ;; TODO : макро на read-only с let для производительности
     `(defmacro with-config-options (options &rest body)
        (let ((macrolet-clauses
                (remove-if-not
