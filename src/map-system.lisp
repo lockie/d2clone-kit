@@ -117,53 +117,96 @@
 
 ;; TODO : debug setting + drawing of tile under cursor
 
+(declaim
+ (inline draw-tile-rhomb)
+ (ftype (function (fixnum fixnum t &optional fixnum) t) draw-tile-rhomb))
+(defun draw-tile-rhomb (x y color &optional (thickness 0))
+  ;; TODO : переделать на один вызов al_draw_prim , так FPS сильно проседает (аж до 20)
+  ;; (al:draw-prim)
+  (al:draw-line
+   (+ x (ceiling *tile-width* 2))
+   y
+   (+ x *tile-width*)
+   (+ y (ceiling *tile-height* 2))
+   color thickness)
+  (al:draw-line
+   (+ x *tile-width*)
+   (+ y (ceiling *tile-height* 2))
+   (+ x (ceiling *tile-width* 2))
+   (+ y *tile-height*)
+   color thickness)
+  (al:draw-line
+   (+ x (ceiling *tile-width* 2))
+   (+ y *tile-height*)
+   x
+   (+ y (ceiling *tile-height* 2))
+   color thickness)
+  (al:draw-line
+   x
+   (+ y (ceiling *tile-height* 2))
+   (+ x (ceiling *tile-width* 2))
+   y
+   color thickness))
+
+
+;; NOTE : it is not advisable performance-wise to use  more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
-  (with-config-options (display-width display-height)
-    (let ((screen-width/tiles (ceiling display-width *tile-width*))
-          (screen-height/tiles (ceiling display-height *tile-height*)))
-      (with-map-chunks
-          (with-point entity (chunk-x chunk-y) ;; XXX require it to be divisible by tile size?
-            (when (range-visible-p chunk-x chunk-y
-                                   (* (tiled-map-width tiled-map) *tile-width*)
-                                   (* (tiled-map-height tiled-map) *tile-height*))
-              (multiple-value-bind (chunk-screen-x chunk-screen-y)
-                  (absolute->screen chunk-x chunk-y)
-                (multiple-value-bind (from-col from-row)
-                    (screen->map (- chunk-screen-x) (- chunk-screen-y))
-                  (incf from-row (rem (abs from-row) 2))
-                  (loop
-                    with tile-offset-x = (rem chunk-x *tile-width*)
-                    with tile-offset-y = (rem chunk-y *tile-height*)
-                    for layer across (tiled-map-layers tiled-map)
-                    do (render
-                        renderer
-                        (+ (tiled-layer-order layer)
-                           (if (ground-layer-p layer) 0 100))
-                        (let ((layer layer)
-                              (tiles tiles))
-                          #'(lambda ()
-                              ;; NOTE : it is not advisable performance-wise to use
-                              ;;  more than one tileset in each layer
-                              (loop
-                                with data = (tiled-layer-data layer)
-                                for row from (max (1- from-row) 0)
-                                upto (min (1+ (+ from-row (1+ (* screen-height/tiles 2))))
-                                          (1- (tiled-layer-width layer)))
-                                do (loop for col from (max (1- from-col) 0)
-                                         upto (min (1+ (+ from-col screen-width/tiles))
-                                                   (1- (tiled-layer-width layer)))
-                                         do (let ((tile-index (aref data row col)))
-                                              (unless (zerop tile-index)
-                                                (multiple-value-bind (tile-x tile-y)
-                                                    (map->screen
-                                                     (- col from-col)
-                                                     (- row from-row))
-                                                  ;; TODO : translucent if obscures player!
-                                                  ;; TODO : debug-grid
-                                                  (al:draw-bitmap
-                                                   (aref tiles tile-index)
-                                                   (+ tile-x tile-offset-x)
-                                                   (+ tile-y tile-offset-y) 0))))))))))))))))))
+  (macrolet
+      ((with-layer-tiles (&rest body)
+         `(loop for row from (max (1- from-row) 0)
+                upto (min (+ 2 from-row (* screen-height/tiles 2)) (1- (tiled-layer-height layer)))
+                do (loop for col from (max (1- from-col) 0)
+                         upto (min (+ 1 from-col screen-width/tiles)
+                                   (1- (tiled-layer-width layer)))
+                         do ,@body))))
+    (with-config-options (display-width display-height debug-grid)
+      (let ((screen-width/tiles (ceiling display-width *tile-width*))
+            (screen-height/tiles (ceiling display-height *tile-height*)))
+        (with-map-chunks
+            (with-point entity (chunk-x chunk-y) ;; XXX require it to be divisible by tile size?
+              (when (range-visible-p chunk-x chunk-y
+                                     (* (tiled-map-width tiled-map) *tile-width*)
+                                     (* (tiled-map-height tiled-map) *tile-height*))
+                (multiple-value-bind (chunk-screen-x chunk-screen-y)
+                    (absolute->screen chunk-x chunk-y)
+                  (multiple-value-bind (from-col from-row)
+                      (screen->map (- chunk-screen-x) (- chunk-screen-y))
+                    (incf from-row (rem (abs from-row) 2))
+                    (let ((tile-offset-x (rem chunk-x *tile-width*))
+                          (tile-offset-y (rem chunk-y *tile-height*)))
+                      (loop
+                        for layer across (tiled-map-layers tiled-map)
+                        do (render
+                            renderer
+                            (+ (tiled-layer-order layer) (if (ground-layer-p layer) 0 100))
+                            (let ((layer layer) (tiles tiles))
+                              #'(lambda ()
+                                  (let ((data (tiled-layer-data layer)))
+                                    (with-layer-tiles
+                                        (let ((tile-index (aref data row col)))
+                                          (unless (zerop tile-index)
+                                            (multiple-value-bind (tile-x tile-y)
+                                                (map->screen (- col from-col) (- row from-row))
+                                              ;; TODO : translucent if obscures player!
+                                              (al:draw-bitmap (aref tiles tile-index)
+                                                              (+ tile-x tile-offset-x)
+                                                              (+ tile-y tile-offset-y) 0))))))))))
+                      (when debug-grid
+                        (render
+                         renderer 1000
+                         (let ((layer (aref (tiled-map-layers tiled-map) 0))
+                               (debug-color (apply #'al:map-rgb debug-grid)))
+                           #'(lambda ()
+                               (with-layer-tiles
+                                   (multiple-value-bind (tile-x tile-y)
+                                       (map->screen (- col from-col) (- row from-row))
+                                     (draw-tile-rhomb
+                                      (+ tile-x tile-offset-x)
+                                      (+ tile-y tile-offset-y)
+                                      debug-color)))))))))))))))))
+
+
+
 
 (defmethod system-quit ((system map-system))
   (setf *tile-width* 0)

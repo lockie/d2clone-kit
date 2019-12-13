@@ -67,5 +67,6 @@
   (display vsync :type boolean :default nil)
   (display fps :type boolean :default nil)
   (display multisampling :type fixnum :default 0)
+  (debug grid :type list :default nil)
 
   )
