@@ -118,36 +118,28 @@
 ;; TODO : debug setting + drawing of tile under cursor
 
 (declaim
- (inline draw-tile-rhomb)
- (ftype (function (fixnum fixnum t &optional fixnum) t) draw-tile-rhomb))
-(defun draw-tile-rhomb (x y color &optional (thickness 0))
-  ;; TODO : переделать на один вызов al_draw_prim , так FPS сильно проседает (аж до 20)
-  ;; (al:draw-prim)
-  (al:draw-line
-   (+ x (ceiling *tile-width* 2))
-   y
-   (+ x *tile-width*)
-   (+ y (ceiling *tile-height* 2))
-   color thickness)
-  (al:draw-line
-   (+ x *tile-width*)
-   (+ y (ceiling *tile-height* 2))
-   (+ x (ceiling *tile-width* 2))
-   (+ y *tile-height*)
-   color thickness)
-  (al:draw-line
-   (+ x (ceiling *tile-width* 2))
-   (+ y *tile-height*)
-   x
-   (+ y (ceiling *tile-height* 2))
-   color thickness)
-  (al:draw-line
-   x
-   (+ y (ceiling *tile-height* 2))
-   (+ x (ceiling *tile-width* 2))
-   y
-   color thickness))
-
+ (inline add-tile-rhomb)
+ (ftype (function ((vector single-float) fixnum fixnum list)) add-tile-rhomb))
+(defun add-tile-rhomb (buffer x y color)
+  (flet
+      ((add-point (x y)
+         (vector-push-extend (float x 0f0) buffer)
+         (vector-push-extend (float y 0f0) buffer)
+         (vector-push-extend 0f0 buffer) ;; z
+         (vector-push-extend 0f0 buffer) ;; u
+         (vector-push-extend 0f0 buffer) ;; v
+         (vector-push-extend (float (first color) 0f0) buffer)             ;; r
+         (vector-push-extend (float (second color) 0f0) buffer)            ;; g
+         (vector-push-extend (float (third color) 0f0) buffer)             ;; b
+         (vector-push-extend (float (or (fourth color) 0f0) 0f0) buffer))) ;; a
+    (add-point (+ x (ceiling *tile-width* 2)) y)
+    (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
+    (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
+    (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
+    (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
+    (add-point x (+ y (ceiling *tile-height* 2)))
+    (add-point x (+ y (ceiling *tile-height* 2)))
+    (add-point (+ x (ceiling *tile-width* 2)) y)))
 
 ;; NOTE : it is not advisable performance-wise to use  more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
@@ -174,36 +166,41 @@
                     (incf from-row (rem (abs from-row) 2))
                     (let ((tile-offset-x (rem chunk-x *tile-width*))
                           (tile-offset-y (rem chunk-y *tile-height*)))
-                      (loop
-                        for layer across (tiled-map-layers tiled-map)
-                        do (render
-                            renderer
-                            (+ (tiled-layer-order layer) (if (ground-layer-p layer) 0 100))
-                            (let ((layer layer) (tiles tiles))
-                              #'(lambda ()
-                                  (let ((data (tiled-layer-data layer)))
-                                    (with-layer-tiles
-                                        (let ((tile-index (aref data row col)))
-                                          (unless (zerop tile-index)
-                                            (multiple-value-bind (tile-x tile-y)
-                                                (map->screen (- col from-col) (- row from-row))
-                                              ;; TODO : translucent if obscures player!
-                                              (al:draw-bitmap (aref tiles tile-index)
-                                                              (+ tile-x tile-offset-x)
-                                                              (+ tile-y tile-offset-y) 0))))))))))
+                      (loop for layer across (tiled-map-layers tiled-map)
+                            do (render
+                                renderer
+                                (+ (tiled-layer-order layer) (if (ground-layer-p layer) 0 100))
+                                (let ((layer layer) (tiles tiles))
+                                  #'(lambda ()
+                                      (let ((data (tiled-layer-data layer)))
+                                        (with-layer-tiles
+                                            (let ((tile-index (aref data row col)))
+                                              (unless (zerop tile-index)
+                                                (multiple-value-bind (tile-x tile-y)
+                                                    (map->screen (- col from-col) (- row from-row))
+                                                  ;; TODO : translucent if obscures player!
+                                                  (al:draw-bitmap (aref tiles tile-index)
+                                                                  (+ tile-x tile-offset-x)
+                                                                  (+ tile-y tile-offset-y) 0))))))))))
                       (when debug-grid
                         (render
                          renderer 1000
-                         (let ((layer (aref (tiled-map-layers tiled-map) 0))
-                               (debug-color (apply #'al:map-rgb debug-grid)))
+                         (let ((layer (aref (tiled-map-layers tiled-map) 0)) (debug-grid debug-grid))
                            #'(lambda ()
-                               (with-layer-tiles
-                                   (multiple-value-bind (tile-x tile-y)
-                                       (map->screen (- col from-col) (- row from-row))
-                                     (draw-tile-rhomb
-                                      (+ tile-x tile-offset-x)
-                                      (+ tile-y tile-offset-y)
-                                      debug-color)))))))))))))))))
+                               (let ((vertices (make-array 144 :adjustable t :fill-pointer 0
+                                                               :element-type 'single-float)))
+                                 (with-layer-tiles
+                                     (multiple-value-bind (tile-x tile-y)
+                                         (map->screen (- col from-col) (- row from-row))
+                                       (add-tile-rhomb vertices
+                                                       (+ tile-x tile-offset-x)
+                                                       (+ tile-y tile-offset-y) debug-grid)))
+                                 (let ((buffer (make-array (length vertices)
+                                                           :element-type 'single-float
+                                                           :initial-contents vertices)))
+                                   (cffi:with-pointer-to-vector-data (ptr buffer)
+                                     (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
+                                                   (ceiling (length buffer) 9) 0))))))))))))))))))
 
 
 
