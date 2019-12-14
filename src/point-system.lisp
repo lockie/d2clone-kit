@@ -15,7 +15,7 @@
   t)
 
 (defmethod make-component ((system point-system) entity &rest parameters)
-  (destructuring-bind (param-x param-y) parameters
-    (with-point entity ()
-      (setf x param-x)
-      (setf y param-y))))
+  (destructuring-bind (&key x y) parameters
+    (with-point entity (point-x point-y)
+      (setf point-x x)
+      (setf point-y y))))

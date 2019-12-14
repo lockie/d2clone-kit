@@ -52,6 +52,14 @@
       (setf components nil))
     (setf (gethash name *systems*) system)))
 
+(declaim (type (integer 0 #.array-dimension-limit) *entities-count*))
+(defvar *entities-count* 0)
+
+(declaim (type (integer 0 #.array-dimension-limit) *entities-allocated*))
+(defvar *entities-allocated* 144)
+
+(defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
+
 (defun unregister-all-systems ()
   (setf *entities-count* 0
         *entities-allocated* 144)
@@ -74,14 +82,6 @@
              always (system-quit system))))
 
 (defgeneric make-component (system entity &rest parameters))
-
-(declaim (type (integer 0 #.array-dimension-limit) *entities-count*))
-(defvar *entities-count* 0)
-
-(declaim (type (integer 0 #.array-dimension-limit) *entities-allocated*))
-(defvar *entities-allocated* 144)
-
-(defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
 
 (defgeneric system-adjust-components (system new-size))
 
@@ -111,7 +111,7 @@
          (slot-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref))) slot-names))
          (array-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s))) slot-names))
          (adjust-assignments (mapcar #'(lambda (a)
-                                         (let ((acc `(,@a 'components)))
+                                         (let ((acc `(,@a components)))
                                            `(setf ,acc (adjust-array ,acc new-size))))
                                      array-accessors))
          (getter-decls (mapcan
