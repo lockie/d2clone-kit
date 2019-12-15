@@ -151,7 +151,7 @@
                          upto (min (+ 1 from-col screen-width/tiles)
                                    (1- (tiled-layer-width layer)))
                          do ,@body))))
-    (with-config-options (display-width display-height debug-grid)
+    (with-config-options ((display-width display-height debug-grid))
       (let ((screen-width/tiles (ceiling display-width *tile-width*))
             (screen-height/tiles (ceiling display-height *tile-height*)))
         (with-map-chunks
@@ -185,7 +185,7 @@
                       (when debug-grid
                         (render
                          renderer 1000
-                         (let ((layer (aref (tiled-map-layers tiled-map) 0)) (debug-grid debug-grid))
+                         (let ((layer (aref (tiled-map-layers tiled-map) 0)))
                            #'(lambda ()
                                (let ((vertices (make-array 144 :adjustable t :fill-pointer 0
                                                                :element-type 'single-float)))

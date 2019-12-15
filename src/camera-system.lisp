@@ -30,7 +30,7 @@
  (inline absolute->screen)
  (ftype (function (coordinate coordinate) (values fixnum fixnum)) absolute->screen))
 (defun absolute->screen (x y)
-  (with-config-options (display-width display-height)
+  (with-config-options ((display-width display-height))
     (with-camera (camera-x camera-y)
       (values
        (+ (- x camera-x) (ceiling display-width 2))
@@ -40,7 +40,7 @@
  (inline visiblep)
  (ftype (function (fixnum fixnum &optional fixnum) boolean) visiblep))
 (defun visiblep (x y &optional (delta 0))
-  (with-config-options (display-width display-height)
+  (with-config-options ((display-width display-height))
     (with-camera (camera-x camera-y)
       (and
        (<= (abs (- camera-x x))
@@ -52,7 +52,7 @@
  (inline range-visible-p)
  (ftype (function (fixnum fixnum fixnum fixnum) boolean) range-visible-p))
 (defun range-visible-p (x y width height)
-  (with-config-options (display-width display-height)
+  (with-config-options ((display-width display-height))
     (with-camera (camera-x camera-y)
       (let ((relative-x (- camera-x x))
             (relative-y (- camera-y y))

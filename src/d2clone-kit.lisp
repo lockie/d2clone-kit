@@ -36,7 +36,7 @@
       (error "Failed to initialize ~a system" (name sys))))
   (gc :full t)
   (log-info "Starting game loop")
-  (with-config-options (display-vsync display-fps)
+  (with-config-options ((display-vsync display-fps))
     (let* ((vsync display-vsync)
            (builtin-font (al:create-builtin-font))
            (white (al:map-rgb 255 255 255))
@@ -107,7 +107,7 @@
   (unless (al:init-acodec-addon)
     (error "Initializing audio codec addon failed"))
 
-  (with-config-options (display-windowed display-multisampling display-width display-height)
+  (with-config-options ((display-windowed display-multisampling display-width display-height))
     (al:set-new-display-flags
      (if display-windowed
          '(:windowed)

@@ -52,14 +52,13 @@
                                              (config ,(make-keyword s) ,(make-keyword k) ,d)))))
                             option-names section-names key-names
                             option-types option-defaults)))
-    ;; TODO : макро на read-only с let для производительности
-    `(defmacro with-config-options (options &rest body)
-       (let ((macrolet-clauses
+    `(defmacro with-config-options ((options &key (read-only t)) &body body)
+       (let ((let-clauses
                (remove-if-not
                 #'(lambda (c) (find (car c) options))
                 '(,@macrolet-clauses))))
-         `(symbol-macrolet (,@macrolet-clauses)
-            ,@body)))))
+         `(,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
+           ,@body)))))
 
 (defoptions
   (display width :type fixnum :default 800)

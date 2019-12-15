@@ -20,7 +20,7 @@
     (let ((x (- al::x (truncate *tile-width* 2))) ;; account for sprite offset
           (y al:y))
       (log-info "mouse click at ~a ~a" x y)
-      (with-config-options (display-width display-height)
+      (with-config-options ((display-width display-height))
         (with-camera (camera-x camera-y)
           (incf camera-x (- x (ceiling display-width 2)))
           (incf camera-y (- y (ceiling display-height 2)))
