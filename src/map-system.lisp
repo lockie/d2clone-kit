@@ -115,12 +115,10 @@
                                     (/ (rem row 2) 2.0))))))
     (values col row)))
 
-;; TODO : debug setting + drawing of tile under cursor
-
 (declaim
  (inline add-tile-rhomb)
- (ftype (function ((vector single-float) fixnum fixnum list)) add-tile-rhomb))
-(defun add-tile-rhomb (buffer x y color)
+ (ftype (function ((vector single-float) fixnum fixnum list boolean)) add-tile-rhomb))
+(defun add-tile-rhomb (buffer x y color mark)
   (flet
       ((add-point (x y)
          (vector-push-extend (float x 0f0) buffer)
@@ -139,9 +137,20 @@
     (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
     (add-point x (+ y (ceiling *tile-height* 2)))
     (add-point x (+ y (ceiling *tile-height* 2)))
-    (add-point (+ x (ceiling *tile-width* 2)) y)))
+    (add-point (+ x (ceiling *tile-width* 2)) y)
+    (when mark
+      (add-point (+ x (ceiling *tile-width* 2)) y)
+      (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
+      (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
+      (add-point x (+ y (ceiling *tile-height* 2))))))
 
-;; NOTE : it is not advisable performance-wise to use  more than one tileset in each layer
+(defun mouse-position ()
+  (al:with-current-mouse-state state
+    (cffi:with-foreign-slots
+        ((al::x al::y) state (:struct al:mouse-state))
+      (values al::x al::y))))
+
+;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
   (macrolet
       ((with-layer-tiles (&rest body)
@@ -183,24 +192,29 @@
                                                                   (+ tile-x tile-offset-x)
                                                                   (+ tile-y tile-offset-y) 0))))))))))
                       (when debug-grid
-                        (render
-                         renderer 1000
-                         (let ((layer (aref (tiled-map-layers tiled-map) 0)))
-                           #'(lambda ()
-                               (let ((vertices (make-array 144 :adjustable t :fill-pointer 0
-                                                               :element-type 'single-float)))
-                                 (with-layer-tiles
-                                     (multiple-value-bind (tile-x tile-y)
-                                         (map->screen (- col from-col) (- row from-row))
-                                       (add-tile-rhomb vertices
-                                                       (+ tile-x tile-offset-x)
-                                                       (+ tile-y tile-offset-y) debug-grid)))
-                                 (let ((buffer (make-array (length vertices)
-                                                           :element-type 'single-float
-                                                           :initial-contents vertices)))
-                                   (cffi:with-pointer-to-vector-data (ptr buffer)
-                                     (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
-                                                   (ceiling (length buffer) 9) 0))))))))))))))))))
+                        (multiple-value-bind (mouse-col mouse-row)
+                            (multiple-value-call #'screen->map (mouse-position))
+                          (render
+                           renderer 1000
+                           (let ((layer (aref (tiled-map-layers tiled-map) 0)))
+                             #'(lambda ()
+                                 (let ((vertices (make-array 144 :adjustable t :fill-pointer 0
+                                                                 :element-type 'single-float)))
+                                   (with-layer-tiles
+                                       (multiple-value-bind (tile-x tile-y)
+                                           (map->screen (- col from-col) (- row from-row))
+                                         (add-tile-rhomb vertices
+                                                         (+ tile-x tile-offset-x)
+                                                         (+ tile-y tile-offset-y)
+                                                         debug-grid
+                                                         (and (= mouse-col (- col from-col))
+                                                              (= mouse-row (- row from-row))))))
+                                   (let ((buffer (make-array (length vertices)
+                                                             :element-type 'single-float
+                                                             :initial-contents vertices)))
+                                     (cffi:with-pointer-to-vector-data (ptr buffer)
+                                       (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
+                                                     (ceiling (length buffer) 9) 0)))))))))))))))))))
 
 
 
