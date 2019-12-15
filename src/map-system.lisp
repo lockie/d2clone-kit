@@ -151,7 +151,7 @@
                          upto (min (+ 1 from-col screen-width/tiles)
                                    (1- (tiled-layer-width layer)))
                          do ,@body))))
-    (with-config-options ((display-width display-height debug-grid))
+    (with-system-config-options ((display-width display-height debug-grid))
       (let ((screen-width/tiles (ceiling display-width *tile-width*))
             (screen-height/tiles (ceiling display-height *tile-height*)))
         (with-map-chunks

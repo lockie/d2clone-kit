@@ -16,7 +16,6 @@
   (al:save-config-file "config.ini" *config*))
 
 (declaim
- (inline (setf config))
  (ftype (function (t (or keyword null) keyword) t) (setf config)))
 (defun (setf config) (value section key)
   (al:set-config-value
@@ -26,7 +25,6 @@
   value)
 
 (declaim
- (inline config)
  (ftype (function ((or keyword null) keyword &optional t) t) config))
 (defun config (section key &optional default)
   (if-let (value (al:get-config-value
@@ -39,28 +37,28 @@
   (al:destroy-config *config*)
   (setf *config* nil))
 
-(defmacro defoptions (&rest options)
+(defmacro defoptions (name &rest options)
   (let* ((section-names (mapcar #'car options))
          (key-names (mapcar #'cadr options))
          (option-names (mapcar #'(lambda (s k) (symbolicate s :- k))
                                section-names key-names))
          (option-types (mapcar #'(lambda (o) (getf o :type)) options))
          (option-defaults (mapcar #'(lambda (o) (getf o :default)) options))
-         (macrolet-clauses (mapcar
-                            #'(lambda (o s k type d)
-                                `(,o . ((the ,type
-                                             (config ,(make-keyword s) ,(make-keyword k) ,d)))))
-                            option-names section-names key-names
-                            option-types option-defaults)))
-    `(defmacro with-config-options ((options &key (read-only t)) &body body)
+         (let-clauses (mapcar
+                       #'(lambda (o s k type d)
+                           `(,o . ((the ,type
+                                        (config ,(make-keyword s) ,(make-keyword k) ,d)))))
+                       option-names section-names key-names
+                       option-types option-defaults)))
+    `(defmacro ,(symbolicate 'with- name '-config-options) ((options &key (read-only t)) &body body)
        (let ((let-clauses
                (remove-if-not
                 #'(lambda (c) (find (car c) options))
-                '(,@macrolet-clauses))))
+                '(,@let-clauses))))
          `(,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
            ,@body)))))
 
-(defoptions
+(defoptions system
   (display width :type fixnum :default 800)
   (display height :type fixnum :default 600)
   (display windowed :type boolean :default t)
