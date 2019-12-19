@@ -20,9 +20,13 @@
   (setf (slot-value system 'entity) entity)
   nil)
 
+(declaim (inline camera-entity))
+(defun camera-entity ()
+  (slot-value (system-ref 'camera) 'entity))
+
 (defmacro with-camera (bindings &rest body)
   (with-gensyms (camera-entity)
-    `(let ((,camera-entity (slot-value (system-ref 'camera) 'entity)))
+    `(let ((,camera-entity (camera-entity)))
        (with-coordinate ,camera-entity ,bindings
          ,@body))))
 
@@ -32,7 +36,7 @@
  )
 (defun absolute->viewport (x y)
   (with-system-config-options ((display-width display-height))
-    (with-screen-coordinate (slot-value (system-ref 'camera) 'entity)
+    (with-screen-coordinate (camera-entity)
         (camera-x camera-y)
       (values
        (+ (- x camera-x) (ceiling display-width 2))
@@ -43,7 +47,7 @@
  )
 (defun viewport->absolute (x y)
   (with-system-config-options ((display-width display-height))
-    (with-screen-coordinate (slot-value (system-ref 'camera) 'entity)
+    (with-screen-coordinate (camera-entity)
         (camera-x camera-y)
       (values
        (+ x camera-x (- (ceiling display-width 2)))

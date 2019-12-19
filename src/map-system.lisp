@@ -155,53 +155,72 @@
 ;; TODO : вроде всё работает, теперь нужен debug grid
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))
-    (with-screen-coordinate (slot-value (system-ref 'camera) 'entity)
-        (camera-x camera-y)
     (multiple-value-bind (start-x start-y)
-        ;; XXX этот паттерн часто повторяется
         (multiple-value-call #'screen->map (viewport->absolute 0 0))
-        (multiple-value-bind (end-x end-y)
-            (multiple-value-call #'screen->map (+ (ceiling display-width 2) camera-x) (+ (ceiling display-height 2) camera-y))
-
-          ;; (log-info "cam = ~a, ~a ; start = ~a, ~a; end = ~a, ~a" camera-x camera-y start-x start-y end-x end-y)
+      (multiple-value-bind (end-x end-y)
+          (multiple-value-call #'screen->map (viewport->absolute display-width display-height))
         (with-map-chunks
             ;; XXX require it to be divisible by tile size?
             (with-coordinate entity (chunk-x chunk-y)
-              (multiple-value-bind (chunk-screen-x chunk-screen-y)
-                  (multiple-value-call #'absolute->viewport (map->screen chunk-x chunk-y))
-                (let ((from-col (max 0 (ceiling (+ start-x (- chunk-x) -2))))
-                      (from-row (max 0 (ceiling (+ start-y (- chunk-y) -2))))
-                      (tile-offset-x chunk-screen-x);;(rem chunk-screen-x *tile-width*))
-                      (tile-offset-y chunk-screen-y);;(rem chunk-screen-y *tile-height*))
-                      )
-                  (log-info "~a: ~a, ~a - ~a, ~a"
-                            entity from-col from-row
-                            (min (1- (tiled-layer-width (elt (tiled-map-layers tiled-map) 0))) (ceiling (+ end-x (- chunk-x) 1)))
-                            (min (1- (tiled-layer-height (elt (tiled-map-layers tiled-map) 0))) (ceiling (+ end-y (- chunk-y) 1))))
-                  (loop for layer across (tiled-map-layers tiled-map)
-                        for to-col = (min (1- (tiled-layer-width layer)) (ceiling (+ end-x (- chunk-x) 1)))
-                        for to-row = (min (1- (tiled-layer-height layer)) (ceiling (+ end-y (- chunk-y) 1)))
-                        do (render
-                            renderer
-                            (+ (tiled-layer-order layer) (if (ground-layer-p layer) 0 100))
-                            (let ((layer layer)
-                                  (tiles tiles)
-                                  (chunk-x chunk-x) (chunk-y chunk-y)
-                                  )
-                              #'(lambda ()
-                                  (let ((data (tiled-layer-data layer)))
-                                    (loop for row from from-row upto to-row
-                                          do (loop for col from from-col upto to-col
-                                                   do (let ((tile-index (aref data row col)))
-                                                        (unless (zerop tile-index)
-                                                          (multiple-value-bind (tile-x tile-y)
-                                                                (map->screen (coerce col 'double-float) (coerce row 'double-float))
-                                                            ;; TODO : translucent if obscures player!
-                                                            ;; (when (and (zerop row) (zerop col) (string= (tiled-layer-name layer) "water"))
-                                                            ;;   (log-info "first tile pos ~a, ~a + offs= ~a, ~a~%end ~a, ~a + chunk-pos = ~a, ~a" tile-x tile-y (+ tile-x tile-offset-x) (+ tile-y tile-offset-y) end-x end-y (+ end-x chunk-x) (+ end-y chunk-y)))
-                                                              (al:draw-bitmap (aref tiles tile-index)
-                                                                              (+ tile-x tile-offset-x)
-                                                                              (+ tile-y tile-offset-y) 0))))))))))))))))))))
+              (loop
+                with (tile-offset-x tile-offset-y)
+                  = (multiple-value-list (multiple-value-call #'absolute->viewport
+                                           (map->screen chunk-x chunk-y)))
+                with from-col = (max 0 (ceiling (- start-x chunk-x 2)))
+                with from-row = (max 0 (ceiling (- start-y chunk-y 2)))
+                for layer across (tiled-map-layers tiled-map)
+                for to-col = (min (ceiling (- end-x chunk-x)) (1- (tiled-layer-width layer)))
+                for to-row = (min (ceiling (- end-y chunk-y)) (1- (tiled-layer-height layer)))
+                do (render
+                    renderer
+                    (+ (tiled-layer-order layer) (if (ground-layer-p layer) 0 100))
+                    (let ((layer layer)
+                          (tiles tiles))
+                      #'(lambda ()
+                          (loop
+                            with data = (tiled-layer-data layer)
+                            for row from from-row upto to-row
+                            do (loop for col from from-col upto to-col
+                                     do (let ((tile-index (aref data row col)))
+                                          (unless (zerop tile-index)
+                                            (multiple-value-bind (tile-x tile-y)
+                                                (map->screen
+                                                 (coerce col 'double-float)
+                                                 (coerce row 'double-float))
+                                              ;; TODO : translucent if obscures player!
+                                              (al:draw-bitmap (aref tiles tile-index)
+                                                              (+ tile-x tile-offset-x)
+                                                              (+ tile-y tile-offset-y)
+                                                              0)))))))))
+                   finally
+                      (when debug-grid
+                        (multiple-value-bind (mouse-col mouse-row)
+                            (multiple-value-call #'screen->map (mouse-position))
+                          (render
+                           renderer 1000  ;; TODO : почему-то иногда рисуется только по краям
+                           #'(lambda ()
+                               (let ((vertices (make-array 144 :adjustable t :fill-pointer 0
+                                                               :element-type 'single-float)))
+                                 (loop for row from from-row upto to-row
+                                       do (loop for col from from-col upto to-col
+                                                do (multiple-value-bind (tile-x tile-y)
+                                                       (map->screen
+                                                        (coerce col 'double-float)
+                                                        (coerce row 'double-float))
+                                                     (add-tile-rhomb vertices
+                                                                     (+ tile-x tile-offset-x)
+                                                                     (+ tile-y tile-offset-y)
+                                                                     debug-grid
+                                                                     nil
+                                                                     ;; (and (= mouse-col (- col from-col 1))
+                                                                     ;;      (= mouse-row (- row from-row 1)))
+                                                                     ))))
+                                 (let ((buffer (make-array (length vertices)
+                                                           :element-type 'single-float
+                                                           :initial-contents vertices)))
+                                   (cffi:with-pointer-to-vector-data (ptr buffer)
+                                     (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
+                                                   (ceiling (length buffer) 9) 0)))))))))))))))
 
 (defmethod system-quit ((system map-system))
   (setf *tile-width* 0)
