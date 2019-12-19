@@ -66,5 +66,6 @@
   (display fps :type boolean :default nil)
   (display multisampling :type fixnum :default 0)
   (debug grid :type list :default nil)
+  (debug sprite :type list :default nil)
 
   )

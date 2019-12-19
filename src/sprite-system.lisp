@@ -238,4 +238,23 @@
                         width height
                         (- x (truncate (- width *tile-width*) 2))
                         (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))
-                        0))))))))))
+                        0))))))
+          (with-system-config-options ((debug-sprite))
+            (when debug-sprite
+              (render
+               renderer 1010
+               (let ((width width)
+                     (height height))
+                 (multiple-value-bind (x y)
+                     (absolute->viewport sprite-x sprite-y)
+                   #'(lambda ()
+                       (let ((x0 (- x (truncate (- width *tile-width*) 2)))
+                             (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
+                         (al:draw-rectangle
+                          x0 y0 (+ x0 width) (+ y0 height)
+                          (al:map-rgba
+                           (first debug-sprite)
+                           (second debug-sprite)
+                           (third debug-sprite)
+                           (or (fourth debug-sprite) 0))
+                          0))))))))))))
