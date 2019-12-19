@@ -211,7 +211,8 @@
 
 (defmethod system-draw ((system sprite-system) renderer)
   (with-sprites
-      (with-point entity (sprite-x sprite-y)
+      (with-screen-coordinate entity (sprite-x sprite-y)
+        ;; (log-info "player screen ~a, ~a" sprite-x sprite-y)
         (when (visiblep sprite-x sprite-y (max width height))
           (loop
             for layer being the hash-key using (hash-value toggled) of layers-toggled
@@ -228,7 +229,7 @@
                      (sprite-x sprite-x)
                      (sprite-y sprite-y))
                  (multiple-value-bind (x y)
-                     (absolute->screen sprite-x sprite-y)
+                     (absolute->viewport sprite-x sprite-y)
                    #'(lambda ()
                        (al:draw-bitmap-region
                         (gethash layer layers)

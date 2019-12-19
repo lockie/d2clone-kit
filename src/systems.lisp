@@ -71,7 +71,7 @@
 
 (defmacro with-systems (var &rest body)
   `(loop for ,var being the hash-values of *systems*
-        do ,@body))
+         do ,@body))
 
 (defun broadcast-event (event-type event)
   (loop for system being the hash-values of *systems*
@@ -85,6 +85,8 @@
 
 (defgeneric system-adjust-components (system new-size))
 
+;; TODO : удаление (дженерик в defcomponent)
+;; TODO : хранить в векторе пул из удалённых entity, возвращать сначала из него
 (defunl make-entity ()
   (let ((res *entities-count*))
     (incf *entities-count*)

@@ -28,7 +28,7 @@
                (:file "tiled")
                (:file "aseprite")
                (:file "systems")
-               (:file "point-system")
+               (:file "coordinate-system")
                (:file "console-system")
                (:file "camera-system")
                (:file "map-system")

@@ -61,6 +61,8 @@ https://chipmunk-physics.net/release/ChipmunkLatest-Docs/
 TODO : docstring в defcomponent?
 + убрать параметр system у макроса?, всё равно у одной системы не м/б несколько компонентов
 
+TODO : разобраться, почему после кондишена в рендере получается unhandled memory fault и приходится рестартить
+
 
 TODO Реклама, лол. Видос с бодрой музыкой и дергающимися скринами кода с подписями:
 LINGUISTIC ABSTRACTION (тут скрин из camera-system пачки вложенных with. ну или из map-system draw)
