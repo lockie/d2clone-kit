@@ -144,13 +144,6 @@
       (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
       (add-point x (+ y (ceiling *tile-height* 2))))))
 
-(defun mouse-position ()
-  ;; TODO : optional struct arg; etypecase for it (mouse-state vs mouse-event)
-  (al:with-current-mouse-state state
-    (cffi:with-foreign-slots
-        ((al::x al::y) state (:struct al:mouse-state))
-      (values al::x al::y))))
-
 ;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
 ;; TODO : вроде всё работает, теперь нужен debug grid
 (defmethod system-draw ((system map-system) renderer)

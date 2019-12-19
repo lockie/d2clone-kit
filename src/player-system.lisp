@@ -36,4 +36,28 @@
             (with-coordinate (slot-value system 'entity) (player-x player-y)
               (setf (values camera-x camera-y) (screen->map camera-screen-x camera-screen-y))
               (setf (values player-x player-y) (screen->map camera-screen-x camera-screen-y))))))))
-    t)
+  t)
+
+(defun mouse-position ()
+  ;; TODO : optional struct arg; etypecase for it (mouse-state vs mouse-event)
+  (al:with-current-mouse-state state
+    (cffi:with-foreign-slots
+        ((al::x al::y) state (:struct al:mouse-state))
+      (values al::x al::y))))
+
+(defmethod system-draw ((system player-system) renderer)
+  (with-system-config-options ((debug-cursor))
+    (when debug-cursor
+      (render
+       renderer 2000
+       (multiple-value-bind (x y)
+           (multiple-value-call #'map->screen
+             (multiple-value-call #'screen->map (mouse-position)))
+         #'(lambda ()
+               (al:draw-filled-rectangle
+                x y (+ x *tile-width*) (+ y *tile-height*)
+                (al:map-rgba
+                 (first debug-cursor)
+                 (second debug-cursor)
+                 (third debug-cursor)
+                 (or (fourth debug-cursor) 0)))))))))
