@@ -58,6 +58,8 @@
                                    :path (prefab-path system prefab-name)))))
     (unless (eq (tiled-map-orientation tiled-map) 'staggered)
       (error "only staggered maps supported"))
+    (unless (eq (tiled-map-stagger-axis tiled-map) 'y)
+      (error "only Y stagger axis supported"))
     (loop for tileset across (tiled-map-tilesets tiled-map)
           for tile-width = (tiled-tileset-tile-width tileset)
           for tile-height = (tiled-tileset-tile-height tileset)

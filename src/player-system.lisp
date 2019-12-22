@@ -50,14 +50,19 @@
     (when debug-cursor
       (render
        renderer 2000
-       (multiple-value-bind (x y)
-           (multiple-value-call #'map->screen
-             (multiple-value-call #'screen->map (mouse-position)))
-         #'(lambda ()
+       (multiple-value-bind (map-x map-y)
+           (multiple-value-call #'screen->map
+             (multiple-value-call #'viewport->absolute
+               (mouse-position)))
+         (multiple-value-bind (x y)
+             (multiple-value-call #'absolute->viewport
+               (map->screen (coerce (floor map-x) 'double-float)
+                            (coerce (floor map-y) 'double-float)))
+           #'(lambda ()
                (al:draw-filled-rectangle
                 x y (+ x *tile-width*) (+ y *tile-height*)
                 (al:map-rgba
                  (first debug-cursor)
                  (second debug-cursor)
                  (third debug-cursor)
-                 (or (fourth debug-cursor) 0)))))))))
+                 (or (fourth debug-cursor) 0))))))))))

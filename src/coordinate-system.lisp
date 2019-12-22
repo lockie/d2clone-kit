@@ -10,7 +10,6 @@
 
 ;; TODO : float ??? for movement. or separate component of 2D/3D position
 ;; TODO : or maybe separate world <-> pixel conversion inline funcs/macroses
-;; переобозвать в coordinate?..
 (defcomponent coordinate coordinate
   (x 0 :type double-float)
   (y 0 :type double-float))  ;; XXX размерность x и y - тайлы (не пиксели!)
@@ -29,25 +28,20 @@
  (ftype (function (double-float double-float) (values fixnum fixnum)) map->screen))
 (defun map->screen (x y)
   (values
-   (the fixnum
-        (+ (ceiling (* x *tile-width*))
-           (ceiling (* (rem y 2) *tile-width*) 2)))
-   (the fixnum
-        (ceiling (* y *tile-height*) 2))))  ;; XXX - ?
+   (floor (+ (* x *tile-width*) (* (rem (abs (floor y)) 2) (floor *tile-width* 2))))
+   (floor (/ (* y *tile-height*) 2))))
 
 (declaim
  (inline screen->map)
  (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
 (defun screen->map (x y)
-  (let* ((ty (- y (ceiling x 2) *tile-height*))
-         (tx (+ x ty)))
-    (setf ty (ceiling (- ty) (ceiling *tile-width* 2)))
-    (setf tx (1+ (ceiling tx (ceiling *tile-height*))))
+  (let ((tx (floor (- x (* -2 y) (floor *tile-width* 2) (* 2 *tile-height*)) *tile-width*))
+        (ty (floor (+ y (/ x -2) (floor *tile-width* 2) (floor *tile-height* 2)) *tile-height*)))
+    ;; TODO : take fractions of tile into account?
     (values
-     (the double-float
-          (* (+ tx ty) 0.5d0))
-     (the double-float
-          (coerce (- tx ty) 'double-float)))))
+     (coerce (1+ (floor (- tx ty) 2)) 'double-float)
+     (coerce (+ tx ty) 'double-float))))
+
 
 (defmacro with-screen-coordinate (entity bindings &body body)
   (let* ((bindings (or bindings '(x y)))
