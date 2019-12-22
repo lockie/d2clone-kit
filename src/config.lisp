@@ -1,9 +1,6 @@
 (in-package :d2clone-kit)
 
 
-;; TODO : макрос defsetting (ну или там defconfig), который будет заводить special переменные?
-;; ну иди symbol-macrolet . плюс ещё типы дефайнить!
-
 (defvar *config*)
 
 (defun init-config ()

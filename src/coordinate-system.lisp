@@ -8,8 +8,6 @@
 ;; (deftype coordinate () `(integer ,(truncate most-negative-fixnum 256)
 ;;                                  ,(truncate most-positive-fixnum 256)))
 
-;; TODO : float ??? for movement. or separate component of 2D/3D position
-;; TODO : or maybe separate world <-> pixel conversion inline funcs/macroses
 (defcomponent coordinate coordinate
   (x 0 :type double-float)
   (y 0 :type double-float))  ;; XXX размерность x и y - тайлы (не пиксели!)
@@ -29,7 +27,7 @@
 (defun map->screen (x y)
   (values
    (floor (+ (* x *tile-width*) (* (rem (abs (floor y)) 2) (floor *tile-width* 2))))
-   (floor (/ (* y *tile-height*) 2))))
+   (floor (* y *tile-height*) 2)))
 
 (declaim
  (inline screen->map)

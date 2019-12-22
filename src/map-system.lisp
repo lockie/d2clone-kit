@@ -99,24 +99,6 @@
     (gethash 'ground? properties nil)
     nil))
 
-;; (defun map->screen (point-x point-y)
-;;   ;; (declare (type coordinate point-x point-y))
-;;   (labels
-;;       ((half-round (n)
-;;          (ceiling n 2)))
-;;     (declare (inline half-round))
-;;     (values
-;;      (+ (* point-x *tile-width*)
-;;         (half-round (* (rem (abs point-y) 2) *tile-width*)))
-;;      (half-round (* point-y *tile-height*)))))
-
-;; (defun screen->map (point-x point-y)
-;;   (declare (type fixnum point-x point-y))
-;;   (let* ((row (the fixnum (round point-y (/ *tile-height* 2))))
-;;          (col (the fixnum (round (- (/ (float point-x) *tile-width*)
-;;                                     (/ (rem row 2) 2.0))))))
-;;     (values col row)))
-
 ;; TODO : отдельный механизм для рисования линий? Напр. короткоживущие (1 фрейм) entity
 (declaim
  (inline add-tile-rhomb)
@@ -148,7 +130,6 @@
       (add-point x (+ y (ceiling *tile-height* 2))))))
 
 ;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
-;; TODO : вроде всё работает, теперь нужен debug grid
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))
     (multiple-value-bind (start-x start-y)
@@ -206,11 +187,7 @@
                                                      (add-tile-rhomb vertices
                                                                      (+ tile-x tile-offset-x)
                                                                      (+ tile-y tile-offset-y)
-                                                                     debug-grid
-                                                                     nil
-                                                                     ;; (and (= mouse-col (- col from-col 1))
-                                                                     ;;      (= mouse-row (- row from-row 1)))
-                                                                     ))))
+                                                                     debug-grid nil))))
                                  (let ((buffer (make-array (length vertices)
                                                            :element-type 'single-float
                                                            :initial-contents vertices)))
