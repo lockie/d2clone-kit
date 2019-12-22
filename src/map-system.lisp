@@ -117,6 +117,7 @@
 ;;                                     (/ (rem row 2) 2.0))))))
 ;;     (values col row)))
 
+;; TODO : отдельный механизм для рисования линий? Напр. короткоживущие (1 фрейм) entity
 (declaim
  (inline add-tile-rhomb)
  (ftype (function ((vector single-float) fixnum fixnum list boolean)) add-tile-rhomb))
@@ -154,7 +155,7 @@
         (multiple-value-call #'screen->map (viewport->absolute 0 0))
       (multiple-value-bind (end-x end-y)
           (multiple-value-call #'screen->map (viewport->absolute display-width display-height))
-        (with-map-chunks
+        (with-map-chunks  ;; TODO : check visible
             ;; XXX require it to be divisible by tile size?
             (with-coordinate entity (chunk-x chunk-y)
               (loop
