@@ -19,12 +19,15 @@
   (cffi:with-foreign-slots ((al::x al::y) event (:struct al:mouse-event))
     ;; TODO : reuse mouse-position func
     (let ((x al::x) (y al::y))
-      (with-system-config-options ((display-width display-height))
-        (with-camera (camera-x camera-y)
-          (multiple-value-bind (camera-screen-x camera-screen-y) (viewport->absolute x y)
-            (with-coordinate (slot-value system 'entity) (player-x player-y)
-              (setf (values camera-x camera-y) (screen->map camera-screen-x camera-screen-y))
-              (setf (values player-x player-y) (screen->map camera-screen-x camera-screen-y))))))))
+      (multiple-value-bind (camera-screen-x camera-screen-y) (viewport->absolute x y)
+        (multiple-value-bind (new-camera-x new-camera-y)
+            (screen->map* camera-screen-x camera-screen-y)
+          (with-coordinate (slot-value system 'entity) (player-x player-y)
+            (setf player-x new-camera-x
+                  player-y new-camera-y))
+          (with-camera (camera-x camera-y)
+            (setf camera-x new-camera-x
+                  camera-y new-camera-y))))))
   t)
 
 (defun mouse-position ()
