@@ -53,40 +53,24 @@
        (+ x camera-x (- (ceiling display-width 2)))
        (+ y camera-y (- (ceiling display-height 2)))))))
 
-
-;; TODO : TODO !!!
-
 (declaim
  (inline visiblep)
- ;; (ftype (function (fixnum fixnum &optional fixnum) boolean) visiblep)
- )
+ (ftype (function (fixnum fixnum &optional fixnum) boolean) visiblep))
 (defun visiblep (x y &optional (delta 0))
-  t)
-  ;; (with-system-config-options ((display-width display-height))
-  ;;   (with-camera (camera-x camera-y)
-  ;;     (and
-  ;;      (<= (abs (- camera-x x))
-  ;;          (+ (ceiling display-width 2) delta))
-  ;;      (<= (abs (- camera-y y))
-  ;;          (+ (ceiling display-height 2) delta))))))
+  (with-system-config-options ((display-width display-height))
+    (and
+     (and (> x (- delta))
+          (< x (+ delta display-width)))
+     (and (> y (- delta))
+          (< y (+ delta display-height))))))
 
 (declaim
  (inline range-visible-p)
- ;; (ftype (function (fixnum fixnum fixnum fixnum) boolean) range-visible-p)
- )
+ (ftype (function (fixnum fixnum fixnum fixnum) boolean) range-visible-p))
 (defun range-visible-p (x y width height)
-  t)
-
-
-  ;; (with-system-config-options ((display-width display-height))
-  ;;   (with-camera (camera-x camera-y)
-  ;;     (let ((relative-x (- camera-x x))
-  ;;           (relative-y (- camera-y y))
-  ;;           (half-screen-width (ceiling display-width 2))
-  ;;           (half-screen-height (ceiling display-height 2)))
-  ;;       (and
-  ;;        (>= relative-x (- half-screen-width))
-  ;;        (< relative-x (+ width half-screen-width))
-  ;;        (>= relative-y (- half-screen-height))
-  ;;        (< relative-y (+ height half-screen-height)))))))
-
+  (with-system-config-options ((display-width display-height))
+    (and
+     (> x (- width))
+     (< x display-width)
+     (> y (- height))
+     (< y display-height))))

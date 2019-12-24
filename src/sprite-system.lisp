@@ -212,49 +212,50 @@
 (defmethod system-draw ((system sprite-system) renderer)
   (with-sprites
       (with-screen-coordinate entity (sprite-x sprite-y)
-        ;; (log-info "player screen ~a, ~a" sprite-x sprite-y)
-        (when (visiblep sprite-x sprite-y (max width height))
-          (loop
-            for layer being the hash-key using (hash-value toggled) of layers-toggled
-            when toggled do
-              (render
-               renderer
-               50 ;; TODO : player -> 30, stance=die -> 10, else 50
-               (let ((layer layer)
-                     (layers layers)
-                     (width width)
-                     (height height)
-                     (frame frame)
-                     (angle angle)
-                     (sprite-x sprite-x)
-                     (sprite-y sprite-y))
-                 (multiple-value-bind (x y)
-                     (absolute->viewport sprite-x sprite-y)
-                   #'(lambda ()
-                       (al:draw-bitmap-region
-                        (gethash layer layers)
-                        (* frame width)
-                        (* (sprite-direction angle) height)
-                        width height
-                        (- x (truncate (- width *tile-width*) 2))
-                        (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))
-                        0))))))
-          (with-system-config-options ((debug-sprite))
-            (when debug-sprite
-              (render
-               renderer 1010
-               (let ((width width)
-                     (height height))
-                 (multiple-value-bind (x y)
-                     (absolute->viewport sprite-x sprite-y)
-                   #'(lambda ()
-                       (let ((x0 (- x (truncate (- width *tile-width*) 2)))
-                             (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
-                         (al:draw-rectangle
-                          x0 y0 (+ x0 width) (+ y0 height)
-                          (al:map-rgba
-                           (first debug-sprite)
-                           (second debug-sprite)
-                           (third debug-sprite)
-                           (or (fourth debug-sprite) 0))
-                          0))))))))))))
+        (multiple-value-bind (sprite-viewport-x sprite-viewport-y)
+            (absolute->viewport sprite-x sprite-y)
+          (when (visiblep sprite-viewport-x sprite-viewport-y (max width height))
+            (loop
+              for layer being the hash-key using (hash-value toggled) of layers-toggled
+              when toggled do
+                (render
+                 renderer
+                 50 ;; TODO : player -> 30, stance=die -> 10, else 50
+                 (let ((layer layer)
+                       (layers layers)
+                       (width width)
+                       (height height)
+                       (frame frame)
+                       (angle angle)
+                       (sprite-x sprite-x)
+                       (sprite-y sprite-y))
+                   (multiple-value-bind (x y)
+                       (absolute->viewport sprite-x sprite-y)
+                     #'(lambda ()
+                         (al:draw-bitmap-region
+                          (gethash layer layers)
+                          (* frame width)
+                          (* (sprite-direction angle) height)
+                          width height
+                          (- x (truncate (- width *tile-width*) 2))
+                          (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))
+                          0))))))
+            (with-system-config-options ((debug-sprite))
+              (when debug-sprite
+                (render
+                 renderer 1010
+                 (let ((width width)
+                       (height height))
+                   (multiple-value-bind (x y)
+                       (absolute->viewport sprite-x sprite-y)
+                     #'(lambda ()
+                         (let ((x0 (- x (truncate (- width *tile-width*) 2)))
+                               (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
+                           (al:draw-rectangle
+                            x0 y0 (+ x0 width) (+ y0 height)
+                            (al:map-rgba
+                             (first debug-sprite)
+                             (second debug-sprite)
+                             (third debug-sprite)
+                             (or (fourth debug-sprite) 0))
+                            0)))))))))))))
