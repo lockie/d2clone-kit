@@ -10,6 +10,7 @@
     :initform nil
     :reader loadedp)))
 ;; TODO : update/draw order?
+;;  slot "priority" + with-systems -> alexandria:hash-table-values + cl:sort
 
 ;; TODO : defsystem macro with global parameter = system instance?
 

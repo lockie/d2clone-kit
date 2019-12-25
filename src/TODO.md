@@ -57,8 +57,10 @@ https://chipmunk-physics.net/release/ChipmunkLatest-Docs/
 про плеера см. https://chipmunk-physics.net/forum/viewtopic.php?t=316
 и https://chipmunk-physics.net/forum/viewtopic.php?f=1&t=3676
 
+гравитация по Z: выставить damping http://chipmunk-physics.net/forum/viewtopic.php?t=1944
 
-TODO : https://github.com/guicho271828/lisp-namespace/ для define-* ?
+
+TODO : https://github.com/guicho271828/lisp-namespace/ для define-* ? или нет.
 
 TODO : docstring в defcomponent?
 + убрать параметр system у макроса?, всё равно у одной системы не м/б несколько компонентов
