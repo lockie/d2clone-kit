@@ -9,6 +9,7 @@
     :type boolean
     :initform nil
     :reader loadedp)))
+;; TODO : update/draw order?
 
 ;; TODO : defsystem macro with global parameter = system instance?
 
@@ -146,8 +147,7 @@
                                 (defun (setf ,@s) (new-value objects index)
                                   (setf (aref (,@a objects) index) new-value)))))
                         slot-ro slot-accessors array-accessors slot-types))
-         (delete-exprs (mapcan #'(lambda (a)
-                                   (list (list 'aref (append a '(components)) 'entity) nil))
+         (delete-exprs (mapcan #'(lambda (a) (copy-list `((aref (,@a components) entity) nil)))
                                array-accessors)))
     `(progn
        (defstruct ,name ,@soa-slots)
