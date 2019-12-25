@@ -60,10 +60,14 @@
 
 (defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
 
+(declaim (type (vector fixnum) *deleted-entities*))
+(defvar *deleted-entities* (make-array 0 :element-type 'fixnum :adjustable t :fill-pointer t))
+
 (defun unregister-all-systems ()
   (setf *entities-count* 0
         *entities-allocated* 144)
-  (clrhash *systems*))
+  (clrhash *systems*)
+  (setf (fill-pointer *deleted-entities*) 0))
 
 (declaim (inline system-ref))
 (defun system-ref (name)
@@ -85,17 +89,24 @@
 
 (defgeneric system-adjust-components (system new-size))
 
-;; TODO : удаление (дженерик в defcomponent)
-;; TODO : хранить в векторе пул из удалённых entity, возвращать сначала из него
+(defgeneric delete-component (system entity))
+
 (defunl make-entity ()
-  (let ((res *entities-count*))
-    (incf *entities-count*)
-    (when (= *entities-count* *entities-allocated*)
-      (setf *entities-allocated* (round (* *entities-allocated* +array-growth-factor+)))
-      (log-debug "Adjusting component allocated size to ~a" *entities-allocated*)
-      (with-systems system
-        (system-adjust-components system *entities-allocated*)))
-    res))
+  (if (emptyp *deleted-entities*)
+      (let ((res *entities-count*))
+        (incf *entities-count*)
+        (when (= *entities-count* *entities-allocated*)
+          (setf *entities-allocated* (round (* *entities-allocated* +array-growth-factor+)))
+          (log-debug "Adjusting component allocated size to ~a" *entities-allocated*)
+          (with-systems system
+            (system-adjust-components system *entities-allocated*)))
+        res)
+      (vector-pop *deleted-entities*)))
+
+(defun delete-entity (entity)
+  (loop for system being the hash-values of *systems*
+        do (delete-component system entity))
+  (vector-push-extend entity *deleted-entities*))
 
 (defmacro defcomponent (system name &rest slots)
   (let* ((system-name (symbolicate system '-system))
@@ -134,7 +145,10 @@
                                         (setf ,@s)))
                                 (defun (setf ,@s) (new-value objects index)
                                   (setf (aref (,@a objects) index) new-value)))))
-                        slot-ro slot-accessors array-accessors slot-types)))
+                        slot-ro slot-accessors array-accessors slot-types))
+         (delete-exprs (mapcan #'(lambda (a)
+                                   (list (list 'aref (append a '(components)) 'entity) nil))
+                               array-accessors)))
     `(progn
        (defstruct ,name ,@soa-slots)
        (defmacro ,(symbolicate 'with- name) (entity bindings &rest body)
@@ -167,6 +181,9 @@
          (declare (type (integer 0 ,array-dimension-limit) new-size))
          (with-slots (components) system
            ,@adjust-assignments))
+       (defmethod delete-component ((system ,system-name) entity)
+         (with-slots (components) system
+           (setf ,@delete-exprs)))
        ,@getter-decls ,@setter-decls)))
 
 (defgeneric prefab (system prefab-name))
