@@ -15,27 +15,31 @@
   (setf (slot-value system 'entity) entity)
   nil)
 
-(defmethod system-event ((system player-system) (event-type (eql :mouse-button-down)) event)
-  (cffi:with-foreign-slots ((al::x al::y) event (:struct al:mouse-event))
-    ;; TODO : reuse mouse-position func
-    (let ((x al::x) (y al::y))
-      (multiple-value-bind (camera-screen-x camera-screen-y) (viewport->absolute x y)
-        (multiple-value-bind (new-camera-x new-camera-y)
-            (screen->map* camera-screen-x camera-screen-y)
-          (with-coordinate (slot-value system 'entity) (player-x player-y)
-            (setf player-x new-camera-x
-                  player-y new-camera-y))
-          (with-camera (camera-x camera-y)
-            (setf camera-x new-camera-x
-                  camera-y new-camera-y))))))
-  t)
+(declaim
+ (inline mouse-position)
+ (ftype (function (&optional cffi:foreign-pointer) (values fixnum fixnum)) mouse-position))
+(defun mouse-position (&optional (event nil))
+  (macrolet
+      ((mouse-position-values (type struct)
+         `(cffi:with-foreign-slots ((al::x al::y) ,struct (:struct ,type))
+            (values al::x al::y))))
+    (if event
+        (mouse-position-values al:mouse-event event)
+        (al:with-current-mouse-state state
+          (mouse-position-values al:mouse-state state)))))
 
-(defun mouse-position ()
-  ;; TODO : optional struct arg; etypecase for it (mouse-state vs mouse-event)
-  (al:with-current-mouse-state state
-    (cffi:with-foreign-slots
-        ((al::x al::y) state (:struct al:mouse-state))
-      (values al::x al::y))))
+(defmethod system-event ((system player-system) (event-type (eql :mouse-button-down)) event)
+  (multiple-value-bind (x y) (mouse-position event)
+    (multiple-value-bind (camera-screen-x camera-screen-y) (viewport->absolute x y)
+      (multiple-value-bind (new-camera-x new-camera-y)
+          (screen->map* camera-screen-x camera-screen-y)
+        (with-coordinate (slot-value system 'entity) (player-x player-y)
+          (setf player-x new-camera-x
+                player-y new-camera-y))
+        (with-camera (camera-x camera-y)
+          (setf camera-x new-camera-x
+                camera-y new-camera-y)))))
+  t)
 
 (defmethod system-draw ((system player-system) renderer)
   (with-system-config-options ((debug-cursor))
