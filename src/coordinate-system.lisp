@@ -9,8 +9,8 @@
 ;;                                  ,(truncate most-positive-fixnum 256)))
 
 (defcomponent coordinate coordinate
-  (x 0 :type double-float)
-  (y 0 :type double-float))  ;; XXX размерность x и y - тайлы (не пиксели!)
+  (x 0d0 :type double-float)
+  (y 0d0 :type double-float))  ;; XXX размерность x и y - тайлы (не пиксели!)
 
 (defmethod system-load ((system coordinate-system))
   t)
