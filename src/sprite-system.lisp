@@ -17,7 +17,8 @@
   (frame 0 :type fixnum)
   (angle 0d0 :type angle)
   (time-counter 0d0 :type double-float)
-  (layers-toggled nil :type hash-table))  ;; layer name (symbol) -> boolean
+  (layers-toggled nil :type hash-table)  ;; layer name (symbol) -> boolean
+  (debug-entity -1 :type fixnum))
 
 (defprefab sprite "ase"
   (ase-file nil :type ase-file)
@@ -162,17 +163,21 @@
      :frame-durations frame-durations)))
 
 (defmethod make-prefab-component ((system sprite-system) entity prefab)
-  (with-sprite entity ()
-    (setf width (ase-file-width (sprite-prefab-ase-file prefab)))
-    (setf height (ase-file-height (sprite-prefab-ase-file prefab)))
-    (setf stances (sprite-prefab-stances prefab))
-    (setf frame-durations (sprite-prefab-frame-durations prefab))
-    (setf layers (sprite-prefab-layers prefab))
-    (setf layers-toggled (make-hash
-                          :size (hash-table-size layers) :init-format :keys
-                          :initial-contents (loop for l being the hash-key of layers collect l)
-                          :init-default nil))
-    (setf stance 'idle)))
+  (with-system-config-options ((debug-sprite))
+    (with-sprite entity ()
+      (setf width (ase-file-width (sprite-prefab-ase-file prefab)))
+      (setf height (ase-file-height (sprite-prefab-ase-file prefab)))
+      (setf stances (sprite-prefab-stances prefab))
+      (setf frame-durations (sprite-prefab-frame-durations prefab))
+      (setf layers (sprite-prefab-layers prefab))
+      (setf layers-toggled (make-hash
+                            :size (hash-table-size layers) :init-format :keys
+                            :initial-contents (loop for l being the hash-key of layers collect l)
+                            :init-default nil))
+      (setf stance 'idle)
+      (when debug-sprite
+        (setf debug-entity (make-entity))
+        (make-component (system-ref 'debug) debug-entity :order 1010)))))
 
 (defmethod make-component ((system sprite-system) entity &rest parameters)
   (declare (ignore system entity parameters))
@@ -210,52 +215,31 @@
    0 (truncate (rem (round (* angle (/ 4 pi))) 8))))
 
 (defmethod system-draw ((system sprite-system) renderer)
-  (with-sprites
-      (with-screen-coordinate entity (sprite-x sprite-y)
-        (multiple-value-bind (sprite-viewport-x sprite-viewport-y)
-            (absolute->viewport sprite-x sprite-y)
-          (when (visiblep sprite-viewport-x sprite-viewport-y (max width height))
-            (loop
-              for layer being the hash-key using (hash-value toggled) of layers-toggled
-              when toggled do
-                (render
-                 renderer
-                 50 ;; TODO : player -> 30, stance=die -> 10, else 50
-                 (let ((layer layer)
-                       (layers layers)
-                       (width width)
-                       (height height)
-                       (frame frame)
-                       (angle angle)
-                       (sprite-x sprite-x)
-                       (sprite-y sprite-y))
-                   (multiple-value-bind (x y)
-                       (absolute->viewport sprite-x sprite-y)
-                     #'(lambda ()
-                         (al:draw-bitmap-region
-                          (gethash layer layers)
-                          (* frame width)
-                          (* (sprite-direction angle) height)
-                          width height
-                          (- x (truncate (- width *tile-width*) 2))
-                          (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))
-                          0))))))
-            (with-system-config-options ((debug-sprite))
-              (when debug-sprite
-                (render
-                 renderer 1010
-                 (let ((width width)
-                       (height height))
-                   (multiple-value-bind (x y)
-                       (absolute->viewport sprite-x sprite-y)
-                     #'(lambda ()
-                         (let ((x0 (- x (truncate (- width *tile-width*) 2)))
-                               (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
-                           (al:draw-rectangle
-                            x0 y0 (+ x0 width) (+ y0 height)
-                            (al:map-rgba
-                             (first debug-sprite)
-                             (second debug-sprite)
-                             (third debug-sprite)
-                             (or (fourth debug-sprite) 0))
-                            0)))))))))))))
+  (with-system-config-options ((debug-sprite))
+    (with-sprites
+        (with-screen-coordinate entity (sprite-x sprite-y)
+          (multiple-value-bind (x y)
+              (absolute->viewport sprite-x sprite-y)
+            (when (visiblep x y (max width height))
+              (let ((x0 (- x (truncate (- width *tile-width*) 2)))
+                    (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
+                (loop
+                  for layer being the hash-key using (hash-value toggled) of layers-toggled
+                  when toggled do
+                    (render
+                     renderer
+                     50 ;; TODO : player -> 30, stance=die -> 10, else 50
+                     (let ((layer layer)
+                           (layers layers)
+                           (width width)
+                           (height height)
+                           (frame frame)
+                           (angle angle))
+                       #'(lambda ()
+                           (al:draw-bitmap-region
+                            (gethash layer layers)
+                            (* frame width)
+                            (* (sprite-direction angle) height)
+                            width height x0 y0 0)))))
+                (when debug-sprite
+                  (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
