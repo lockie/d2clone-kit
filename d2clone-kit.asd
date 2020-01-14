@@ -29,6 +29,7 @@
                (:file "aseprite")
                (:file "systems")
                (:file "coordinate-system")
+               (:file "debug-system")
                (:file "console-system")
                (:file "camera-system")
                (:file "map-system")

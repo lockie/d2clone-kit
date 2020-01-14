@@ -10,6 +10,7 @@
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   ;; TODO : init systems DSL style
   (make-instance 'coordinate-system)
+  (make-instance 'debug-system)
   (let ((camera-entity (make-entity)))
     (make-component (make-instance 'camera-system) camera-entity)
     (make-component (system-ref 'coordinate) camera-entity :x 0d0 :y 0d0))
@@ -55,6 +56,7 @@
             (livesupport:update-repl-link)
             (setf last-repl-update current-tick))
           (with-systems sys
+            ;; TODO : remove this "loadedp" crap?
             (let ((name (name sys)))
               (unless (loadedp sys)
                 (system-load sys))
@@ -65,12 +67,14 @@
                       (setf failed-systems
                             (delete name failed-systems)))
                     (system-update
-                     sys (- current-tick last-tick))
-                    (system-draw sys renderer))
+                     sys (- current-tick last-tick)))
                   (unless (member name failed-systems)
                     (setf failed-systems
                           (adjoin name failed-systems))
                     (log-error "System ~a failed to reload" name)))))
+          (with-systems sys
+            (when (loadedp sys)
+              (system-draw sys renderer)))
           (al:clear-to-color (al:map-rgb 0 0 0))
           (al:hold-bitmap-drawing t)
           (do-draw renderer)

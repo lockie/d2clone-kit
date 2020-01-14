@@ -8,9 +8,11 @@
    (loadedp
     :type boolean
     :initform nil
-    :reader loadedp)))
-;; TODO : update/draw order?
-;;  slot "priority" + with-systems -> alexandria:hash-table-values + cl:sort
+    :reader loadedp)
+   (order
+    :type fixnum
+    :initform 0
+    :reader order)))
 
 ;; TODO : defsystem macro with global parameter = system instance?
 
@@ -76,8 +78,10 @@
   (gethash name *systems*))
 
 (defmacro with-systems (var &rest body)
-  `(loop for ,var being the hash-values of *systems*
-         do ,@body))
+  (with-gensyms (systems)
+    `(let ((,systems (sort (hash-table-values *systems*)
+                           (lambda (s1 s2) (< (order s1) (order s2))))))
+       (dolist (,var ,systems) ,@body))))
 
 (defun broadcast-event (event-type event)
   (loop for system being the hash-values of *systems*

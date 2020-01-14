@@ -5,7 +5,8 @@
 
 (defcomponent map map-chunk
   (tiled-map nil :type tiled-map)
-  (tiles nil :type simple-vector))
+  (tiles nil :type simple-vector)
+  (debug-entity -1 :type fixnum))
 
 (defprefab map "tmx"
   (tiled-map nil :type tiled-map)
@@ -83,9 +84,13 @@
      :tiles (load-tiles tiled-map))))
 
 (defmethod make-prefab-component ((system map-system) entity prefab)
-  (with-map-chunk entity ()
-    (setf tiled-map (map-prefab-tiled-map prefab))
-    (setf tiles (map-prefab-tiles prefab))))
+  (with-system-config-options ((debug-grid))
+    (with-map-chunk entity ()
+      (setf tiled-map (map-prefab-tiled-map prefab))
+      (setf tiles (map-prefab-tiles prefab))
+      (when debug-grid
+        (setf debug-entity (make-entity))
+        (make-component (system-ref 'debug) debug-entity)))))
 
 (defmethod make-component ((system map-system) entity &rest parameters)
   (declare (ignore system entity parameters))
@@ -98,36 +103,6 @@
   (if-let ((properties (tiled-layer-properties layer)))
     (gethash 'ground? properties nil)
     nil))
-
-;; TODO : отдельный механизм для рисования линий? Напр. короткоживущие (1 фрейм) entity
-(declaim
- (inline add-tile-rhomb)
- (ftype (function ((vector single-float) fixnum fixnum list boolean)) add-tile-rhomb))
-(defun add-tile-rhomb (buffer x y color mark)
-  (flet
-      ((add-point (x y)
-         (vector-push-extend (float x 0f0) buffer)
-         (vector-push-extend (float y 0f0) buffer)
-         (vector-push-extend 0f0 buffer) ;; z
-         (vector-push-extend 0f0 buffer) ;; u
-         (vector-push-extend 0f0 buffer) ;; v
-         (vector-push-extend (float (first color) 0f0) buffer)             ;; r
-         (vector-push-extend (float (second color) 0f0) buffer)            ;; g
-         (vector-push-extend (float (third color) 0f0) buffer)             ;; b
-         (vector-push-extend (float (or (fourth color) 0f0) 0f0) buffer))) ;; a
-    (add-point (+ x (ceiling *tile-width* 2)) y)
-    (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
-    (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
-    (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
-    (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
-    (add-point x (+ y (ceiling *tile-height* 2)))
-    (add-point x (+ y (ceiling *tile-height* 2)))
-    (add-point (+ x (ceiling *tile-width* 2)) y)
-    (when mark
-      (add-point (+ x (ceiling *tile-width* 2)) y)
-      (add-point (+ x (ceiling *tile-width* 2)) (+ y *tile-height*))
-      (add-point (+ x *tile-width*) (+ y (ceiling *tile-height* 2)))
-      (add-point x (+ y (ceiling *tile-height* 2))))))
 
 ;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
@@ -174,27 +149,17 @@
                                                                   0)))))))))
                     finally
                        (when debug-grid
-                         (render
-                          renderer 1000  ;; TODO : почему-то иногда рисуется только по краям
-                          #'(lambda ()
-                              (let ((vertices (make-array 144 :adjustable t :fill-pointer 0
-                                                              :element-type 'single-float)))
-                                (loop for row from from-row upto to-row
-                                      do (loop for col from from-col upto to-col
-                                               do (multiple-value-bind (tile-x tile-y)
-                                                      (map->screen
-                                                       (coerce col 'double-float)
-                                                       (coerce row 'double-float))
-                                                    (add-tile-rhomb vertices
-                                                                    (+ tile-x chunk-viewport-x)
-                                                                    (+ tile-y chunk-viewport-y)
-                                                                    debug-grid nil))))
-                                (let ((buffer (make-array (length vertices)
-                                                          :element-type 'single-float
-                                                          :initial-contents vertices)))
-                                  (cffi:with-pointer-to-vector-data (ptr buffer)
-                                    (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
-                                                  (ceiling (length buffer) 9) 0))))))))))))))))
+                         (loop for row from from-row upto to-row
+                               do (loop for col from from-col upto to-col
+                                        do (multiple-value-bind (tile-x tile-y)
+                                               (map->screen
+                                                (coerce col 'double-float)
+                                                (coerce row 'double-float))
+                                             (add-debug-tile-rhomb
+                                              debug-entity
+                                              (+ tile-x chunk-viewport-x)
+                                              (+ tile-y chunk-viewport-y)
+                                              debug-grid nil))))))))))))))
 
 (defmethod system-quit ((system map-system))
   (setf *tile-width* 0)
