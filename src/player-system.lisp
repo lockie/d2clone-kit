@@ -3,7 +3,8 @@
 
 (defclass player-system (system)
   ((name :initform 'player)
-   (entity :initform nil)))
+   (entity :initform -1)
+   (debug-entity :initform -1)))
 
 (defcomponent player player)
 
@@ -13,7 +14,11 @@
 (defmethod make-component ((system player-system) entity &rest parameters)
   (declare (ignore parameters))
   (setf (slot-value system 'entity) entity)
-  nil)
+  (with-system-config-options ((debug-cursor))
+    (when debug-cursor
+      (let ((debug-entity (make-entity)))
+        (setf (slot-value system 'debug-entity) debug-entity)
+        (make-component (system-ref 'debug) debug-entity :order 2000)))))
 
 (declaim
  (inline mouse-position)
@@ -44,21 +49,14 @@
 (defmethod system-draw ((system player-system) renderer)
   (with-system-config-options ((debug-cursor))
     (when debug-cursor
-      (render
-       renderer 2000
-       (multiple-value-bind (map-x map-y)
-           (multiple-value-call #'screen->map
-             (multiple-value-call #'viewport->absolute
-               (mouse-position)))
-         (multiple-value-bind (x y)
-             (multiple-value-call #'absolute->viewport
-               (map->screen (coerce (floor map-x) 'double-float)
-                            (coerce (floor map-y) 'double-float)))
-           #'(lambda ()
-               (al:draw-filled-rectangle
-                x y (+ x *tile-width*) (+ y *tile-height*)
-                (al:map-rgba
-                 (first debug-cursor)
-                 (second debug-cursor)
-                 (third debug-cursor)
-                 (or (fourth debug-cursor) 0))))))))))
+      (multiple-value-bind (map-x map-y)
+          (multiple-value-call #'screen->map
+            (multiple-value-call #'viewport->absolute
+              (mouse-position)))
+        (multiple-value-bind (x y)
+            (multiple-value-call #'absolute->viewport
+              (map->screen (coerce (floor map-x) 'double-float)
+                           (coerce (floor map-y) 'double-float)))
+          (add-debug-rectangle
+           (slot-value system 'debug-entity)
+           x y *tile-width* *tile-height* debug-cursor))))))
