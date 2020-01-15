@@ -217,7 +217,13 @@
 (defmethod system-draw ((system sprite-system) renderer)
   (with-system-config-options ((debug-sprite))
     (with-sprites
+        ;; TODO : character system to sort movement out ._.
         (with-screen-coordinate entity (sprite-x sprite-y)
+
+        ;; (with-coordinate entity (sprite-world-x sprite-world-y)
+        ;;   (let ((sprite-x (floor (* sprite-world-x *tile-width*)))
+        ;;         (sprite-y (floor (* sprite-world-y *tile-height*) 2)))
+
           (multiple-value-bind (x y)
               (absolute->viewport sprite-x sprite-y)
             (when (visiblep x y (max width height))
