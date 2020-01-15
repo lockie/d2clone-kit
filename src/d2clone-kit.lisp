@@ -141,6 +141,8 @@
            (float-features:with-float-traps-masked
                (:invalid :inexact :overflow :underflow)
              (game-loop event-queue))
+        (log-info "Shutting engine down")
+        (broadcast-quit)
         (al:inhibit-screensaver nil)
         (unregister-all-systems)
         (al:destroy-display display)
