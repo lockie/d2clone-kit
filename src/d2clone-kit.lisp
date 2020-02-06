@@ -18,7 +18,9 @@
     (make-component (make-instance 'map-system) map-entity :prefab 'map)
     (make-component (system-ref 'coordinate) map-entity :x 0d0 :y 0d0))
   (let ((map-entity (make-entity)))
+    (print map-entity)
     (make-component (system-ref 'map) map-entity :prefab 'map2)
+    ;; TODO : test coordinate maths with realtime map chunk movement
     (make-component (system-ref 'coordinate) map-entity :x -10d0 :y 0d0))
   (let ((map-entity (make-entity)))
     (make-component (system-ref 'map) map-entity :prefab 'map3)
@@ -29,6 +31,11 @@
     (toggle-layer sprite-entity 'cloth t)
     (make-component (make-instance 'player-system) sprite-entity)
     (make-component (system-ref 'coordinate) sprite-entity :x 0d0 :y 0d0))
+  ;; (let ((char-entity (make-entity)))
+  ;;   (make-component (system-ref 'sprite) char-entity :prefab 'heroine)
+  ;;   (toggle-layer char-entity 'cloth t)  ;; всадник без головы кек
+  ;;   (make-component (system-ref 'coordinate) char-entity :x 0d0 :y 0d0)
+  ;;   (make-component (make-instance 'character-system) char-entity :target-x 3d0 :target-y 3d0))
 
   (with-systems sys
     (unless (system-load sys)

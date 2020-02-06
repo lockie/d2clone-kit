@@ -30,6 +30,14 @@
    (floor (* y *tile-height*) 2)))
 
 (declaim
+ (inline world->screen)
+ (ftype (function (double-float double-float) (values fixnum fixnum)) world->screen))
+(defun world->screen (x y)
+  (values
+   (floor (* x *tile-width*))
+   (floor (* y *tile-height*) 2)))
+
+(declaim
  (inline screen->map*)
  (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
 (defun screen->map* (x y)
@@ -51,6 +59,7 @@
          (+ int-map-x (/ diff-x (coerce *tile-width* 'double-float)))
          (+ int-map-y (/ diff-y (coerce *tile-height* 'double-float))))))))
 
+;; TODO : sort of world->screen function
 (defmacro with-screen-coordinate (entity bindings &body body)
   (let* ((bindings (or bindings '(x y)))
          (screen-x (car bindings))
@@ -58,5 +67,5 @@
          (map-x (gensym "x"))
          (map-y (gensym "y")))
     `(with-coordinate ,entity (,map-x ,map-y)
-       (multiple-value-bind (,screen-x ,screen-y) (map->screen ,map-x ,map-y)
+       (multiple-value-bind (,screen-x ,screen-y) (world->screen ,map-x ,map-y)
          ,@body))))

@@ -104,6 +104,8 @@
     (gethash 'ground? properties nil)
     nil))
 
+;; XXX only allow integer map chunk coords?..
+
 ;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))

@@ -38,6 +38,7 @@
     (multiple-value-bind (camera-screen-x camera-screen-y) (viewport->absolute x y)
       (multiple-value-bind (new-camera-x new-camera-y)
           (screen->map* camera-screen-x camera-screen-y)
+        (incf new-camera-x (/ (mod (floor new-camera-y) 2) 2)) ;; XXX wut
         (with-coordinate (slot-value system 'entity) (player-x player-y)
           (setf player-x new-camera-x
                 player-y new-camera-y))

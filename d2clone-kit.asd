@@ -34,6 +34,7 @@
                (:file "camera-system")
                (:file "map-system")
                (:file "sprite-system")
+               (:file "character-system")
                (:file "player-system")
                (:file "renderer")
                (:file "d2clone-kit"))

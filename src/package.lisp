@@ -5,4 +5,5 @@
   (:import-from :cl-containers :priority-queue-on-container :insert-item
    :iterate-elements :empty!)
   (:import-from :make-hash :make-hash)
+  (:shadow character)
   (:export :main))
