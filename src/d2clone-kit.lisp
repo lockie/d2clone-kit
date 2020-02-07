@@ -159,7 +159,8 @@
         (al:uninstall-system)))))
 
 
-(defun main ()
+(defun demo ()
+  "Run built-in engine demo."
   ;; TODO : separate thread?
   (with-condition-reporter
       (start-engine "demo")))
