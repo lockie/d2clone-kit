@@ -1,6 +1,7 @@
 (in-package :d2clone-kit)
 
 (defun init-log (data-dir &optional (level "info"))
+  "wait wut"
   (let ((log-file
           (merge-pathnames
            (make-pathname :name "log" :type "txt")
@@ -17,10 +18,12 @@
 
 (defvar *function-name* "")
 
-(defmacro defunl (fname lambda-list &rest body)
-  `(defun ,fname ,lambda-list
-     (let ((*function-name* (quote ,fname)))
-       ,@body)))
+(defmacro defunl (fname lambda-list &body body)
+  (let ((docstring (when (stringp (car body)) (pop body))))
+    `(defun ,fname ,lambda-list
+       ,@(ensure-list docstring)
+       (let ((*function-name* (quote ,fname)))
+         ,@body))))
 
 (declaim (string *last-message*)
          (fixnum *last-message-repetitions))
