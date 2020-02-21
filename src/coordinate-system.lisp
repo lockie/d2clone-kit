@@ -44,7 +44,7 @@
   (let ((tx (floor (- x (* -2 y) (floor *tile-width* 2) (* 2 *tile-height*)) *tile-width*))
         (ty (floor (+ y (/ x -2) (floor *tile-width* 2) (floor *tile-height* 2)) *tile-height*)))
     (values
-     (coerce (1+ (floor (- tx ty) 2)) 'double-float)
+     (coerce (1+ (/ (- tx ty) 2)) 'double-float)
      (coerce (+ tx ty) 'double-float))))
 
 (declaim
