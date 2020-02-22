@@ -25,9 +25,9 @@
    (floor (* y *tile-height*) 2)))
 
 (declaim
- (inline screen->map*)
+ (inline screen->map)
  (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
-(defun screen->map* (x y)
+(defun screen->map (x y)
   (let ((tx (floor (- x (* -2 y) (floor *tile-width* 2) (* 2 *tile-height*)) *tile-width*))
         (ty (floor (+ y (/ x -2) (floor *tile-width* 2) (floor *tile-height* 2)) *tile-height*)))
     (values
@@ -35,9 +35,9 @@
      (coerce (+ tx ty) 'double-float))))
 
 (declaim
- (inline screen->map)
+ (inline screen->map*)
  (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
-(defun screen->map (x y)
+(defun screen->map* (x y)
   (multiple-value-bind (int-map-x int-map-y) (screen->map* x y)
     (multiple-value-bind (int-x int-y) (map->screen int-map-x int-map-y)
       (let ((diff-x (- x int-x))
