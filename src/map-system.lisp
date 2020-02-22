@@ -179,8 +179,10 @@ See MAP->SCREEN"
                     with from-col = (max 0 (ceiling (- start-x chunk-x 2)))
                     with from-row = (max 0 (ceiling (- start-y chunk-y 2)))
                     for layer across (tiled-map-layers tiled-map)
-                    for to-col = (min (ceiling (- end-x chunk-x)) (1- (tiled-layer-width layer)))
-                    for to-row = (min (ceiling (- end-y chunk-y)) (1- (tiled-layer-height layer)))
+                    for to-col = (min (ceiling (- end-x chunk-x -1))
+                                      (1- (tiled-layer-width layer)))
+                    for to-row = (min (ceiling (- end-y chunk-y -1))
+                                      (1- (tiled-layer-height layer)))
                     do (render
                         renderer
                         (+ (tiled-layer-order layer) (if (ground-layer-p layer) 0 100))
