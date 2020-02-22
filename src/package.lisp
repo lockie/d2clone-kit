@@ -12,6 +12,7 @@
    (:export
     #:camera-system
     #:camera-entity
+    #:camera-target
     #:with-camera
     #:absolute->viewport
     #:viewport->absolute
@@ -66,6 +67,7 @@
    ;; player-system.lisp
    (:export
     #:player-system
+    #:player-entity
     #:mouse-position)
    ;; renderer.lisp
    (:export
