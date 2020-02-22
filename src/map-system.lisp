@@ -148,7 +148,16 @@ See MAP->SCREEN"
     (gethash 'ground? properties nil)
     nil))
 
-;; XXX only allow integer map chunk coords?..
+(defmethod system-update ((system map-system) dt)
+  (flet
+      ((intp (n) (zerop (mod n 1))))
+    (with-map-chunks
+      (with-coordinate entity ()
+        (unless (and (intp x)
+                     (intp y))
+          ;; TODO : restart for rounding coordinates
+          ;; Otherwise it will badly fuck up screen <-> map maths
+          (error "Only integer map coordinates allowed for map chunks"))))))
 
 ;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
