@@ -30,13 +30,13 @@
   (let ((sprite-entity (make-entity)))
     (make-component (make-instance 'sprite-system) sprite-entity :prefab 'heroine)
     (toggle-layer sprite-entity 'head t)
-    (toggle-layer sprite-entity 'cloth t)
+    (toggle-layer sprite-entity 'clothes t)
     (make-component (make-instance 'player-system) sprite-entity)
     (setf (camera-target) sprite-entity)
     (make-component (system-ref 'coordinate) sprite-entity :x 0d0 :y 0d0))
   ;; (let ((char-entity (make-entity)))
   ;;   (make-component (system-ref 'sprite) char-entity :prefab 'heroine)
-  ;;   (toggle-layer char-entity 'cloth t)  ;; всадник без головы кек
+  ;;   (toggle-layer char-entity 'clothes t)  ;; всадник без головы кек
   ;;   (make-component (system-ref 'coordinate) char-entity :x 0d0 :y 0d0)
   ;;   (make-component (make-instance 'character-system) char-entity :target-x 3d0 :target-y 3d0))
 
