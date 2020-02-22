@@ -22,14 +22,6 @@
       (setf point-y y))))
 
 (declaim
- (inline map->screen)
- (ftype (function (double-float double-float) (values fixnum fixnum)) map->screen))
-(defun map->screen (x y)
-  (values
-   (floor (+ (* x *tile-width*) (* (rem (abs (floor y)) 2) (floor *tile-width* 2))))
-   (floor (* y *tile-height*) 2)))
-
-(declaim
  (inline world->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum)) world->screen))
 (defun world->screen (x y)
@@ -37,29 +29,6 @@
    (floor (* x *tile-width*))
    (floor (* y *tile-height*) 2)))
 
-(declaim
- (inline screen->map*)
- (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
-(defun screen->map* (x y)
-  (let ((tx (floor (- x (* -2 y) (floor *tile-width* 2) (* 2 *tile-height*)) *tile-width*))
-        (ty (floor (+ y (/ x -2) (floor *tile-width* 2) (floor *tile-height* 2)) *tile-height*)))
-    (values
-     (coerce (1+ (/ (- tx ty) 2)) 'double-float)
-     (coerce (+ tx ty) 'double-float))))
-
-(declaim
- (inline screen->map)
- (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
-(defun screen->map (x y)
-  (multiple-value-bind (int-map-x int-map-y) (screen->map* x y)
-    (multiple-value-bind (int-x int-y) (map->screen int-map-x int-map-y)
-      (let ((diff-x (- x int-x))
-            (diff-y (- y int-y)))
-        (values
-         (+ int-map-x (/ diff-x (coerce *tile-width* 'double-float)))
-         (+ int-map-y (/ diff-y (coerce *tile-height* 'double-float))))))))
-
-;; TODO : sort of world->screen function
 (defmacro with-screen-coordinate (entity bindings &body body)
   (let* ((bindings (or bindings '(x y)))
          (screen-x (car bindings))
