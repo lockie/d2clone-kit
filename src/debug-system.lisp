@@ -2,7 +2,8 @@
 
 (defclass debug-system (system)
   ((name :initform 'debug)
-   (order :initform 10)))
+   (order :initform 10))
+  (:documentation "Handles drawing of debug lines."))
 
 (defcomponent debug debug-buffer
   (render-order 0 :type fixnum)
@@ -14,6 +15,7 @@
          (fixnum fixnum fixnum fixnum fixnum fixnum &optional (or fixnum null)))
         add-debug-point))
 (defun add-debug-point (entity x y r g b &optional (a nil))
+  "Adds point with screen coordinates X, Y and color R, G, B, A to debug buffer ENTITY."
   (with-debug-buffer entity ()
     (let ((current-length (length points)))
       (when (< current-length (+ count 9))
@@ -31,8 +33,9 @@
       (setf (aref points (+ count 8)) (float (or a 0)))
       (incf count 9))))
 
-(declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list )) add-debug-rectangle))
+(declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list)) add-debug-rectangle))
 (defun add-debug-rectangle (entity x y w h color)
+  "Adds rectangle with screen coordinates X, Y, dimensions W, H and color COLOR to debug buffer ENTITY."
   (let ((r (first color))
         (g (second color))
         (b (third color))
@@ -48,6 +51,7 @@
 
 (declaim (ftype (function (fixnum fixnum fixnum list boolean)) add-debug-tile-rhomb))
 (defun add-debug-tile-rhomb (entity x y color mark)
+  "Adds grid rhomb with screen coordinates X, Y and color COLOR to debug buffer ENTITY. If MARK is T, then rhomb is drawn crossed out."
   (let ((r (first color))
         (g (second color))
         (b (third color))

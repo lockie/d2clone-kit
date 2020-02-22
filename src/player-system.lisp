@@ -4,7 +4,8 @@
 (defclass player-system (system)
   ((name :initform 'player)
    (entity :initform -1)
-   (debug-entity :initform -1)))
+   (debug-entity :initform -1))
+  (:documentation "Handles player character."))
 
 (defcomponent player player)
 
@@ -24,6 +25,7 @@
  (inline mouse-position)
  (ftype (function (&optional cffi:foreign-pointer) (values fixnum fixnum)) mouse-position))
 (defun mouse-position (&optional (event nil))
+  "Get current mouse cursor coordinates using liballegro mouse event EVENT or by calling [al_get_mouse_state](https://liballeg.org/a5docs/trunk/mouse.html#al_get_mouse_state)."
   (macrolet
       ((mouse-position-values (type struct)
          `(cffi:with-foreign-slots ((al::x al::y) ,struct (:struct ,type))

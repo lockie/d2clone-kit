@@ -1,7 +1,6 @@
 (in-package :d2clone-kit)
 
 (defun init-log (data-dir &optional (level "info"))
-  "wait wut"
   (let ((log-file
           (merge-pathnames
            (make-pathname :name "log" :type "txt")
@@ -19,6 +18,7 @@
 (defvar *function-name* "")
 
 (defmacro defunl (fname lambda-list &body body)
+  "DEFUN wrapper which sets correct current function name for logging functions."
   (let ((docstring (when (stringp (car body)) (pop body))))
     `(defun ,fname ,lambda-list
        ,@(ensure-list docstring)
@@ -46,21 +46,27 @@
             (do-trace level (string-downcase *function-name*) full-message)
             (setf *last-message* full-message))))))
 
-(defmacro deflog (name level)
+(defmacro deflog (name level docstring)
   (let
       ((function-name (intern (concatenate 'string "LOG-" (symbol-name name)))))
     `(defun ,function-name (message &rest args)
+       ,@(ensure-list docstring)
        (%trace ,level message args))))
 
-(deflog debug 0)
+(deflog debug 0
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro debug channel.")
 
-(deflog info 1)
+(deflog info 1
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro info channel.")
 
-(deflog warn 2)
+(deflog warn 2
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro warn channel.")
 
-(deflog error 3)
+(deflog error 3
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro error channel.")
 
-(defmacro with-condition-reporter (&rest body)
+(defmacro with-condition-reporter (&body body)
+  "Executes body BODY with generic error handler which puts full error condition info including backtrace to liballegro log and displays error messagebox when not in debugger."
   `(handler-bind
        ((error #'(lambda (e)
                    (log-error "~a"

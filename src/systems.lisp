@@ -12,7 +12,8 @@
    (order
     :type fixnum
     :initform 0
-    :reader order)))
+    :reader order))
+  (:documentation "Base class for all ECS systems."))
 
 ;; TODO : defsystem macro with global parameter = system instance?
 
@@ -20,13 +21,19 @@
 
 (defgeneric system-unload (system))
 
-(defgeneric system-event (system event-type event))
+(defgeneric system-event (system event-type event)
+  (:documentation "Processes liballegro event EVENT of type EVENT-TYPE by system SYSTEM."))
 
-(defgeneric system-update (system dt))
+(defgeneric system-update (system dt)
+  (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
 
-(defgeneric system-draw (system renderer))
+(defgeneric system-draw (system renderer)
+  (:documentation "Renders system SYSTEM using functional renderer RENDERER.
 
-(defgeneric system-quit (system))
+See RENDER"))
+
+(defgeneric system-quit (system)
+  (:documentation "Shuts down system SYSTEM."))
 
 (defmethod system-load :around ((system system))
   (setf (slot-value system 'loadedp) (call-next-method)))
@@ -75,9 +82,11 @@
 
 (declaim (inline system-ref))
 (defun system-ref (name)
+  "Returns system instance by its name symbol NAME."
   (gethash name *systems*))
 
-(defmacro with-systems (var &rest body)
+(defmacro with-systems (var &body body)
+  "Executes BODY in loop for each system, binding system instance to variable VAR."
   (with-gensyms (systems)
     `(let ((,systems (sort (hash-table-values *systems*)
                            (lambda (s1 s2) (< (order s1) (order s2))))))
@@ -91,13 +100,19 @@
   (not (loop for system being the hash-values of *systems*
              always (system-quit system))))
 
-(defgeneric make-component (system entity &rest parameters))
+(defgeneric make-component (system entity &rest parameters)
+  (:documentation "Creates new component using PARAMETERS within system SYSTEM for entity ENTITY.
+
+PARAMETERS could include `:PREFAB` key, in which case component is constructed using corresponding prefab.
+
+See MAKE-PREFAB-COMPONENT"))
 
 (defgeneric system-adjust-components (system new-size))
 
 (defgeneric delete-component (system entity))
 
 (defunl make-entity ()
+  "Allocates new entity."
   (if (emptyp *deleted-entities*)
       (let ((res *entities-count*))
         (incf *entities-count*)
@@ -110,11 +125,13 @@
       (vector-pop *deleted-entities*)))
 
 (defun delete-entity (entity)
+  "Deletes entity ENTITY."
   (loop for system being the hash-values of *systems*
         do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
 
 (defmacro defcomponent (system name &rest slots)
+  "Defines component structure with name NAME and slots SLOTS within system SYSTEM."
   (let* ((system-name (symbolicate system '-system))
          (slot-names (mapcar #'car slots))
          (slot-defaults (mapcar #'cadr slots))
@@ -191,18 +208,22 @@
            (setf ,@delete-exprs)))
        ,@getter-decls ,@setter-decls)))
 
-(defgeneric prefab (system prefab-name))
+(defgeneric prefab (system prefab-name)
+  (:documentation "Returns prefab with name symbol PREFAB-NAME within system SYSTEM."))
 
-(defgeneric (setf prefab) (new-prefab system prefab-name))
+(defgeneric (setf prefab) (new-prefab system prefab-name)
+  (:documentation "Sets prefab NEW-PREFAB with name symbol PREFAB-NAME within system SYSTEM."))
 
-(defgeneric prefab-path (system prefab-name))
-
-(defgeneric make-prefab (system prefab-name))
+(defgeneric prefab-path (system prefab-name)
+  (:documentation "Returns prefab file path for system SYSTEM and prefab name symbol PREFAB-NAME."))
+(defgeneric make-prefab (system prefab-name)
+  (:documentation "Loads prefab with name symbol PREFAB-NAME within system SYSTEM."))
 
 (defmethod make-prefab :around (system prefab-name)
   (setf (prefab system prefab-name) (call-next-method)))
 
-(defgeneric make-prefab-component (system entity prefab))
+(defgeneric make-prefab-component (system entity prefab)
+  (:documentation "Creates new component using prefab instance PREFAB as a template within system SYSTEM for entity ENTITY."))
 
 (defmethod make-component :around (system entity &rest parameters)
   (destructuring-bind (&key (prefab nil) &allow-other-keys) parameters
@@ -214,6 +235,7 @@
         (call-next-method))))
 
 (defmacro defprefab (system extension &rest slots)
+  "Defines prefab structure with slots SLOTS and file name extension EXTENSION within system SYSTEM."
   (let ((storage-name (symbolicate '* system '- 'prefabs '*))
         (system-name (symbolicate system '- 'system))
         (struct-name (symbolicate system '- 'prefab))

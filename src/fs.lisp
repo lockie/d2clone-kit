@@ -58,7 +58,8 @@
 
 (defclass character-stream (trivial-gray-streams:fundamental-character-input-stream)
   ((path :initarg :path :initform (error "missing path"))
-   (al-file)))
+   (al-file))
+  (:documentation "Wrapper around liballegro file APIs."))
 
 (defmethod initialize-instance :after ((stream character-stream) &key)
   (with-slots (path al-file) stream
@@ -89,7 +90,8 @@
 
 (defclass binary-stream (trivial-gray-streams:fundamental-binary-input-stream)
   ((path :initarg :path :initform (error "missing path"))
-   (al-file)))
+   (al-file))
+  (:documentation "Wrapper around liballegro file APIs."))
 
 (defmethod initialize-instance :after ((stream binary-stream) &key)
   (with-slots (path al-file) stream
@@ -118,7 +120,8 @@
 
 (defclass virtual-binary-stream (trivial-gray-streams:fundamental-binary-input-stream)
   ((buffer :initarg :buffer :initform (error "missing buffer"))
-   (position :initform 0)))
+   (position :initform 0))
+  (:documentation "Read-only binary Gray stream based on SIMPLE-ARRAY of UNSIGNED-BYTE."))
 
 (defmethod stream-element-type ((stream virtual-binary-stream))
   '(unsigned-byte))
@@ -137,7 +140,8 @@
     (let ((copied (min (- end start) (- (length buffer) position))))
       (+ start (incf position copied)))))
 
-(defgeneric read-binary (type stream))
+(defgeneric read-binary (type stream)
+  (:documentation "Reads and returns element of type denoted by TYPE from binary stream STREAM."))
 
 (defmethod read-binary ((type (eql 'byte)) stream)
   (read-byte stream))
@@ -162,6 +166,9 @@
     string))
 
 (defmacro define-binary-struct (name &rest slots)
+  "Defines structure with name NAME and slots SLOTS along with corresponding READ-BINARY method which reads and returns that structure from given binary stream.
+
+See READ-BINARY"
   (flet
       ((slot->struct-slot (spec)
          (let* ((parameters (cdr spec))

@@ -1,7 +1,7 @@
 (asdf:defsystem :d2clone-kit
   :description "Generic Diablo 2 clone game engine."
   :author "Andrew Kravchuk <awkravchuk@gmail.com>"
-  :license "GPLv3"
+  :license "GPL v3"
   :depends-on (:iterate
                :make-hash
                :trivial-gray-streams

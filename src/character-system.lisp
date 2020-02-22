@@ -2,7 +2,8 @@
 
 
 (defclass character-system (system)
-  ((name :initform 'character)))
+  ((name :initform 'character))
+  (:documentation "Handles characters."))
 
 (defcomponent character character
   (target-x nil :type double-float)

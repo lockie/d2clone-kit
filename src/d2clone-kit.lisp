@@ -1,6 +1,7 @@
 (in-package :d2clone-kit)
 
 (defunl handle-event (event)
+  "Broadcasts liballegro event EVENT through ECS systems."
   (let ((event-type
           (cffi:foreign-slot-value event '(:union al:event) 'al::type)))
     (if (eq event-type :display-close)
@@ -8,7 +9,8 @@
         (broadcast-event event-type event))))
 
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
-  ;; TODO : init systems DSL style
+  "Runs game loop."
+  ;; TODO : init systems DSL style someplace else
   (make-instance 'coordinate-system)
   (make-instance 'debug-system)
   (let ((camera-entity (make-entity)))
@@ -97,6 +99,7 @@
       (cffi:foreign-free event))))
 
 (defunl start-engine (game-name)
+  "Initializes and starts engine using assets specified by GAME-NAME."
   (let ((data-dir
           (merge-pathnames
            (make-pathname :directory `(:relative ,game-name))
@@ -160,7 +163,7 @@
 
 
 (defun demo ()
-  "Run built-in engine demo."
+  "Runs built-in engine demo."
   ;; TODO : separate thread?
   (with-condition-reporter
       (start-engine "demo")))

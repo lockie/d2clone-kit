@@ -2,9 +2,12 @@
 
 
 (defclass sprite-system (system)
-  ((name :initform 'sprite)))
+  ((name :initform 'sprite))
+  (:documentation "Handles movable sprites in Aseprite format."))
 
-(deftype angle () `(double-float ,(- (* 2 pi)) ,(* 2 pi)))
+(deftype angle ()
+  "Angle value in radians."
+  `(double-float ,(- (* 2 pi)) ,(* 2 pi)))
 
 (defcomponent sprite sprite
   (width 0 :type fixnum)
@@ -27,6 +30,7 @@
   (frame-durations nil :type (simple-array double-float)))
 
 (defun toggle-layer (entity layer &optional (on nil on-supplied-p))
+  "Toggles layer LAYER on sprite entity ENTITY."
   (with-sprite entity ()
     (multiple-value-bind (old-value layer-exists)
         (gethash layer layers-toggled)
@@ -206,7 +210,7 @@
  (inline sprite-direction)
  (ftype (function (angle) unsigned-byte) sprite-direction))
 (defun sprite-direction (angle)
-  "West direction is 0 degree angle; counted clockwise"
+  "Calculates sprite direction from angle value ANGLE. West direction is 0 degree angle; counted clockwise."
   (declare (angle angle))
   (when (minusp angle)
     (setf angle (+ angle (* 2 pi))))

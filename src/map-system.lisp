@@ -1,7 +1,8 @@
 (in-package :d2clone-kit)
 
 (defclass map-system (system)
-  ((name :initform 'map)))
+  ((name :initform 'map))
+  (:documentation "Handles map chunks in Tiled format."))
 
 (defcomponent map map-chunk
   (tiled-map nil :type tiled-map)
@@ -20,6 +21,10 @@
  (inline map->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum)) map->screen))
 (defun map->screen (x y)
+  "Converts map coordinates to screen pixel coordinates.
+
+See SCREEN->MAP
+See SCREEN->MAP*"
   (values
    (floor (+ (* x *tile-width*) (* (rem (abs (floor y)) 2) (floor *tile-width* 2))))
    (floor (* y *tile-height*) 2)))
@@ -28,6 +33,10 @@
  (inline screen->map)
  (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
 (defun screen->map (x y)
+  "Converts screen pixel coordinates to map coordinates of nearest tile.
+
+See SCREEN->MAP*
+See MAP->SCREEN"
   (let ((tx (floor (- x (* -2 y) (floor *tile-width* 2) (* 2 *tile-height*)) *tile-width*))
         (ty (floor (+ y (/ x -2) (floor *tile-width* 2) (floor *tile-height* 2)) *tile-height*)))
     (values
@@ -38,6 +47,10 @@
  (inline screen->map*)
  (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
 (defun screen->map* (x y)
+  "Converts screen pixel coordinates to exact map coordinates.
+
+See SCREEN->MAP
+See MAP->SCREEN"
   (multiple-value-bind (int-map-x int-map-y) (screen->map* x y)
     (multiple-value-bind (int-x int-y) (map->screen int-map-x int-map-y)
       (let ((diff-x (- x int-x))
@@ -130,6 +143,7 @@
   t)
 
 (defun ground-layer-p (layer)
+  "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground?\" property)."
   (if-let ((properties (tiled-layer-properties layer)))
     (gethash 'ground? properties nil)
     nil))

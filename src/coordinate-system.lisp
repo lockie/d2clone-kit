@@ -2,7 +2,8 @@
 
 
 (defclass coordinate-system (system)
-  ((name :initform 'coordinate)))
+  ((name :initform 'coordinate))
+  (:documentation "Stores world coordinates."))
 
 ;; TODO : разобраться с типами
 ;; (deftype coordinate () `(integer ,(truncate most-negative-fixnum 256)
@@ -10,7 +11,7 @@
 
 (defcomponent coordinate coordinate
   (x 0d0 :type double-float)
-  (y 0d0 :type double-float))  ;; XXX размерность x и y - тайлы (не пиксели!)
+  (y 0d0 :type double-float))
 
 (defmethod system-load ((system coordinate-system))
   t)
@@ -25,11 +26,13 @@
  (inline world->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum)) world->screen))
 (defun world->screen (x y)
+  "Converts world coordinate units to screen pixel units."
   (values
    (floor (* x *tile-width*))
    (floor (* y *tile-height*) 2)))
 
 (defmacro with-screen-coordinate (entity bindings &body body)
+  "Executes BODY with ENTITY's screen pixel coordinates bound to two symbols in BINDINGS list. If BINDINGS are not set, coordinates are bound to symbols X and Y."
   (let* ((bindings (or bindings '(x y)))
          (screen-x (car bindings))
          (screen-y (cadr bindings))
