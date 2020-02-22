@@ -46,9 +46,9 @@
         (viewport->absolute x y)
       (multiple-value-bind (new-camera-x new-camera-y)
           (screen->map new-camera-screen-x new-camera-screen-y)
-        (with-coordinate (player-entity) (player-x player-y)
-          (setf player-x new-camera-x
-                player-y new-camera-y)))))
+        (with-character (player-entity) ()
+          (setf target-x new-camera-x
+                target-y new-camera-y)))))
   t)
 
 (defmethod system-draw ((system player-system) renderer)

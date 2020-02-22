@@ -6,6 +6,7 @@
   (:documentation "Handles characters."))
 
 (defcomponent character character
+  (speed nil :type double-float)
   (target-x nil :type double-float)
   (target-y nil :type double-float))
 
@@ -13,12 +14,11 @@
   t)
 
 (defmethod make-component ((system character-system) entity &rest parameters)
-  (destructuring-bind (&key target-x target-y) parameters
-    (with-character entity (x y)
+  (destructuring-bind (&key (speed 0.1d0) target-x target-y) parameters
+    (with-character entity (s x y)
+      (setf s speed)
       (setf x target-x)
       (setf y target-y))))
-
-(defparameter *speed* 0.01d0)
 
 (declaim
  (inline approx-equal)
@@ -29,13 +29,12 @@
 (defmethod system-update ((system character-system) dt)
   (with-characters
       (with-coordinate entity ()
-        (if (and (approx-equal target-x x) (approx-equal target-y y))
-            ;; XXX debug
-            (progn
-              (incf x (* 10 *speed* (signum (- target-x x))))
-              (incf y (* 10 *speed* (signum (- target-y y))))
-              (setf target-x (- target-x))
-              (setf target-y (- target-y)))
-            (progn
-              (incf x (* *speed* (signum (- target-x x))))
-              (incf y (* *speed* (signum (- target-y y)))))))))
+        (with-sprite entity ()
+          (if (and (approx-equal target-x x speed) (approx-equal target-y y speed))
+              (when (eq stance 'walk)
+                (setf stance 'idle))
+              (let ((a (atan (- target-y y) (- target-x x))))
+                (setf angle a) ;; TODO : crooked :(
+                (incf x (* speed (cos a)))
+                (incf y (* speed (sin a)))
+                (setf stance 'walk)))))))

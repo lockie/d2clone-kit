@@ -33,6 +33,7 @@
     (toggle-layer sprite-entity 'clothes t)
     (make-component (make-instance 'player-system) sprite-entity)
     (setf (camera-target) sprite-entity)
+    (make-component (make-instance 'character-system) sprite-entity :target-x 0d0 :target-y 0d0)
     (make-component (system-ref 'coordinate) sprite-entity :x 0d0 :y 0d0))
   ;; (let ((char-entity (make-entity)))
   ;;   (make-component (system-ref 'sprite) char-entity :prefab 'heroine)
