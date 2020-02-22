@@ -21,6 +21,11 @@
         (setf (slot-value system 'debug-entity) debug-entity)
         (make-component (system-ref 'debug) debug-entity :order 2000)))))
 
+(declaim (inline player-entity))
+(defun player-entity ()
+  "Returns current player entity."
+  (slot-value (system-ref 'player) 'entity))
+
 (declaim
  (inline mouse-position)
  (ftype (function (&optional cffi:foreign-pointer) (values fixnum fixnum)) mouse-position))
@@ -37,15 +42,13 @@
 
 (defmethod system-event ((system player-system) (event-type (eql :mouse-button-down)) event)
   (multiple-value-bind (x y) (mouse-position event)
-    (multiple-value-bind (camera-screen-x camera-screen-y) (viewport->absolute x y)
+    (multiple-value-bind (new-camera-screen-x new-camera-screen-y)
+        (viewport->absolute x y)
       (multiple-value-bind (new-camera-x new-camera-y)
-          (screen->map camera-screen-x camera-screen-y)
-        (with-coordinate (slot-value system 'entity) (player-x player-y)
+          (screen->map new-camera-screen-x new-camera-screen-y)
+        (with-coordinate (player-entity) (player-x player-y)
           (setf player-x new-camera-x
-                player-y new-camera-y))
-        (with-camera (camera-x camera-y)
-          (setf camera-x new-camera-x
-                camera-y new-camera-y)))))
+                player-y new-camera-y)))))
   t)
 
 (defmethod system-draw ((system player-system) renderer)

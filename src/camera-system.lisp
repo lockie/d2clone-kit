@@ -3,7 +3,8 @@
 
 (defclass camera-system (system)
   ((name :initform 'camera)
-   (entity :initform nil))
+   (entity :initform nil)
+   (target :initform nil))
   (:documentation "Handles camera entity."))
 
 (defcomponent camera camera)
@@ -25,6 +26,16 @@
 (defun camera-entity ()
   "Returns current camera entity."
   (slot-value (system-ref 'camera) 'entity))
+
+(declaim (inline camera-target))
+(defun camera-target ()
+  "Returns current camera target, i.e. the entity camera tracks."
+  (slot-value (system-ref 'camera) 'target))
+
+(declaim (inline (setf camera-target)))
+(defun (setf camera-target) (target)
+  "Sets current camera target, i.e. the entity camera tracks. Set to NIL to stop camera tracking."
+  (setf (slot-value (system-ref 'camera) 'target) target))
 
 (defmacro with-camera (bindings &body body)
   "Executes BODY with current camera position bound to two symbols in BIDNINGS list."
@@ -85,3 +96,10 @@ See ABSOLUTE->VIEWPORT"
      (< x display-width)
      (> y (- height))
      (< y display-height))))
+
+(defmethod system-update ((system camera-system) dt)
+  (when-let (target (slot-value system 'target))
+    (with-camera (camera-x camera-y)
+      (with-coordinate target ()
+        (setf camera-x x
+              camera-y y)))))
