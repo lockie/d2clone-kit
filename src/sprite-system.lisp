@@ -14,6 +14,7 @@
   (height 0 :type fixnum)
   (layers nil :type hash-table)  ;; layer name (symbol) -> al_bitmap
   (stances nil :type hash-table)  ;; stance name (symbol) -> list of frame #s
+  (directions 0 :type fixnum) ;; count of directions
   (frame-durations nil :type (simple-array double-float))
   ;; instance state
   (stance nil :type symbol)
@@ -27,6 +28,7 @@
   (ase-file nil :type ase-file)
   (layers nil :type hash-table)  ;; layer name (symbol) -> al_bitmap
   (stances nil :type hash-table)  ;; stance name (symbol) -> list of frame #s
+  (directions 0 :type fixnum)  ;; count of directions
   (frame-durations nil :type (simple-array double-float)))
 
 (defun toggle-layer (entity layer &optional (on nil on-supplied-p))
@@ -107,15 +109,19 @@
                 (setf (elt layer-names id) (format-symbol 'd2clone-kit "~:@(~a~)" layer-name))))
     finally (return layer-names)))
 
-(defun load-sprite-layers (ase-file layer-names stances)
+(defun total-stance-length (stances)
+  (loop for stance-name being the hash-key of stances
+        sum (length (gethash stance-name stances))))
+
+(defun directions (ase-file total-stance-length)
+  (ceiling (length (ase-file-frames ase-file)) total-stance-length))
+
+(defun load-sprite-layers (ase-file layer-names stances total-stance-length directions)
   (loop
     with cel-width = (ase-file-width ase-file)
     with cel-height = (ase-file-height ase-file)
     with frames = (ase-file-frames ase-file)
     with frames-count = (length frames)
-    with total-stance-length = (loop for stance-name being the hash-key of stances
-                                     sum (length (gethash stance-name stances)))
-    with directions = (ceiling frames-count total-stance-length)
     with bitmap-width = (* cel-width total-stance-length)
     with bitmap-height = (* cel-height directions)
     with layers-count = (length layer-names)
@@ -154,9 +160,12 @@
                     (make-instance 'binary-stream
                                    :path (prefab-path system prefab-name))))
          (stances (load-sprite-stances ase-file))
+         (total-stance-length (total-stance-length stances))
+         (directions (directions ase-file total-stance-length))
          (frame-durations (load-sprite-frame-durations ase-file stances))
          (layer-names (load-sprite-layer-names ase-file))
-         (layer-bitmaps (load-sprite-layers ase-file layer-names stances))
+         (layer-bitmaps
+           (load-sprite-layers ase-file layer-names stances total-stance-length directions))
          (layers (make-hash
                   :size (length layer-names) :test 'eq :init-format :keychain
                   :initial-contents layer-names :init-data layer-bitmaps)))
@@ -164,6 +173,7 @@
      :ase-file ase-file
      :layers layers
      :stances stances
+     :directions directions
      :frame-durations frame-durations)))
 
 (defmethod make-prefab-component ((system sprite-system) entity prefab)
@@ -172,6 +182,7 @@
       (setf width (ase-file-width (sprite-prefab-ase-file prefab)))
       (setf height (ase-file-height (sprite-prefab-ase-file prefab)))
       (setf stances (sprite-prefab-stances prefab))
+      (setf directions (sprite-prefab-directions prefab))
       (setf frame-durations (sprite-prefab-frame-durations prefab))
       (setf layers (sprite-prefab-layers prefab))
       (setf layers-toggled (make-hash
@@ -208,15 +219,14 @@
 
 (declaim
  (inline sprite-direction)
- (ftype (function (angle) unsigned-byte) sprite-direction))
-(defun sprite-direction (angle)
+ (ftype (function (fixnum angle) unsigned-byte) sprite-direction))
+(defun sprite-direction (directions angle)
   "Calculates sprite direction from angle value ANGLE. East direction is 0 degree angle; counted clockwise."
   (declare (angle angle))
   (when (minusp angle)
     (setf angle (+ angle (* 2 pi))))
   (nth-value
-   ;; TODO : support different # of directions
-   0 (truncate (rem (round (* angle (/ 4 pi))) 8))))
+   0 (truncate (rem (round (/ (* angle directions) (* 2 pi))) directions))))
 
 (defmethod system-draw ((system sprite-system) renderer)
   (with-system-config-options ((debug-sprite))
@@ -238,12 +248,13 @@
                            (width width)
                            (height height)
                            (frame frame)
+                           (directions directions)
                            (angle angle))
                        #'(lambda ()
                            (al:draw-bitmap-region
                             (gethash layer layers)
                             (* frame width)
-                            (* (sprite-direction angle) height)
+                            (* (sprite-direction directions angle) height)
                             width height x0 y0 0)))))
                 (when debug-sprite
                   (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
