@@ -221,7 +221,7 @@
  (inline sprite-direction)
  (ftype (function (fixnum angle) unsigned-byte) sprite-direction))
 (defun sprite-direction (directions angle)
-  "Calculates sprite direction from angle value ANGLE. East direction is 0 degree angle; counted clockwise."
+  "Calculates sprite direction from angle value ANGLE assuming total sprite direction count DIRECTIONS. East direction is 0 degree angle; counted clockwise."
   (declare (angle angle))
   (when (minusp angle)
     (setf angle (+ angle (* 2 pi))))
