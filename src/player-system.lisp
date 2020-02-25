@@ -3,6 +3,7 @@
 
 (defclass player-system (system)
   ((name :initform 'player)
+   (mouse-pressed :initform nil)
    (entity :initform -1)
    (debug-entity :initform -1))
   (:documentation "Handles player character."))
@@ -28,7 +29,7 @@
 
 (declaim
  (inline mouse-position)
- (ftype (function (&optional cffi:foreign-pointer) (values fixnum fixnum)) mouse-position))
+ (ftype (function (&optional (or cffi:foreign-pointer null)) (values fixnum fixnum)) mouse-position))
 (defun mouse-position (&optional (event nil))
   "Get current mouse cursor coordinates using liballegro mouse event EVENT or by calling [al_get_mouse_state](https://liballeg.org/a5docs/trunk/mouse.html#al_get_mouse_state)."
   (macrolet
@@ -40,16 +41,28 @@
         (al:with-current-mouse-state state
           (mouse-position-values al:mouse-state state)))))
 
-(defmethod system-event ((system player-system) (event-type (eql :mouse-button-down)) event)
-  (multiple-value-bind (x y) (mouse-position event)
-    (multiple-value-bind (new-camera-screen-x new-camera-screen-y)
+(defun target-player (&optional (mouse-event nil))
+  "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
+  (multiple-value-bind (x y) (mouse-position mouse-event)
+    (multiple-value-bind (new-screen-x new-screen-y)
         (viewport->absolute x y)
-      (multiple-value-bind (new-camera-x new-camera-y)
-          (screen->map new-camera-screen-x new-camera-screen-y)
+      (multiple-value-bind (new-x new-y)
+          (screen->map new-screen-x new-screen-y)
         (with-character (player-entity) ()
-          (setf target-x new-camera-x
-                target-y new-camera-y)))))
+          (setf target-x new-x
+                target-y new-y))))))
+
+(defmethod system-event ((system player-system) (event-type (eql :mouse-button-down)) event)
+  (target-player event)
+  (setf (slot-value system 'mouse-pressed) t))
+
+(defmethod system-event ((system player-system) (event-type (eql :mouse-button-up)) event)
+  (setf (slot-value system 'mouse-pressed) nil)
   t)
+
+(defmethod system-update ((system player-system) dt)
+  (when (slot-value system 'mouse-pressed)
+    (target-player)))
 
 (defmethod system-draw ((system player-system) renderer)
   (with-system-config-options ((debug-cursor))

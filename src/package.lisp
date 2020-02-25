@@ -68,7 +68,8 @@
    (:export
     #:player-system
     #:player-entity
-    #:mouse-position)
+    #:mouse-position
+    #:target-player)
    ;; renderer.lisp
    (:export
     #:make-renderer
