@@ -37,4 +37,5 @@
                 (setf angle a)
                 (incf x (* speed (cos a)))
                 (incf y (* speed (sin a)))
-                (switch-stance entity 'walk)))))))
+                (unless (eq stance 'walk)
+                  (switch-stance entity 'walk))))))))
