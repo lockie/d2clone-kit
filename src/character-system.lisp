@@ -32,9 +32,9 @@
         (with-sprite entity ()
           (if (and (approx-equal target-x x speed) (approx-equal target-y y speed))
               (when (eq stance 'walk)
-                (setf stance 'idle))
+                (switch-stance entity 'idle))
               (let ((a (atan (- target-y y) (- target-x x))))
-                (setf angle a) ;; TODO : crooked :(
+                (setf angle a)
                 (incf x (* speed (cos a)))
                 (incf y (* speed (sin a)))
-                (setf stance 'walk)))))))
+                (switch-stance entity 'walk)))))))

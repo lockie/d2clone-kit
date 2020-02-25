@@ -201,6 +201,17 @@
 (defmethod system-load ((system sprite-system))
   t)
 
+(declaim
+ (inline switch-stance)
+ (ftype (function (fixnum symbol)) switch-stance))
+(defun switch-stance (entity new-stance)
+  "Immediately switches stance of the sprite ENTITY to NEW-STANCE."
+  (with-sprite entity ()
+    (unless (eq stance new-stance)
+      (setf stance new-stance)
+      (setf frame (first (gethash stance stances)))
+      (setf time-counter 0d0))))
+
 (defmethod system-update ((system sprite-system) dt)
   (declare (double-float dt))
   (with-sprites

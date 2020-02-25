@@ -79,6 +79,7 @@
     #:sprite-system
     #:angle
     #:toggle-layer
+    #:switch-stance
     #:sprite-direction)
    ;; systems.lisp
    (:export
