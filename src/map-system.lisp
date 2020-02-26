@@ -2,7 +2,9 @@
 
 (defclass map-system (system)
   ((name :initform 'map))
-  (:documentation "Handles map chunks in Tiled format."))
+  (:documentation "Handles map chunks in Tiled format.
+
+Note: it is not advisable performance-wise to use more than one tileset in each map layer."))
 
 (defcomponent map map-chunk
   (tiled-map nil :type tiled-map)
@@ -156,7 +158,6 @@ See MAP->SCREEN"
           ;; Otherwise it will badly fuck up screen <-> map maths
           (error "Only integer map coordinates allowed for map chunks"))))))
 
-;; NOTE : it is not advisable performance-wise to use more than one tileset in each layer
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))
     (multiple-value-bind (start-x start-y)
