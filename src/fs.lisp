@@ -59,7 +59,7 @@
 (defclass character-stream (trivial-gray-streams:fundamental-character-input-stream)
   ((path :initarg :path :initform (error "missing path"))
    (al-file))
-  (:documentation "Wrapper around liballegro file APIs."))
+  (:documentation "Wrapper around liballegro [file APIs](https://liballeg.org/a5docs/trunk/file.html)."))
 
 (defmethod initialize-instance :after ((stream character-stream) &key)
   (with-slots (path al-file) stream
@@ -91,7 +91,7 @@
 (defclass binary-stream (trivial-gray-streams:fundamental-binary-input-stream)
   ((path :initarg :path :initform (error "missing path"))
    (al-file))
-  (:documentation "Wrapper around liballegro file APIs."))
+  (:documentation "Wrapper around liballegro [file APIs](https://liballeg.org/a5docs/trunk/file.html)."))
 
 (defmethod initialize-instance :after ((stream binary-stream) &key)
   (with-slots (path al-file) stream
