@@ -10,9 +10,6 @@
   (target-x nil :type double-float)
   (target-y nil :type double-float))
 
-(defmethod system-load ((system character-system))
-  t)
-
 (defmethod make-component ((system character-system) entity &rest parameters)
   (destructuring-bind (&key (speed 0.1d0) target-x target-y) parameters
     (with-character entity (s x y)

@@ -5,10 +5,6 @@
     :type symbol
     :reader name)
    components
-   (loadedp
-    :type boolean
-    :initform nil
-    :reader loadedp)
    (order
     :type fixnum
     :initform 0
@@ -16,8 +12,6 @@
   (:documentation "Base class for all ECS systems."))
 
 ;; TODO : defsystem macro with global parameter = system instance?
-
-(defgeneric system-load (system))
 
 (defgeneric system-unload (system))
 
@@ -34,9 +28,6 @@ See RENDER"))
 
 (defgeneric system-quit (system)
   (:documentation "Shuts down system SYSTEM."))
-
-(defmethod system-load :around ((system system))
-  (setf (slot-value system 'loadedp) (call-next-method)))
 
 (defmethod system-event ((system system) event-type event)
   (declare (ignore system) (ignore event-type) (ignore event))

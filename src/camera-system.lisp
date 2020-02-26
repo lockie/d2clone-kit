@@ -9,10 +9,6 @@
 
 (defcomponent camera camera)
 
-(defmethod system-load ((system camera-system))
-  (declare (ignore system))
-  t)
-
 (defmethod system-quit ((system camera-system))
   (setf (slot-value system 'entity) -1)
   t)

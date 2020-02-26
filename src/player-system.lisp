@@ -10,9 +10,6 @@
 
 (defcomponent player player)
 
-(defmethod system-load ((system player-system))
-  t)
-
 (defmethod make-component ((system player-system) entity &rest parameters)
   (declare (ignore parameters))
   (setf (slot-value system 'entity) entity)

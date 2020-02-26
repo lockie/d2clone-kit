@@ -22,7 +22,6 @@
   (let ((map-entity (make-entity)))
     (print map-entity)
     (make-component (system-ref 'map) map-entity :prefab 'map2)
-    ;; TODO : test coordinate maths with realtime map chunk movement
     (make-component (system-ref 'coordinate) map-entity :x -10d0 :y 0d0))
   (let ((map-entity (make-entity)))
     (make-component (system-ref 'map) map-entity :prefab 'map3)
@@ -41,9 +40,6 @@
   ;;   (make-component (system-ref 'coordinate) char-entity :x 0d0 :y 0d0)
   ;;   (make-component (make-instance 'character-system) char-entity :target-x 3d0 :target-y 3d0))
 
-  (with-systems sys
-    (unless (system-load sys)
-      (error "Failed to initialize ~a system" (name sys))))
   (gc :full t)
   (log-info "Starting game loop")
   (with-system-config-options ((display-vsync display-fps))
@@ -51,7 +47,6 @@
            (builtin-font (al:create-builtin-font))
            (white (al:map-rgb 255 255 255))
            (event (cffi:foreign-alloc '(:union al:event)))
-           (failed-systems '())
            (renderer (make-renderer))
            (last-tick (al:get-time))
            (last-repl-update last-tick))
@@ -66,25 +61,9 @@
             (livesupport:update-repl-link)
             (setf last-repl-update current-tick))
           (with-systems sys
-            ;; TODO : remove this "loadedp" crap?
-            (let ((name (name sys)))
-              (unless (loadedp sys)
-                (system-load sys))
-              (if (loadedp sys)
-                  (progn
-                    (when (member name failed-systems)
-                      (log-info "System ~a reloaded" name)
-                      (setf failed-systems
-                            (delete name failed-systems)))
-                    (system-update
-                     sys (- current-tick last-tick)))
-                  (unless (member name failed-systems)
-                    (setf failed-systems
-                          (adjoin name failed-systems))
-                    (log-error "System ~a failed to reload" name)))))
+            (system-update sys (- current-tick last-tick)))
           (with-systems sys
-            (when (loadedp sys)
-              (system-draw sys renderer)))
+            (system-draw sys renderer))
           (al:clear-to-color (al:map-rgb 0 0 0))
           (al:hold-bitmap-drawing t)
           (do-draw renderer)

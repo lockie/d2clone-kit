@@ -70,9 +70,6 @@
     (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2)) r g b a)
     (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a))))
 
-(defmethod system-load ((system debug-system))
-  t)
-
 (defmethod make-component ((system debug-system) entity &rest parameters)
   (destructuring-bind (&key (size 144) (order 1000)) parameters
     (when (< size 14)

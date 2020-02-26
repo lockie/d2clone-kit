@@ -13,9 +13,6 @@
   (x 0d0 :type double-float)
   (y 0d0 :type double-float))
 
-(defmethod system-load ((system coordinate-system))
-  t)
-
 (defmethod make-component ((system coordinate-system) entity &rest parameters)
   (destructuring-bind (&key x y) parameters
     (with-coordinate entity (point-x point-y)

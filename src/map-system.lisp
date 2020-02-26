@@ -139,9 +139,6 @@ See MAP->SCREEN"
   (declare (ignore system entity parameters))
   nil)
 
-(defmethod system-load ((system map-system))
-  t)
-
 (defun ground-layer-p (layer)
   "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground?\" property)."
   (if-let ((properties (tiled-layer-properties layer)))

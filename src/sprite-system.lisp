@@ -198,9 +198,6 @@
   (declare (ignore system entity parameters))
   nil)
 
-(defmethod system-load ((system sprite-system))
-  t)
-
 (declaim
  (inline switch-stance)
  (ftype (function (fixnum symbol)) switch-stance))
