@@ -47,4 +47,4 @@
                          :deploy)
   :build-operation "deploy:deploy-op"
   :build-pathname "d2clone"
-  :entry-point "d2clone-kit:main")
+  :entry-point "d2clone-kit:demo")
