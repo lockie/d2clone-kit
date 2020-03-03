@@ -7,6 +7,7 @@
   (:import-from :cl-containers :priority-queue-on-container :insert-item
    :iterate-elements :empty!)
   (:import-from :make-hash :make-hash)
+  (:import-from :cl-inflector :plural-of)
   (:shadow character)
    ;; camera-system.lisp
    (:export

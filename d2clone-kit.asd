@@ -11,6 +11,7 @@
                :parse-float
                :float-features
                :babel
+               :cl-inflector
                :qbase64
                :chipz
                :uiop
