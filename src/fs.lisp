@@ -12,7 +12,7 @@
 (cffi:defcfun ("PHYSFS_permitSymbolicLinks" physfs-permit-symbolic-links) :void (allow :int))
 (cffi:defcfun ("PHYSFS_getBaseDir" physfs-get-base-dir) :string)
 (cffi:defcfun ("PHYSFS_setWriteDir" physfs-set-write-dir) :int (new-dir :string))
-(cffi:defcfun ("PHYSFS_enumerate" physfs-enumerate) :int
+(cffi:defcfun ("PHYSFS_enumerateFilesCallback" physfs-enumerate) :int
   (dir :string) (callback :pointer) (data :pointer))
 (cffi:defcfun ("PHYSFS_getRealDir" physfs-get-real-dir) :string (file-name :string))
 (cffi:defcfun ("PHYSFS_mount" physfs-mount) :int
