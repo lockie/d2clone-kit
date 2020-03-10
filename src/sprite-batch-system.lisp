@@ -22,7 +22,8 @@
   (< (sprite-batch-element-order e1)
      (sprite-batch-element-order e2)))
 
-(defconstant +maximum-sprite-size+ 256)
+(eval-when (:compile-toplevel)
+  (defconstant +maximum-sprite-size+ 256))
 
 (defcomponent sprite-batch sprite-batch
   (bitmap (cffi:null-pointer) :type cffi:foreign-pointer)
