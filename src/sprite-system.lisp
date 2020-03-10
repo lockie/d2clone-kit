@@ -12,7 +12,7 @@
 (defcomponent sprite sprite
   (width 0 :type fixnum)
   (height 0 :type fixnum)
-  (layers nil :type hash-table)  ;; layer name (symbol) -> al_bitmap
+  (layer-batches nil :type hash-table)  ;; layer name (symbol) -> sprite batch entity
   (stances nil :type hash-table)  ;; stance name (symbol) -> list of frame #s
   (directions 0 :type fixnum) ;; count of directions
   (frame-durations nil :type (simple-array double-float))
@@ -184,11 +184,27 @@
       (setf stances (sprite-prefab-stances prefab))
       (setf directions (sprite-prefab-directions prefab))
       (setf frame-durations (sprite-prefab-frame-durations prefab))
-      (setf layers (sprite-prefab-layers prefab))
-      (setf layers-toggled (make-hash
-                            :size (hash-table-size layers) :init-format :keys
-                            :initial-contents (loop for l being the hash-key of layers collect l)
-                            :init-default nil))
+      (let* ((layers (sprite-prefab-layers prefab))
+             (layer-names (loop for l being the hash-key of layers collect l)))
+        (setf layer-batches (make-hash
+                             :test 'eq
+                             :initial-contents layers
+                             :init-data (lambda (k v)
+                                          (let ((width width)
+                                                (height height)
+                                                (entity (make-entity)))
+                                            (make-component
+                                             (system-ref 'sprite-batch)
+                                             entity
+                                             :bitmap v
+                                             :sprite-width width
+                                             :sprite-height height)
+                                            (values k entity)))))
+        (setf layers-toggled (make-hash
+                              :test 'eq
+                              :init-format :keys
+                              :initial-contents layer-names
+                              :init-default nil)))
       (setf stance 'idle)
       (when debug-sprite
         (setf debug-entity (make-entity))
@@ -248,21 +264,12 @@
                 (loop
                   for layer being the hash-key using (hash-value toggled) of layers-toggled
                   when toggled do
-                    (render
-                     renderer
-                     50 ;; TODO : player -> 30, stance=die -> 10, else 50
-                     (let ((layer layer)
-                           (layers layers)
-                           (width width)
-                           (height height)
-                           (frame frame)
-                           (directions directions)
-                           (angle angle))
-                       #'(lambda ()
-                           (al:draw-bitmap-region
-                            (gethash layer layers)
-                            (* frame width)
-                            (* (sprite-direction directions angle) height)
-                            width height x0 y0 0)))))
+                    (add-sprite-to-batch
+                     (gethash layer layer-batches)
+                     (- (truncate (+ x y))
+                        (truncate *tile-height* 2))
+                     (* frame width)
+                     (* (sprite-direction directions angle) height)
+                     x0 y0))
                 (when debug-sprite
                   (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))

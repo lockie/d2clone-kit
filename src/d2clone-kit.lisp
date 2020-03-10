@@ -66,9 +66,7 @@
           (with-systems sys
             (system-draw sys renderer))
           (al:clear-to-color (al:map-rgb 0 0 0))
-          (al:hold-bitmap-drawing t)
           (do-draw renderer)
-          (al:hold-bitmap-drawing nil)
           (when display-fps
             ;; TODO : smooth FPS counter, like in allegro examples
             (al:draw-text
