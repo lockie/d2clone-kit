@@ -13,6 +13,7 @@
   ;; TODO : init systems DSL style someplace else
   (make-instance 'coordinate-system)
   (make-instance 'debug-system)
+  (make-instance 'sprite-batch-system)
   (let ((camera-entity (make-entity)))
     (make-component (make-instance 'camera-system) camera-entity)
     (make-component (system-ref 'coordinate) camera-entity :x 0d0 :y 0d0))

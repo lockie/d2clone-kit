@@ -34,6 +34,7 @@
                (:file "debug-system")
                (:file "console-system")
                (:file "camera-system")
+               (:file "sprite-batch-system")
                (:file "map-system")
                (:file "sprite-system")
                (:file "character-system")

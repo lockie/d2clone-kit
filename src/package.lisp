@@ -82,6 +82,11 @@
     #:make-renderer
     #:render
     #:do-draw)
+   ;; sprite-batch-system.lisp
+   (:export
+    #:sprite-batch-system
+    #:add-sprite-to-batch
+    #:add-sprite-index-to-batch)
    ;; sprite-system.lisp
    (:export
     #:sprite-system
