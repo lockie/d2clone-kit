@@ -2,19 +2,17 @@
 
 (defun make-renderer ()
   "Creates functional renderer instance."
-  (make-instance 'priority-queue-on-container
-                 :sorter #'(lambda (a b) (< (car a) (car b)))
-                 :test #'(lambda (a b) (= (car a) (car b)))))
+  (make-priority-queue #'car))
 
 (defun render (renderer z-order render-proc)
   "Schedules function RENDER-PROC to be called in accordance with specified Z order Z-ORDER within renderer instance RENDERER."
-  (insert-item renderer (cons z-order render-proc)))
+  (priority-queue-push renderer (cons z-order render-proc)))
 
 (defun do-draw (renderer)
   "Calls renderer functions scheduled within renderer instance RENDERER in accordance with their respective Z order values."
-  (iterate-elements
+  (priority-queue-traverse
    renderer
    #'(lambda (item)
        (funcall (cdr item))))
-  (empty! renderer))
+  (priority-queue-clear renderer))
 

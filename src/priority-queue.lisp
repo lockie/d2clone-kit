@@ -82,3 +82,12 @@
 in appropriate order."
   (loop for element across (priority-queue-array queue)
         do (funcall fn element)))
+
+(declaim
+ (inline priority-queue-clear)
+ (ftype (function (priority-queue)) priority-queue-clear))
+(defun priority-queue-clear (queue)
+  "Clears priority queue QUEUE."
+  (setf (priority-queue-array queue)
+        (make-array 0))
+  nil)

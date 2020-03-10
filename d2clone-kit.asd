@@ -7,7 +7,6 @@
                :trivial-gray-streams
                :alexandria
                :trivial-garbage
-               :cl-containers
                :parse-float
                :float-features
                :babel

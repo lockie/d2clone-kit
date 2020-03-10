@@ -4,8 +4,6 @@
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
   (:use :cl :alexandria :iterate :trivial-garbage :parse-float :xmls)
-  (:import-from :cl-containers :priority-queue-on-container :insert-item
-   :iterate-elements :empty!)
   (:import-from :make-hash :make-hash)
   (:import-from :cl-inflector :plural-of)
   (:shadow character)
@@ -76,7 +74,8 @@
     #:make-priority-queue
     #:priority-queue-push
     #:priority-queue-push-many
-    #:priority-queue-traverse)
+    #:priority-queue-traverse
+    #:priority-queue-clear)
    ;; renderer.lisp
    (:export
     #:make-renderer
