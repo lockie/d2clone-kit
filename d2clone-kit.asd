@@ -22,6 +22,7 @@
   :pathname "src"
   :serial t
   :components ((:file "package")
+               (:file "priority-queue")
                (:file "config")
                (:file "log")
                (:file "events")

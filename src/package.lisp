@@ -71,6 +71,12 @@
     #:player-entity
     #:mouse-position
     #:target-player)
+   ;; priority-queue.lisp
+   (:export
+    #:make-priority-queue
+    #:priority-queue-push
+    #:priority-queue-push-many
+    #:priority-queue-traverse)
    ;; renderer.lisp
    (:export
     #:make-renderer
