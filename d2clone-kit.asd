@@ -2,22 +2,22 @@
   :description "Generic Diablo 2 clone game engine."
   :author "Andrew Kravchuk <awkravchuk@gmail.com>"
   :license "GPL v3"
-  :depends-on (:iterate
-               :make-hash
-               :trivial-gray-streams
-               :alexandria
-               :trivial-garbage
-               :parse-float
-               :float-features
+  :depends-on (:alexandria
                :babel
-               :cl-inflector
-               :qbase64
                :chipz
-               :uiop
-               :xmls
                :cl-csv
+               :cl-inflector
                :cl-liballegro
-               :livesupport)
+               :float-features
+               :iterate
+               :livesupport
+               :make-hash
+               :parse-float
+               :qbase64
+               :trivial-garbage
+               :trivial-gray-streams
+               :uiop
+               :xmls)
   :pathname "src"
   :serial t
   :components ((:file "package")
@@ -45,8 +45,7 @@
   ;;                               (safety 0)
   ;;                               (speed 3)))
   ;;                   (funcall next))
-  :defsystem-depends-on (:asdf-shared-library  ;; XXX : replace this GPL crap with asdf-linguist
-                         :deploy)
+  :defsystem-depends-on (:deploy)
   :build-operation "deploy:deploy-op"
   :build-pathname "d2clone"
   :entry-point "d2clone-kit:demo")

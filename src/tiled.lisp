@@ -1,6 +1,7 @@
 (in-package :d2clone-kit)
 
 ;; NOTE: supporting only maps made in Tiled 0.15+
+;; NOTE: tile flipping is not supported
 
 (deftype rgba-color () '(simple-array unsigned-byte (4)))
 
