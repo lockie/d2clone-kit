@@ -11,11 +11,13 @@
 (defcomponent map map-chunk
   (tiled-map nil :type tiled-map)
   (tiles nil :type simple-vector)  ;; tiles: tile id -> map-tileset
+  (tiles-properties nil :type (vector (or hash-table null)))
   (debug-entity -1 :type fixnum))
 
 (defprefab map "tmx"
   (tiled-map nil :type tiled-map)
-  (tiles nil :type simple-vector))  ;; tiles: tile id -> map-tileset
+  (tiles nil :type simple-vector)  ;; tiles: tile id -> map-tileset
+  (tiles-properties nil :type (vector (or hash-table null))))
 
 (declaim (type (integer 0 255) *tile-width* *tile-height*))
 (defparameter *tile-width* 0)
@@ -73,16 +75,17 @@ See MAP->SCREEN"
                      (setf max-id first-id)
                      (setf argmax tileset)
                    finally (return argmax)))
-      (let ((tiles (make-array
-                    (+ (tiled-tileset-first-id last-tileset)
-                       (tiled-tileset-tile-count last-tileset))
-                    :initial-element nil)))
+      (let* ((tile-count (+ (tiled-tileset-first-id last-tileset)
+                            (tiled-tileset-tile-count last-tileset)))
+             (tiles (make-array tile-count :initial-element nil))
+             (tiles-properties (make-array tile-count :initial-element nil)))
         (loop
           for tileset across tilesets
           do
              (if-let ((first-id (tiled-tileset-first-id tileset))
                       (tile-count (tiled-tileset-tile-count tileset))
                       (columns (tiled-tileset-columns tileset))
+                      (tileset-tiles-properties (tiled-tileset-tiles-properties tileset))
                       (bitmap (al:load-bitmap
                                (format
                                 nil "maps/~a"
@@ -102,9 +105,10 @@ See MAP->SCREEN"
                    for index = (- i first-id)
                    for (q r) = (multiple-value-list (floor index columns))
                    do
-                      (setf (aref tiles i)
-                            map-tileset)))))
-        tiles)
+                      (setf
+                       (aref tiles i) map-tileset
+                       (aref tiles-properties i) (aref tileset-tiles-properties index))))))
+        (values tiles tiles-properties))
       nil)))
 
 (defmethod make-prefab ((system map-system) prefab-name)
@@ -133,15 +137,19 @@ See MAP->SCREEN"
                           (tiled-tileset-name tileset)
                           tile-width tile-height
                           *tile-width* *tile-height*))))
-    (make-map-prefab
-     :tiled-map tiled-map
-     :tiles (load-tiles tiled-map))))
+    (multiple-value-bind (tiles tiles-properties)
+        (load-tiles tiled-map)
+      (make-map-prefab
+       :tiled-map tiled-map
+       :tiles tiles
+       :tiles-properties tiles-properties))))
 
 (defmethod make-prefab-component ((system map-system) entity prefab)
   (with-system-config-options ((debug-grid))
     (with-map-chunk entity ()
       (setf tiled-map (map-prefab-tiled-map prefab))
       (setf tiles (map-prefab-tiles prefab))
+      (setf tiles-properties (map-prefab-tiles-properties prefab))
       (when debug-grid
         (setf debug-entity (make-entity))
         (make-component (system-ref 'debug) debug-entity)))))

@@ -14,7 +14,8 @@
   (columns nil :type fixnum :read-only t)
   (spacing nil :type (or null fixnum) :read-only t)
   (margin nil :type (or null fixnum) :read-only t)
-  (image-source nil :type string :read-only t))
+  (image-source nil :type string :read-only t)
+  (tiles-properties nil :type (vector (or hash-table null)) :read-only t))
 
 (defstruct tiled-layer
   (id nil :type fixnum :read-only t)
@@ -82,8 +83,7 @@
                (properties-tag
                  (xmlrep-find-child-tag "properties" tag nil)))
            (when properties-tag
-             (dolist (property (xmlrep-find-child-tags
-                                "property" properties-tag))
+             (dolist (property (xmlrep-find-child-tags "property" properties-tag))
                (setf
                 (gethash
                  (symbolize (xmlrep-attrib-value "name" property nil))
@@ -92,6 +92,15 @@
                  (symbolize (xmlrep-attrib-value "type" property nil))
                  (xmlrep-attrib-value "value" property nil)))))
            properties))
+       (parse-tiles-properties (tag)
+         (let* ((tileset-tile-count (xmlrep-integer-attrib-value "tilecount" tag))
+                (tiles (xmlrep-find-child-tags "tile" tag))
+                (result (make-array tileset-tile-count :initial-element nil)))
+           (dolist (tile tiles)
+             (when-let ((id (xmlrep-integer-attrib-value "id" tile))
+                        (properties (tag-properties tile)))
+               (setf (aref result id) properties)))
+           result))
        (parse-tileset (tag)
          (make-tiled-tileset
           :name (xmlrep-attrib-value "name" tag nil)
@@ -104,7 +113,8 @@
           :margin (xmlrep-integer-attrib-value "margin" tag)
           :image-source (if-let (image (xmlrep-find-child-tag "image" tag nil))
                           (xmlrep-attrib-value "source" image nil)
-                          "")))
+                          "")
+          :tiles-properties (parse-tiles-properties tag)))
        (parse-layer (tag order)
          (labels
              ((csv-layer-parser (data)
