@@ -9,7 +9,6 @@
                :cl-inflector
                :cl-liballegro
                :float-features
-               :iterate
                :livesupport
                :make-hash
                :parse-float

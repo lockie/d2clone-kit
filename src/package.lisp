@@ -3,7 +3,7 @@
 (defpackage :d2clone-kit
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
-  (:use :cl :alexandria :iterate :trivial-garbage :parse-float :xmls)
+  (:use :cl :alexandria :trivial-garbage :parse-float :xmls)
   (:import-from :make-hash :make-hash)
   (:import-from :cl-inflector :plural-of)
   (:shadow character)
