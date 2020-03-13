@@ -165,6 +165,15 @@ See MAP->SCREEN"
     (gethash 'ground properties nil)
     nil))
 
+(declaim
+ (inline tile-property)
+ (ftype (function ((vector (or hash-table null)) array-index symbol t)) tile-property))
+(defun tile-property (tile-properties index property default)
+  "Returns property denoted by symbol PROPERTY of tile with index INDEX. Returns DEFAULT if there's no such property."
+  (if-let (properties (aref tile-properties index))
+    (gethash property properties default)
+    default))
+
 (defmethod system-update ((system map-system) dt)
   (flet
       ((intp (n) (zerop (mod n 1))))
@@ -216,8 +225,8 @@ See MAP->SCREEN"
                                            (when-let (tileset (aref tiles tile-index))
                                              (add-sprite-index-to-batch
                                               (map-tileset-sprite-batch tileset)
-                                              (+ tile-x chunk-viewport-x
-                                                 tile-y chunk-viewport-y
+                                              (+ tile-y chunk-viewport-y
+                                                 (tile-property tiles-properties tile-index 'z 0)
                                                  (* display-width
                                                     (- layer-order
                                                        (* layer-count

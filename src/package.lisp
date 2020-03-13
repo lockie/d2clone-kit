@@ -62,7 +62,8 @@
     #:map->screen
     #:screen->map
     #:screen->map*
-    #:ground-layer-p)
+    #:ground-layer-p
+    #:tile-property)
    ;; player-system.lisp
    (:export
     #:player-system
