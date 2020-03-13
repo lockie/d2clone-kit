@@ -21,7 +21,6 @@
     (make-component (make-instance 'map-system) map-entity :prefab 'map)
     (make-component (system-ref 'coordinate) map-entity :x 0d0 :y 0d0))
   (let ((map-entity (make-entity)))
-    (print map-entity)
     (make-component (system-ref 'map) map-entity :prefab 'map2)
     (make-component (system-ref 'coordinate) map-entity :x -10d0 :y 0d0))
   (let ((map-entity (make-entity)))
