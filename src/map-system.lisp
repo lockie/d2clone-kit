@@ -158,10 +158,11 @@ See MAP->SCREEN"
   (declare (ignore system entity parameters))
   nil)
 
+(declaim (inline ground-layer-p))
 (defun ground-layer-p (layer)
-  "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground?\" property)."
-  (if-let ((properties (tiled-layer-properties layer)))
-    (gethash 'ground? properties nil)
+  "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground\" property)."
+  (if-let (properties (tiled-layer-properties layer))
+    (gethash 'ground properties nil)
     nil))
 
 (defmethod system-update ((system map-system) dt)
