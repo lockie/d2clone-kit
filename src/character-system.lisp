@@ -33,6 +33,6 @@
               (let ((a (atan (- target-y y) (- target-x x))))
                 (setf angle a)
                 (incf x (* speed (cos a)))
-                (incf y (* speed (sin a)))
+                (incf y (* (/ *tile-width* *tile-height*) speed (sin a)))
                 (unless (eq stance 'walk)
                   (switch-stance entity 'walk))))))))
