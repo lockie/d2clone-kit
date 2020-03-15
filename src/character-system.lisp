@@ -24,6 +24,7 @@
   (< (abs (- a b)) epsilon))
 
 (defmethod system-update ((system character-system) dt)
+  ;; TODO : if mouse cursor is close to player when moving, movement is still jerky :(
   (with-characters
       (with-coordinate entity ()
         (with-sprite entity ()
