@@ -35,6 +35,8 @@
 (defmethod make-component ((system sprite-batch-system) entity &rest parameters)
   ;; TODO : check bitmap is not null everywhere! (i.e. file exists)
   (destructuring-bind (&key bitmap sprite-width sprite-height) parameters
+    (unless (find :video-bitmap (al:get-bitmap-flags bitmap))
+      (log-warn "Bitmap ~a is not video bitmap, it makes no sense to batch it" bitmap))
     (with-sprite-batch entity (batch-bitmap sprite-w sprite-h columns sprites)
       (setf batch-bitmap bitmap
             sprite-w sprite-width
@@ -90,6 +92,7 @@ See ADD-SPRITE-TO-BATCH"
      sprites)))
 
 (defmethod system-update ((system sprite-batch-system) dt)
+  ;; TODO : clear explicitly?..
   (with-sprite-batches
       (setf (fill-pointer sprites) 0)))
 
