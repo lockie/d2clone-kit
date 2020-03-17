@@ -41,6 +41,15 @@
     #:add-debug-point
     #:add-debug-rectangle
     #:add-debug-tile-rhomb)
+   ;; event-loop.lisp
+   (:export
+    #:event-loop
+    #:defevent
+    #:defhandler)
+   ;; events.lisp
+   (:export
+    #:allegro-event
+    #:quit)
    ;; fs.lisp
    (:export
     #:character-stream
@@ -97,10 +106,8 @@
    ;; systems.lisp
    (:export
     #:system
-    #:system-event
     #:system-update
     #:system-draw
-    #:system-quit
     #:system-ref
     #:with-systems
     #:make-component

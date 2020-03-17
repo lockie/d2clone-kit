@@ -9,9 +9,8 @@
 
 (defcomponent camera camera)
 
-(defmethod system-quit ((system camera-system))
-  (setf (slot-value system 'entity) -1)
-  t)
+(defhandler camera-system quit (event)
+  (setf (slot-value system 'entity) -1))
 
 (defmethod make-component ((system camera-system) entity &rest parameters)
   (declare (ignore parameters))

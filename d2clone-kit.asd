@@ -8,6 +8,7 @@
                :cl-csv
                :cl-inflector
                :cl-liballegro
+               :deeds
                :float-features
                :livesupport
                :make-hash
@@ -23,6 +24,7 @@
                (:file "priority-queue")
                (:file "config")
                (:file "log")
+               (:file "event-loop")
                (:file "events")
                (:file "fs")
                (:file "tiled")
@@ -48,3 +50,5 @@
   :build-operation "deploy:deploy-op"
   :build-pathname "d2clone"
   :entry-point "d2clone-kit:demo")
+
+(pushnew :deeds-no-startup *features*)

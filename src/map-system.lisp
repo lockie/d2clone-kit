@@ -248,6 +248,6 @@ See MAP->SCREEN"
                                               (+ tile-y chunk-viewport-y)
                                               debug-grid nil))))))))))))))
 
-(defmethod system-quit ((system map-system))
+(defhandler map-system quit (event)
   (setf *tile-width* 0)
   (setf *tile-height* 0))

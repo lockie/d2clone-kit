@@ -15,9 +15,6 @@
 
 (defgeneric system-unload (system))
 
-(defgeneric system-event (system event-type event)
-  (:documentation "Processes liballegro event EVENT of type EVENT-TYPE by system SYSTEM."))
-
 (defgeneric system-update (system dt)
   (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
 
@@ -26,22 +23,11 @@
 
 See RENDER"))
 
-(defgeneric system-quit (system)
-  (:documentation "Shuts down system SYSTEM."))
-
-(defmethod system-event ((system system) event-type event)
-  (declare (ignore system) (ignore event-type) (ignore event))
-  t)
-
 (defmethod system-update ((system system) dt)
   (declare (ignore system) (ignore dt)))
 
 (defmethod system-draw ((system system) renderer)
   (declare (ignore system) (ignore renderer)))
-
-(defmethod system-quit ((system system))
-  (declare (ignore system))
-  t)
 
 (defvar *systems* (make-hash-table :test #'eq))
 
@@ -82,14 +68,6 @@ See RENDER"))
     `(let ((,systems (sort (hash-table-values *systems*)
                            (lambda (s1 s2) (< (order s1) (order s2))))))
        (dolist (,var ,systems) ,@body))))
-
-(defun broadcast-event (event-type event)
-  (loop for system being the hash-values of *systems*
-        always (system-event system event-type event)))
-
-(defun broadcast-quit ()
-  (not (loop for system being the hash-values of *systems*
-             always (system-quit system))))
 
 (defgeneric make-component (system entity &rest parameters)
   (:documentation "Creates new component using PARAMETERS within system SYSTEM for entity ENTITY.
@@ -239,8 +217,8 @@ See MAKE-PREFAB-COMPONENT"))
          (gethash prefab-name ,storage-name))
        (defmethod (setf prefab) (new-prefab (system ,system-name) prefab-name)
          (setf (gethash prefab-name ,storage-name) new-prefab))
-       (defmethod system-quit :after ((system ,system-name))
-         (declare (ignore system))
+       (defhandler ,system-name quit (event)
+         :after '(:end)
          (clrhash ,storage-name))
        (defmethod prefab-path ((system ,system-name) prefab-name)
          (format nil ,path-format prefab-name))

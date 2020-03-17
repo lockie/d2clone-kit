@@ -49,13 +49,18 @@
           (setf target-x new-x
                 target-y new-y))))))
 
-(defmethod system-event ((system player-system) (event-type (eql :mouse-button-down)) event)
-  (target-player event)
-  (setf (slot-value system 'mouse-pressed) t))
+(defhandler player-system allegro-event (event event-type)
+  :filter '(eq event-type :mouse-button-down)
+  (let ((allegro-event (slot-value event 'event)))
+    (when (= 1 (cffi:foreign-slot-value allegro-event '(:struct al:mouse-event) 'al::button))
+      (target-player allegro-event)
+      (setf (slot-value system 'mouse-pressed) t))))
 
-(defmethod system-event ((system player-system) (event-type (eql :mouse-button-up)) event)
-  (setf (slot-value system 'mouse-pressed) nil)
-  t)
+(defhandler player-system allegro-event (event event-type)
+  :filter '(eq event-type :mouse-button-up)
+  (let ((allegro-event (slot-value event 'event)))
+    (when (= 1 (cffi:foreign-slot-value allegro-event '(:struct al:mouse-event) 'al::button))
+      (setf (slot-value system 'mouse-pressed) nil))))
 
 (defmethod system-update ((system player-system) dt)
   (when (slot-value system 'mouse-pressed)

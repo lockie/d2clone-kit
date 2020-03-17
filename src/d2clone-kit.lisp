@@ -1,12 +1,14 @@
 (in-package :d2clone-kit)
 
 (defunl handle-event (event)
-  "Broadcasts liballegro event EVENT through ECS systems."
+  "Broadcasts liballegro event EVENT through ECS systems.
+Returns T when EVENT is not :DISPLAY-CLOSE."
   (let ((event-type
           (cffi:foreign-slot-value event '(:union al:event) 'al::type)))
-    (if (eq event-type :display-close)
-        (broadcast-quit)
-        (broadcast-event event-type event))))
+    (deeds:do-issue allegro-event
+      :event event
+      :event-type event-type)
+    (not (eq event-type :display-close))))
 
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   "Runs game loop."
@@ -46,36 +48,36 @@
     (let* ((vsync display-vsync)
            (builtin-font (al:create-builtin-font))
            (white (al:map-rgb 255 255 255))
-           (event (cffi:foreign-alloc '(:union al:event)))
            (renderer (make-renderer))
            (last-tick (al:get-time))
            (last-repl-update last-tick))
-      ;; TODO : рестарт для продолжения лупа
-      (sleep 0.016)
-      (loop do
-        (unless (loop while (al:get-next-event event-queue event)
-                      always (handle-event event))
-          (loop-finish))
-        (let ((current-tick (al:get-time)))
-          (when (> (- current-tick last-repl-update) repl-update-interval)
-            (livesupport:update-repl-link)
-            (setf last-repl-update current-tick))
-          (with-systems sys
-            (system-update sys (- current-tick last-tick)))
-          (with-systems sys
-            (system-draw sys renderer))
-          (al:clear-to-color (al:map-rgb 0 0 0))
-          (do-draw renderer)
-          (when display-fps
-            ;; TODO : smooth FPS counter, like in allegro examples
-            (al:draw-text
-             builtin-font white 0 0 0
-             (format nil "FPS: ~d" (round 1 (- current-tick last-tick)))))
-          (setf last-tick current-tick))
-        (when vsync
-          (setf vsync (al:wait-for-vsync)))
-        (al:flip-display))
-      (cffi:foreign-free event))))
+      (cffi:with-foreign-object (event '(:union al:event))
+        (sleep 0.016)
+        ;; TODO : restart to continue loop
+        (loop do
+          (unless (loop while (al:get-next-event event-queue event)
+                        always (handle-event event))
+            (loop-finish))
+          (let ((current-tick (al:get-time)))
+            (when (> (- current-tick last-repl-update) repl-update-interval)
+              (livesupport:update-repl-link)
+              (setf last-repl-update current-tick))
+            (with-systems sys
+              ;; TODO : replace system-update with event?.. maybe even system-draw too?..
+              (system-update sys (- current-tick last-tick)))
+            (with-systems sys
+              (system-draw sys renderer))
+            (al:clear-to-color (al:map-rgb 0 0 0))
+            (do-draw renderer)
+            (when display-fps
+              ;; TODO : smooth FPS counter, like in allegro examples
+              (al:draw-text
+               builtin-font white 0 0 0
+               (format nil "FPS: ~d" (round 1 (- current-tick last-tick)))))
+            (setf last-tick current-tick))
+          (when vsync
+            (setf vsync (al:wait-for-vsync)))
+          (al:flip-display))))))
 
 (defunl start-engine (game-name)
   "Initializes and starts engine using assets specified by GAME-NAME."
@@ -130,7 +132,6 @@
                (:invalid :inexact :overflow :underflow)
              (game-loop event-queue))
         (log-info "Shutting engine down")
-        (broadcast-quit)
         (al:inhibit-screensaver nil)
         (unregister-all-systems)
         (al:destroy-display display)
