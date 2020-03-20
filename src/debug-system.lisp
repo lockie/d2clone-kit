@@ -90,7 +90,6 @@
        (let ((points points)
              (count count))
          #'(lambda ()
-             (al:hold-bitmap-drawing nil)
              (cffi:with-pointer-to-vector-data (ptr points)
                (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
                              (ceiling count 9) 0)))))))

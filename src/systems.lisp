@@ -3,12 +3,14 @@
 (defclass system ()
   ((name
     :type symbol
-    :reader name)
+    :reader name
+    :documentation "Symbol that denotes system.")
    components
    (order
     :type fixnum
     :initform 0
-    :reader order))
+    :reader order
+    :documentation "Fixnum representing system's update order."))
   (:documentation "Base class for all ECS systems."))
 
 ;; TODO : defsystem macro with global parameter = system instance?
