@@ -20,6 +20,11 @@
    ;; character-system.lisp
    (:export
     #:character-system)
+   ;; collision-system.lisp
+   (:export
+    #:collision-system
+    #:collides
+    #:collidesp)
    ;; config.lisp
    (:export
     #:defoptions
@@ -50,7 +55,8 @@
    ;; events.lisp
    (:export
     #:allegro-event
-    #:quit)
+    #:quit
+    #:component-created)
    ;; fs.lisp
    (:export
     #:character-stream
@@ -92,6 +98,12 @@
     #:make-renderer
     #:render
     #:do-draw)
+   ;; sparse-matrix.lisp
+   (:export
+    #:sparse-matrix
+    #:make-sparse-matrix
+    #:sparse-matrix-ref
+    #:sparse-matrix-remove)
    ;; sprite-batch-system.lisp
    (:export
     #:sprite-batch-system

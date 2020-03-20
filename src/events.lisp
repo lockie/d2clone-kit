@@ -19,3 +19,11 @@ Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
   :filter '(eq event-type :display-close)
   :class 'deeds:locally-blocking-handler
   (issue quit))
+
+(defevent component-created ()
+  ((entity :initarg :entity)
+   (system-name :initarg :system-name))
+  (:default-initargs
+   :entity (error "ENTITY required")
+   :system-name (error "SYSTEM-NAME required"))
+  (:documentation "Event class issued when a new component is created."))

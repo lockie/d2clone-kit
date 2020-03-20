@@ -167,8 +167,8 @@ See MAP->SCREEN"
 
 (declaim
  (inline tile-property)
- (ftype (function ((vector (or hash-table null)) array-index symbol t)) tile-property))
-(defun tile-property (tile-properties index property default)
+ (ftype (function ((vector (or hash-table null)) array-index symbol &optional t)) tile-property))
+(defun tile-property (tile-properties index property &optional (default nil))
   "Returns property denoted by symbol PROPERTY of tile with index INDEX. Returns DEFAULT if there's no such property."
   (if-let (properties (aref tile-properties index))
     (gethash property properties default)

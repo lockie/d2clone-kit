@@ -33,7 +33,15 @@
                 (switch-stance entity 'idle))
               (let ((a (atan (- target-y y) (- target-x x))))
                 (setf angle a)
-                (incf x (* speed (cos a)))
-                (incf y (* (/ *tile-width* *tile-height*) speed (sin a)))
-                (unless (eq stance 'walk)
-                  (switch-stance entity 'walk))))))))
+                (let ((new-x (+ x (* speed (cos a))))
+                      (new-y (+ y (* (/ *tile-width* *tile-height*) speed (sin a)))))
+                  (if (collidesp (round new-x) (round new-y))
+                      (progn
+                        (setf target-x x
+                              target-y y)
+                        (switch-stance entity 'idle))
+                      (progn
+                        (setf x new-x
+                              y new-y)
+                        (unless (eq stance 'walk)
+                          (switch-stance entity 'walk)))))))))))

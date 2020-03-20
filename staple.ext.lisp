@@ -27,3 +27,14 @@
 
 (defmethod staple:documents ((system (eql (asdf:find-system :staple))))
   (list (asdf:system-relative-pathname system "README.md")))
+
+(defmethod staple:definition-wanted-p ((definition definitions:method) (__ my-page))
+  (let* ((designator (definitions:designator definition))
+         (symbol (etypecase designator
+                   (cons (cadr designator))
+                   (symbol designator))))
+    (and
+     (string= "D2CLONE-KIT" (package-name (symbol-package symbol)))
+     (some
+      (lambda (method) (documentation method 't))
+      (closer-mop:generic-function-methods (symbol-function symbol))))))

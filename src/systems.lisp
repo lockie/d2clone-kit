@@ -202,7 +202,8 @@ See MAKE-PREFAB-COMPONENT"))
                                (if-let (prefab-instance (prefab system prefab))
                                  prefab-instance
                                  (make-prefab system prefab)))
-        (call-next-method))))
+        (call-next-method))
+    (issue component-created :entity entity :system-name (name system))))
 
 (defmacro defprefab (system extension &rest slots)
   "Defines prefab structure with slots SLOTS and file name extension EXTENSION within system SYSTEM."
