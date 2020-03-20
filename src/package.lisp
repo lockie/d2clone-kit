@@ -45,7 +45,8 @@
     #:debug-system
     #:add-debug-point
     #:add-debug-rectangle
-    #:add-debug-tile-rhomb)
+    #:add-debug-tile-rhomb
+    #:add-debug-text)
    ;; event-loop.lisp
    (:export
     #:event-loop

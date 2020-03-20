@@ -47,8 +47,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
   (log-info "Starting game loop")
   (with-system-config-options ((display-vsync display-fps))
     (let* ((vsync display-vsync)
-           (builtin-font (al:create-builtin-font))
-           (white (al:map-rgb 255 255 255))
            (renderer (make-renderer))
            (last-tick (al:get-time))
            (last-repl-update last-tick))
@@ -72,9 +70,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
             (do-draw renderer)
             (when display-fps
               ;; TODO : smooth FPS counter, like in allegro examples
-              (al:draw-text
-               builtin-font white 0 0 0
-               (format nil "FPS: ~d" (round 1 (- current-tick last-tick)))))
+              (add-debug-text :fps "FPS: ~d" (round 1 (- current-tick last-tick))))
             (setf last-tick current-tick))
           (when vsync
             (setf vsync (al:wait-for-vsync)))
