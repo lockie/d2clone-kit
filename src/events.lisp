@@ -2,8 +2,8 @@
 
 
 (defevent allegro-event ()
-  ((event-type :initarg :event-type :reader event-type)
-   (event :initarg :event :reader event))
+  ((event-type :initarg :event-type)
+   (event :initarg :event))
   (:default-initargs
    :event-type (error "EVENT-TYPE required")
    :event (error "EVENT required"))
@@ -18,4 +18,4 @@ Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
 (deeds:define-handler (broadcast-quit allegro-event) (event event-type)
   :filter '(eq event-type :display-close)
   :class 'deeds:locally-blocking-handler
-  (deeds:do-issue quit))
+  (issue quit))

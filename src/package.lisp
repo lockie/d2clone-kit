@@ -45,6 +45,7 @@
    (:export
     #:event-loop
     #:defevent
+    #:issue
     #:defhandler)
    ;; events.lisp
    (:export

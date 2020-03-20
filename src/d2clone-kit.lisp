@@ -5,7 +5,7 @@
 Returns T when EVENT is not :DISPLAY-CLOSE."
   (let ((event-type
           (cffi:foreign-slot-value event '(:union al:event) 'al::type)))
-    (deeds:do-issue allegro-event
+    (issue allegro-event
       :event event
       :event-type event-type)
     (not (eq event-type :display-close))))

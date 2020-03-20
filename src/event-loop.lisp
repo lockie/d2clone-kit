@@ -30,8 +30,12 @@ simple synchronous single-threaded event loop for now."))
 (setf deeds:*standard-event-loop* (deeds:start (make-instance 'event-loop)))
 
 (eval-when
-    (:compile-toplevel)
+    (:compile-toplevel
+     :load-toplevel)
   (setf (macro-function 'defevent) (macro-function 'deeds:define-event)))
+
+(defmacro issue (event-type &rest args)
+  `(deeds:do-issue ,event-type ,@args))
 
 (defmacro defhandler (system event args &body options-and-body)
   "Defines event handler in SYSTEM for event type EVENT. ARGS are handler's arguments.
