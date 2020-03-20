@@ -61,6 +61,9 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
             (when (> (- current-tick last-repl-update) repl-update-interval)
               (livesupport:update-repl-link)
               (setf last-repl-update current-tick))
+            (when display-fps
+              ;; TODO : smooth FPS counter, like in allegro examples
+              (add-debug-text :fps "FPS: ~d" (round 1 (- current-tick last-tick))))
             (with-systems sys
               ;; TODO : replace system-update with event?.. maybe even system-draw too?..
               (system-update sys (- current-tick last-tick)))
@@ -68,9 +71,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
               (system-draw sys renderer))
             (al:clear-to-color (al:map-rgb 0 0 0))
             (do-draw renderer)
-            (when display-fps
-              ;; TODO : smooth FPS counter, like in allegro examples
-              (add-debug-text :fps "FPS: ~d" (round 1 (- current-tick last-tick))))
             (setf last-tick current-tick))
           (when vsync
             (setf vsync (al:wait-for-vsync)))
