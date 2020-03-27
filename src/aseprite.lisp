@@ -99,8 +99,8 @@
      :id (prog1 *layer-id* (incf *layer-id*))
      :name name)))
 
-(declaim (ftype (function (virtual-binary-stream fixnum) (vector (unsigned-byte 8))) pass))
-(defun pass (binary-stream size)
+(declaim (ftype (function (virtual-binary-stream fixnum) (vector (unsigned-byte 8))) pass-data))
+(defun pass-data (binary-stream size)
   (declare (ignore size))
   (let* ((buffer (slot-value binary-stream 'buffer))
          (position (slot-value binary-stream 'position))
@@ -114,7 +114,7 @@
      :displaced-index-offset stream-offset)))
 
 (defun decompress (binary-stream size)
-  (let ((data (pass binary-stream size)))
+  (let ((data (pass-data binary-stream size)))
     (chipz:decompress
      nil 'chipz:zlib
      (make-array
@@ -133,7 +133,7 @@
     (read-binary 'byte stream)  ;; opacity
     (let ((process
             (ecase (read-binary 'word stream)
-              (0 #'pass)
+              (0 #'pass-data)
               (1 (error "linked cels not supported"))
               (2 #'decompress))))
       (read-binary 7 stream)
