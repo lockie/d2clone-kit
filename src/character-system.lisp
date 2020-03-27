@@ -11,7 +11,7 @@
   (target-y nil :type double-float))
 
 (defmethod make-component ((system character-system) entity &rest parameters)
-  (destructuring-bind (&key (speed 0.1d0) target-x target-y) parameters
+  (destructuring-bind (&key (speed 0.05d0) target-x target-y) parameters
     (with-character entity (s x y)
       (setf s speed)
       (setf x target-x)
@@ -45,7 +45,7 @@
               (when (eq stance 'walk)
                 (switch-stance entity 'idle))
               (let ((direction-x (* 0.5d0 (cos angle)))
-                    (direction-y (* 0.5d0 (/ *tile-width* *tile-height*) (sin angle))))
+                    (direction-y (* 0.5d0 (sin angle) (/ *tile-width* *tile-height*))))
                 (if (multiple-value-call #'collidesp
                       (tile-index (+ x direction-x)
                                   (+ y direction-y)))

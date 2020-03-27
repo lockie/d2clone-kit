@@ -34,7 +34,6 @@
      (1+ (floor (- tx ty) 2))
      (+ tx ty))))
 
-
 (declaim
  (inline map->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum)) map->screen))
