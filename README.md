@@ -1,5 +1,11 @@
 Diablo 2 is arguably one of the best action RPG created ever. This is humble attempt to recreate and, hopefully, deconstruct it using Common Lisp programming language and related techniques.
 
+## Features
+TODO
+
+## Installation
+TODO
+
 ## Glossary
 * **map coordinates** - *world coordinates* of tile in staggered map grid.
 * **prefab** - system-specific object loaded from file and used as a template to create new instances of system's component.

@@ -31,7 +31,7 @@
                                         t))))))))))
 
 (defmethod collides ((sytem collision-system) x y)
-  "Returns whether tile located at map coordinates X, Y does collide with other objects
+  "Returns whether tile located at integer map coordinates X, Y does collide with other objects
 using collision system SYSTEM."
   (sparse-matrix-ref (slot-value system 'collision-map) (list x y)))
 
@@ -39,7 +39,7 @@ using collision system SYSTEM."
  (inline collidesp)
  (ftype (function (fixnum fixnum) boolean) collidesp))
 (defun collidesp (x y)
-  "Returns whether tile located at map coordinates X, Y does collide with other objects."
+  "Returns whether tile located at integer map coordinates X, Y does collide with other objects."
   (sparse-matrix-ref (slot-value (system-ref 'collision) 'collision-map) (list x y)))
 
 (defhandler collision-system quit (event)
