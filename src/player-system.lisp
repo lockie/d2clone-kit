@@ -45,9 +45,7 @@
         (viewport->absolute x y)
       (multiple-value-bind (new-x new-y)
           (screen->map new-screen-x new-screen-y)
-        (with-character (player-entity) ()
-          (setf target-x new-x
-                target-y new-y))))))
+        (set-character-target (player-entity) new-x new-y)))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)

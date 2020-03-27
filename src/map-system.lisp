@@ -24,6 +24,18 @@
 (defparameter *tile-height* 0)
 
 (declaim
+ (inline tile-index)
+ (ftype (function (double-float double-float) (values fixnum fixnum)) tile-index))
+(defun tile-index (x y)
+  "Returns index of tile containing point with world coordinates X, Y."
+  (let ((tx (floor (+ (/ y 2) x -0.49d0)))
+        (ty (floor (- (/ y 2) x -1.5d0))))
+    (values
+     (1+ (floor (- tx ty) 2))
+     (+ tx ty))))
+
+
+(declaim
  (inline map->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum)) map->screen))
 (defun map->screen (x y)
@@ -37,7 +49,7 @@ See SCREEN->MAP*"
 
 (declaim
  (inline screen->map)
- (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
+ (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
 (defun screen->map (x y)
   "Converts screen pixel coordinates to map coordinates of nearest tile.
 
@@ -51,19 +63,19 @@ See MAP->SCREEN"
 
 (declaim
  (inline screen->map*)
- (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
+ (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
 (defun screen->map* (x y)
   "Converts screen pixel coordinates to exact map coordinates.
 
 See SCREEN->MAP
 See MAP->SCREEN"
-  (multiple-value-bind (int-map-x int-map-y) (screen->map* x y)
+  (multiple-value-bind (int-map-x int-map-y) (screen->map x y)
     (multiple-value-bind (int-x int-y) (map->screen int-map-x int-map-y)
       (let ((diff-x (- x int-x))
             (diff-y (- y int-y)))
         (values
          (+ int-map-x (/ diff-x (coerce *tile-width* 'double-float)))
-         (+ int-map-y (/ diff-y (coerce *tile-height* 'double-float))))))))
+         (+ int-map-y (/ diff-y (* 2 (coerce *tile-height* 'double-float)))))))))
 
 (defun load-tiles (tiled-map)
   (let ((tilesets (tiled-map-tilesets tiled-map)))

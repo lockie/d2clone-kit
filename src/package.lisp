@@ -19,7 +19,8 @@
     #:range-visible-p)
    ;; character-system.lisp
    (:export
-    #:character-system)
+    #:character-system
+    #:set-character-target)
    ;; collision-system.lisp
    (:export
     #:collision-system
@@ -76,6 +77,7 @@
    ;; map-system.lisp
    (:export
     #:map-system
+    #:tile-index
     #:map->screen
     #:screen->map
     #:screen->map*

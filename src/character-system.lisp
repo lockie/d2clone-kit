@@ -17,6 +17,19 @@
       (setf x target-x)
       (setf y target-y))))
 
+;; TODO : some sort of generic SoA class/macro with getter/setter functions
+(declaim
+ (inline set-character-target)
+ (ftype (function (fixnum double-float double-float)) set-character-target))
+(defun set-character-target (entity new-target-x new-target-y)
+  "Sets character ENTITY new movement target to NEW-TARGET-X, NEW-TARGET-Y."
+  (with-character entity ()
+    (setf target-x new-target-x
+          target-y new-target-y))
+  (with-sprite entity ()
+    (with-coordinate entity ()
+      (setf angle (atan (* (- new-target-y y) 0.5d0) (- new-target-x x))))))
+
 (declaim
  (inline approx-equal)
  (ftype (function (double-float double-float &optional double-float) boolean) approx-equal))
@@ -31,17 +44,17 @@
           (if (and (approx-equal target-x x speed) (approx-equal target-y y speed))
               (when (eq stance 'walk)
                 (switch-stance entity 'idle))
-              (let ((a (atan (- target-y y) (- target-x x))))
-                (setf angle a)
-                (let ((new-x (+ x (* speed (cos a))))
-                      (new-y (+ y (* (/ *tile-width* *tile-height*) speed (sin a)))))
-                  (if (collidesp (round new-x) (round new-y))
-                      (progn
+              (let ((direction-x (* 0.5d0 (cos angle)))
+                    (direction-y (* 0.5d0 (/ *tile-width* *tile-height*) (sin angle))))
+                (if (multiple-value-call #'collidesp
+                      (tile-index (+ x direction-x)
+                                  (+ y direction-y)))
+                    (progn
                         (setf target-x x
                               target-y y)
                         (switch-stance entity 'idle))
                       (progn
-                        (setf x new-x
-                              y new-y)
+                        (incf x (* speed 2d0 direction-x))
+                        (incf y (* speed 2d0 direction-y))
                         (unless (eq stance 'walk)
-                          (switch-stance entity 'walk)))))))))))
+                          (switch-stance entity 'walk))))))))))
