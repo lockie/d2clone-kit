@@ -50,6 +50,11 @@
   (tilesets nil :type (vector tiled-tileset) :read-only t)
   (layers nil :type (vector tiled-layer) :read-only t)
   (objects nil :type (vector tiled-object) :read-only t))
+;; TODO
+; note: unable to
+;   avoid runtime dispatch on array element type
+; due to type uncertainty:
+;   The first argument is a (VECTOR TILED-LAYER), not a SIMPLE-ARRAY.
 
 (defun load-tiled-map (stream)
   (labels

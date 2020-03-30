@@ -10,6 +10,8 @@
 
 ;; TODO : delete component event?..
 
+;; TODO : optimize this by packing coordinates into single fixnum (31 bits ought to be enough for anyone)
+
 (defhandler collision-system component-created (event entity system-name)
   :filter '(eq system-name 'map)
   (with-slots (collision-map) system
