@@ -9,7 +9,7 @@
   (indices nil :type hash-table)
   (array nil :type simple-vector)
   (length nil :type array-length)
-  (deleted-indices nil :type (vector array-index)))
+  (deleted-indices nil :type #+ccl vector #-ccl (vector array-index)))
 
 (declaim (ftype (function (&key (:element-type t)) sparse-matrix)
                 make-sparse-matrix))
