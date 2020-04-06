@@ -17,7 +17,7 @@
     (when debug-cursor
       (let ((debug-entity (make-entity)))
         (setf (slot-value system 'debug-entity) debug-entity)
-        (make-component (system-ref 'debug) debug-entity :order 2000)))))
+        (make-component (system-ref 'debug) debug-entity :order 2000d0)))))
 
 (declaim (inline player-entity))
 (defun player-entity ()

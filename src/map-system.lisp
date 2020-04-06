@@ -23,16 +23,33 @@
 (defparameter *tile-width* 0)
 (defparameter *tile-height* 0)
 
+(deftype float-coordinate () `(double-float
+                               ,(/ most-negative-fixnum 2d0)
+                               ,(/ most-positive-fixnum 2d0)))
+
 (declaim
  (inline tile-index)
  (ftype (function (double-float double-float) (values fixnum fixnum)) tile-index))
 (defun tile-index (x y)
   "Returns index of tile containing point with world coordinates X, Y."
-  (let ((tx (floor (+ (/ y 2) x -0.49d0)))
-        (ty (floor (- (/ y 2) x -1.5d0))))
+  (let ((tx (floor (the float-coordinate (+ (* y 0.5d0) x -0.5d0))))
+        (ty (floor (the float-coordinate (- (* y 0.5d0) x -1.5d0)))))
     (values
      (1+ (floor (- tx ty) 2))
-     (+ tx ty))))
+     (the fixnum (+ tx ty)))))
+
+(declaim
+ (inline tile-pos)
+ (ftype (function (float-coordinate float-coordinate) (values double-float double-float))
+        tile-pos))
+(defun tile-pos (col row)
+  (let ((x (floor col))
+        (y (floor row)))
+    (values
+     (if (oddp y)
+         (+ 0.5d0 x)
+         (coerce x 'double-float))
+     (coerce y 'double-float))))
 
 (declaim
  (inline map->screen)
@@ -236,12 +253,14 @@ See MAP->SCREEN"
                                            (when-let (tileset (aref tiles tile-index))
                                              (add-sprite-index-to-batch
                                               (map-tileset-sprite-batch tileset)
-                                              (+ tile-y chunk-viewport-y
-                                                 (tile-property tiles-properties tile-index 'z 0)
-                                                 (* display-width
-                                                    (- layer-order
-                                                       (* layer-count
-                                                          (if ground-layer-p 2 1)))))
+                                              (coerce
+                                               (+ tile-y chunk-viewport-y
+                                                  (tile-property tiles-properties tile-index 'z 0)
+                                                  (* display-width
+                                                     (- layer-order
+                                                        (* layer-count
+                                                           (if ground-layer-p 2 1)))))
+                                               'double-float)
                                               (- tile-index (map-tileset-first-id tileset))
                                               (+ tile-x chunk-viewport-x)
                                               (+ tile-y chunk-viewport-y))))))))

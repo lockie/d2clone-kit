@@ -208,7 +208,7 @@
       (setf stance 'idle)
       (when debug-sprite
         (setf debug-entity (make-entity))
-        (make-component (system-ref 'debug) debug-entity :order 1010)))))
+        (make-component (system-ref 'debug) debug-entity :order 1010d0)))))
 
 (defmethod make-component ((system sprite-system) entity &rest parameters)
   (declare (ignore system entity parameters))
@@ -266,7 +266,7 @@
                   when toggled do
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
-                     (- y (truncate *tile-height* 2))
+                     (coerce (- y (truncate *tile-height* 2)) 'double-float)
                      (* frame width)
                      (* (sprite-direction directions angle) height)
                      x0 y0))

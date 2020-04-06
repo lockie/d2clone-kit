@@ -9,7 +9,7 @@
   (:documentation "Handles drawing of various debug information."))
 
 (defcomponent debug debug-buffer
-  (render-order 0 :type fixnum)
+  (render-order 0d0 :type double-float)
   (count 0 :type fixnum)
   (points nil :type (simple-array single-float)))
 
@@ -82,7 +82,7 @@
     (setf (gethash designator texts) (apply #'format nil text args))))
 
 (defmethod make-component ((system debug-system) entity &rest parameters)
-  (destructuring-bind (&key (size 144) (order 1000)) parameters
+  (destructuring-bind (&key (size 144) (order 1000d0)) parameters
     (when (< size 14)
       (setf size 14))
     (with-debug-buffer entity ()
@@ -115,7 +115,7 @@
       unless (emptyp text)
         do (render
             renderer
-            5000
+            5000d0
             (let ((i i)
                   (text text))
               #'(lambda () (al:draw-text font color 0 (* i 10) 0 text)))))))

@@ -69,5 +69,6 @@ See WITH-SYSTEM-CONFIG-OPTIONS"
   (debug grid :type list :default nil)
   (debug sprite :type list :default nil)
   (debug cursor :type list :default nil)
+  (debug path :type list :default nil)
 
   )

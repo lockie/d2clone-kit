@@ -20,6 +20,7 @@
    ;; character-system.lisp
    (:export
     #:character-system
+    #:a*
     #:set-character-target)
    ;; collision-system.lisp
    (:export

@@ -5,15 +5,17 @@
             (:copier nil)
             (:predicate nil))
   (array nil :type simple-vector)
-  (key nil :type (function (t) fixnum) :read-only t))
+  (key nil :type (function (t) double-float) :read-only t))
 
 (defun make-priority-queue (key-fn)
-  "Creates priority queue using key extraction function KEY-FN."
+  "Creates priority queue using key extraction function KEY-FN.
+
+Note: keys are expected to be DOUBLE-FLOATs."
   (%make-priority-queue :array (make-array 0) :key key-fn))
 
 (declaim
  (inline binary-search)
- (ftype (function ((function (t) fixnum) fixnum simple-vector) array-index)
+ (ftype (function ((function (t) double-float) double-float simple-vector) array-index)
         binary-search))
 (defun binary-search (key-fn key array)
   (if (zerop (length array))
@@ -27,9 +29,19 @@
               (u (1- (length array)))
               (m (mid l u) (mid l u)))
              ((> l u) l)
-          (if (< (funcall key-fn (aref array m)) key)
+          (if (> (funcall key-fn (aref array m)) key)
               (setf l (1+ m))
               (setf u (1- m)))))))
+
+(declaim
+ (inline priority-queue-find)
+ (ftype (function (priority-queue t)) priority-queue-find))
+(defun priority-queue-find (queue element)
+  (let* ((array (priority-queue-array queue))
+         (key-fn (priority-queue-key queue))
+         (position (binary-search key-fn (funcall key-fn element) array)))
+    (when (and (< position (length array)) (equal element (aref array position)))
+      position)))
 
 (declaim
  (inline priority-queue-push)
@@ -69,8 +81,8 @@
       (sort
        array
        #'(lambda (a b)
-           (declare (fixnum a b))
-           (< a b))
+           (declare (double-float a b))
+           (> a b))
        :key (priority-queue-key queue))))
   nil)
 
@@ -80,8 +92,39 @@
 (defun priority-queue-traverse (queue fn)
   "Calls one argument function FN on elements of priority queue QUEUE
 in appropriate order."
-  (loop for element across (priority-queue-array queue)
-        do (funcall fn element)))
+  (let ((array (priority-queue-array queue)))
+    (loop
+      for i from (1- (length array)) downto 0
+      for element = (aref array i)
+      do (funcall fn element))))
+
+(declaim
+ (inline simple-vector-pop)
+ (ftype (function (simple-vector) (values t simple-vector)) simple-vector-pop))
+(defun simple-vector-pop (array)
+  (let* ((last-index (1- (length array)))
+         (element (aref array last-index))
+         (new-array (adjust-array array last-index)))
+    (values element new-array)))
+
+(declaim
+ (inline priority-queue-pop)
+ (ftype (function (priority-queue)) priority-queue-pop))
+(defun priority-queue-pop (queue)
+  (multiple-value-bind (element new-array)
+      (simple-vector-pop (priority-queue-array queue))
+    (setf (priority-queue-array queue) new-array)
+    element))
+
+(declaim
+ (inline priority-queue-remove)
+ (ftype (function (priority-queue array-index)) priority-queue-remove))
+(defun priority-queue-remove (queue index)
+  (let ((array (priority-queue-array queue)))
+    (replace (priority-queue-array queue) array :start1 index :start2 (1+ index))
+    (setf (priority-queue-array queue)
+          (adjust-array (priority-queue-array queue) (1- (length array)))))
+  nil)
 
 (declaim
  (inline priority-queue-clear)

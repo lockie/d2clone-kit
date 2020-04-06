@@ -8,7 +8,7 @@
 
 (defstruct sprite-batch-element
   (bitmap (cffi:null-pointer) :type cffi:foreign-pointer)
-  (order 0 :type fixnum :read-only t)
+  (order 0 :type double-float :read-only t)
   (image-x 0 :type fixnum :read-only t)
   (image-y 0 :type fixnum :read-only t)
   (screen-x 0 :type fixnum :read-only t)
@@ -48,7 +48,7 @@
 
 (declaim
  (inline add-sprite-to-batch)
- (ftype (function (fixnum fixnum fixnum fixnum fixnum fixnum)) add-sprite-to-batch))
+ (ftype (function (fixnum double-float fixnum fixnum fixnum fixnum)) add-sprite-to-batch))
 (defun add-sprite-to-batch (entity order image-x image-y screen-x screen-y)
   "Adds sprite to sprite batch ENTITY using order ORDER, sprite coordinates
 IMAGE-X, IMAGE-Y and screen coordinates SCREEN-X, SCREEN-Y.
@@ -69,7 +69,7 @@ See ADD-SPRITE-INDEX-TO-BATCH"
 
 (declaim
  (inline add-sprite-index-to-batch)
- (ftype (function (fixnum fixnum fixnum fixnum fixnum)) add-sprite-index-to-batch))
+ (ftype (function (fixnum double-float fixnum fixnum fixnum)) add-sprite-index-to-batch))
 (defun add-sprite-index-to-batch (entity order index screen-x screen-y)
   "Adds sprite to sprite batch ENTITY using order ORDER, sprite index INDEX and
 screen coordinates SCREEN-X, SCREEN-Y.
@@ -102,7 +102,7 @@ See ADD-SPRITE-TO-BATCH"
         (priority-queue-push-many elements sprites))
     (render
      renderer
-     100
+     100d0
      #'(lambda ()
          (al:hold-bitmap-drawing t)
          (priority-queue-traverse
