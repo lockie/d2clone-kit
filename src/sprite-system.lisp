@@ -266,7 +266,7 @@
                   when toggled do
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
-                     (coerce (- y (truncate *tile-height* 2)) 'double-float)
+                     (coerce (- y (truncate *tile-height* 2) -2) 'double-float)
                      (* frame width)
                      (* (sprite-direction directions angle) height)
                      x0 y0))
