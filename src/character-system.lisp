@@ -3,7 +3,7 @@
 
 (defclass character-system (system)
   ((name :initform 'character))
-  (:documentation "Handles characters."))
+  (:documentation "Handles sprites that are able to walk and collide with obstacles."))
 
 (defcomponent character character
   (speed nil :type double-float)
@@ -145,13 +145,23 @@ Note: if goal point is not walkable, this function will stuck."
         (loop
           with result = (make-array 0 :element-type 'cons :adjustable t :fill-pointer t)
           for node = goal-node then (path-node-parent node)
+          until (eq start-node node)
           do (vector-push-extend (cons (path-node-x node) (path-node-y node)) result)
-             (when (eq start-node node)
-               (loop-finish))
           finally (return (make-array (length result)
                                       :element-type 'cons
                                       :initial-contents result))))))))
 
+(declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
+(defun follow-path (character-entity)
+  (with-coordinate character-entity ()
+    (with-sprite character-entity ()
+      (with-character character-entity ()
+        (multiple-value-bind (target new-path)
+            (simple-vector-pop path)
+          (setf path new-path
+                target-x (car target)
+                target-y (cdr target)
+                angle (atan (* (- target-y y) 0.5d0) (- target-x x))))))))
 
 ;; TODO : some sort of generic SoA class/macro with getter/setter functions
 (declaim
@@ -179,14 +189,14 @@ Note: if goal point is not walkable, this function will stuck."
       (with-character entity ()
         (when (or (zerop (length path))
                   (destructuring-bind (current-target-x . current-target-y)
-                      (aref path (1- (length path)))
+                      (simple-vector-peek path)
                     (> (euclidean-distance
                         new-target-x new-target-y
                         current-target-x current-target-y)
                        1d0)))
-          (setf path (a* x y new-target-x new-target-y)
-                target-x x
-                target-y y))))))
+          (setf path (a* x y new-target-x new-target-y))
+          (unless (zerop (length path))
+            (follow-path entity)))))))
 
 (declaim
  (inline approx-equal)
@@ -195,7 +205,6 @@ Note: if goal point is not walkable, this function will stuck."
   (< (abs (- a b)) epsilon))
 
 (defmethod system-update ((system character-system) dt)
-  ;; TODO : still weird jerky movement when cursor is close to player
   (with-characters
       (with-coordinate entity ()
         (with-sprite entity ()
@@ -203,12 +212,7 @@ Note: if goal point is not walkable, this function will stuck."
               (if (zerop (length path))
                   (when (eq stance 'walk)
                     (switch-stance entity 'idle))
-                  (multiple-value-bind (target new-path)
-                      (simple-vector-pop path)
-                    (setf path new-path
-                          target-x (car target)
-                          target-y (cdr target)
-                          angle (atan (* (- target-y y) 0.5d0) (- target-x x)))))
+                  (follow-path entity))
               (let ((direction-x (* 0.5d0 speed (cos angle)))
                     (direction-y (* 0.5d0 speed (sin angle) (/ *tile-width* *tile-height*))))
                 ;; TODO : this check is kinda redundant

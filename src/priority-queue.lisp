@@ -99,6 +99,12 @@ in appropriate order."
       do (funcall fn element))))
 
 (declaim
+ (inline simple-vector-peek)
+ (ftype (function (simple-vector) t) simple-vector-peek))
+(defun simple-vector-peek (array)
+  (aref array (1- (length array))))
+
+(declaim
  (inline simple-vector-pop)
  (ftype (function (simple-vector) (values t simple-vector)) simple-vector-pop))
 (defun simple-vector-pop (array)
