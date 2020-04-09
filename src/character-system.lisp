@@ -95,61 +95,64 @@ Note: if goal point is not walkable, this function will stuck."
   (multiple-value-bind (goal-col goal-row)
       (tile-index goal-x goal-y)
     (multiple-value-bind (initial-x initial-y)
-        (multiple-value-call #'tile-pos
-          (tile-index start-x start-y))
-    (let ((open (make-priority-queue #'path-node-cost))
-          (closed nil)
-          (start-node (make-path-node initial-x initial-y)))
-      (priority-queue-push open start-node)
-      (let ((goal-node
-              (loop for current = (priority-queue-pop open)
-                    until (equal (list goal-col goal-row)
-                                 (multiple-value-list
-                                  (tile-index (path-node-x current)
-                                              (path-node-y current))))
-                    do (push current closed)
-                       (dolist (neighbour +neighbours+)
-                         (multiple-value-bind (neighbour-x neighbour-y)
-                             (tile-pos (+ (path-node-x current) (the double-float (car neighbour)))
-                                       (+ (path-node-y current) (the double-float (cadr neighbour))))
-                           (let* ((cost (+ (euclidean-distance
-                                            start-x start-y
-                                            (path-node-x current) (path-node-y current))
-                                           1d0
-                                           (if (multiple-value-call #'collidesp
-                                                 (tile-index neighbour-x neighbour-y))
-                                               10000d0 0d0)))
-                                  (neighbour-cost (euclidean-distance
-                                                   start-x start-y
-                                                   neighbour-x neighbour-y))
-                                  (neighbour-node (make-path-node neighbour-x neighbour-y))
-                                  (neighbour-open-index (priority-queue-find open neighbour-node)))
-                             (if (and (< cost neighbour-cost) neighbour-open-index)
-                                 ;; new path is better
-                                 (priority-queue-remove open neighbour-open-index)
-                                 (let ((neighbour-closed-index
-                                         (position neighbour-node closed :test #'path-node-equal)))
-                                   (cond
-                                     ((and neighbour-closed-index (< cost neighbour-cost))
-                                      ;; XXX this does happen with the chosen metric.
-                                      (setf closed (remove-nth closed neighbour-closed-index)))
-                                     ((and (not neighbour-open-index)
-                                           (not neighbour-closed-index))
-                                      (setf (path-node-cost neighbour-node)
-                                            (+ cost (euclidean-distance neighbour-x neighbour-y
-                                                                        goal-x goal-y))
-                                            (path-node-parent neighbour-node)
-                                            current)
-                                      (priority-queue-push open neighbour-node))))))))
-                    finally (return current))))
-        (loop
-          with result = (make-array 0 :element-type 'cons :adjustable t :fill-pointer t)
-          for node = goal-node then (path-node-parent node)
-          until (eq start-node node)
-          do (vector-push-extend (cons (path-node-x node) (path-node-y node)) result)
-          finally (return (make-array (length result)
-                                      :element-type 'cons
-                                      :initial-contents result))))))))
+        (multiple-value-bind (i-x i-y)
+            (tile-index start-x start-y)
+          (tile-pos (coerce i-x 'double-float) (coerce i-y 'double-float)))
+      (let ((open (make-priority-queue #'path-node-cost))
+            (closed nil)
+            (start-node (make-path-node initial-x initial-y)))
+        (priority-queue-push open start-node)
+        (let ((goal-node
+                (loop for current = (priority-queue-pop open)
+                      until (equal (list goal-col goal-row)
+                                   (multiple-value-list
+                                    (tile-index (path-node-x current)
+                                                (path-node-y current))))
+                      do (push current closed)
+                         (dolist (neighbour +neighbours+)
+                           (multiple-value-bind (neighbour-x neighbour-y)
+                               (tile-pos (+ (path-node-x current)
+                                            (the double-float (car neighbour)))
+                                         (+ (path-node-y current)
+                                            (the double-float (cadr neighbour))))
+                             (let* ((cost (+ (euclidean-distance
+                                              start-x start-y
+                                              (path-node-x current) (path-node-y current))
+                                             1d0
+                                             (if (multiple-value-call #'collidesp
+                                                   (tile-index neighbour-x neighbour-y))
+                                                 10000d0 0d0)))
+                                    (neighbour-cost (euclidean-distance
+                                                     start-x start-y
+                                                     neighbour-x neighbour-y))
+                                    (neighbour-node (make-path-node neighbour-x neighbour-y))
+                                    (neighbour-open-index (priority-queue-find open neighbour-node)))
+                               (if (and (< cost neighbour-cost) neighbour-open-index)
+                                   ;; new path is better
+                                   (priority-queue-remove open neighbour-open-index)
+                                   (let ((neighbour-closed-index
+                                           (position neighbour-node closed :test #'path-node-equal)))
+                                     (cond
+                                       ((and neighbour-closed-index (< cost neighbour-cost))
+                                        ;; XXX this does happen with the chosen metric.
+                                        (setf closed (remove-nth closed neighbour-closed-index)))
+                                       ((and (not neighbour-open-index)
+                                             (not neighbour-closed-index))
+                                        (setf (path-node-cost neighbour-node)
+                                              (+ cost (euclidean-distance neighbour-x neighbour-y
+                                                                          goal-x goal-y))
+                                              (path-node-parent neighbour-node)
+                                              current)
+                                        (priority-queue-push open neighbour-node))))))))
+                      finally (return current))))
+          (loop
+            with result = (make-array 0 :element-type 'cons :adjustable t :fill-pointer t)
+            for node = goal-node then (path-node-parent node)
+            until (eq start-node node)
+            do (vector-push-extend (cons (path-node-x node) (path-node-y node)) result)
+            finally (return (make-array (length result)
+                                        :element-type 'cons
+                                        :initial-contents result))))))))
 
 (declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
 (defun follow-path (character-entity)
