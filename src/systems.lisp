@@ -48,8 +48,6 @@ See RENDER"))
 (declaim (type (integer 0 #.array-dimension-limit) *entities-allocated*))
 (defvar *entities-allocated* 144)
 
-(defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
-
 (declaim (type (vector fixnum) *deleted-entities*))
 (defvar *deleted-entities* (make-array 0 :element-type 'fixnum :adjustable t :fill-pointer t))
 

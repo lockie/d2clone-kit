@@ -7,21 +7,17 @@
             (:predicate nil))
   "A high-watermark sparse matrix, implemented as a dictionary of keys."
   (indices nil :type hash-table)
-  (array nil :type simple-vector)
-  (length nil :type array-length)
+  (array nil :type growable-vector)
   (deleted-indices nil :type #+ccl vector #-ccl (vector array-index)))
 
-(declaim (ftype (function (&key (:element-type t)) sparse-matrix)
+(declaim (ftype (function () sparse-matrix)
                 make-sparse-matrix))
-(defun make-sparse-matrix (&key (element-type 't))
-  "Creates sparse matrix holding elements of ELEMENT-TYPE."
+(defun make-sparse-matrix ()
+  "Creates new sparse matrix."
   (let ((initial-size 8))
     (%make-sparse-matrix
      :indices (make-hash-table :test 'equal :size initial-size)
-     :array (make-array initial-size
-                        :element-type element-type
-                        :initial-element nil)
-     :length 0
+     :array (make-growable-vector :initial-allocated-size initial-size)
      :deleted-indices (make-array 0
                                   :element-type 'array-index
                                   :adjustable t :fill-pointer t))))
@@ -32,7 +28,7 @@
 (defun sparse-matrix-ref (sparse-matrix subscripts)
   "Returns SPARSE-MATRIX element identified by list SUBSCRIPTS or NIL if there's no such element."
   (if-let (index (gethash subscripts (sparse-matrix-indices sparse-matrix)))
-    (aref (sparse-matrix-array sparse-matrix) index)
+    (growable-vector-ref (sparse-matrix-array sparse-matrix) index)
     nil))
 
 (declaim
@@ -44,22 +40,16 @@ To remove an element from sparse matrix, use SPARSE-MATRIX-REMOVE.
 
 See SPARSE-MATRIX-REMOVE"
   (if-let (index (gethash subscripts (sparse-matrix-indices sparse-matrix)))
-    (setf (aref (sparse-matrix-array sparse-matrix) index) value)
-    (let* ((array (sparse-matrix-array sparse-matrix))
-           (size (length array))
-           (length (sparse-matrix-length sparse-matrix))
-           (index length))
-      (if (< index size)
-          (incf (sparse-matrix-length sparse-matrix))
-          (if (emptyp (sparse-matrix-deleted-indices sparse-matrix))
-              (setf size (the array-length (round (* size +array-growth-factor+)))
-                    array (adjust-array array size :initial-element nil)
-                    (sparse-matrix-array sparse-matrix) array
-                    (sparse-matrix-length sparse-matrix) (1+ length))
-              ;; TODO : test deletion!
-              (setf index (vector-pop (sparse-matrix-deleted-indices sparse-matrix)))))
-      (setf (gethash subscripts (sparse-matrix-indices sparse-matrix)) index)
-      (setf (aref array index) value))))
+    (setf (%growable-vector-ref (sparse-matrix-array sparse-matrix) index) value)
+    (let ((array (sparse-matrix-array sparse-matrix)))
+      (if (emptyp (sparse-matrix-deleted-indices sparse-matrix))
+          (let ((index (growable-vector-length array)))
+            (setf (gethash subscripts (sparse-matrix-indices sparse-matrix)) index
+                  (growable-vector-ref array index) value))
+          ;; TODO : test deletion!
+          (let ((index (vector-pop (sparse-matrix-deleted-indices sparse-matrix))))
+            (setf (gethash subscripts (sparse-matrix-indices sparse-matrix)) index
+                  (%growable-vector-ref array index) value))))))
 
 (declaim
  (inline sparse-matrix-remove)

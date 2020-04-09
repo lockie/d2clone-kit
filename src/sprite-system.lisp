@@ -95,19 +95,16 @@
 
 (defun load-sprite-layer-names (ase-file)
   (loop
-    with layer-names = (make-array 1 :element-type 'symbol :initial-element nil)
+    with layer-names = (make-growable-vector)
     for frame across (ase-file-frames ase-file)
     do (loop
          for chunk across (ase-frame-chunks frame)
          when (and chunk (ase-layer-chunk-p chunk))
            do (let ((id (ase-layer-chunk-id chunk))
-                    (layer-name (ase-layer-chunk-name chunk))
-                    (layers-length (length layer-names)))
-                (when (>= id layers-length)
-                  (setf layer-names
-                        (adjust-array layer-names (round (* layers-length +array-growth-factor+)))))
-                (setf (elt layer-names id) (format-symbol 'd2clone-kit "~:@(~a~)" layer-name))))
-    finally (return layer-names)))
+                    (layer-name (ase-layer-chunk-name chunk)))
+                (setf (growable-vector-ref layer-names id)
+                      (format-symbol 'd2clone-kit "~:@(~a~)" layer-name))))
+    finally (return (growable-vector-freeze layer-names))))
 
 (defun total-stance-length (stances)
   (loop for stance-name being the hash-key of stances

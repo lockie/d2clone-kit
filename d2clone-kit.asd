@@ -23,6 +23,7 @@
   :serial t
   :components ((:file "package")
                (:file "priority-queue")
+               (:file "growable-vector")
                (:file "sparse-matrix")
                (:file "config")
                (:file "log")

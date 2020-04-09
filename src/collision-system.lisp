@@ -16,7 +16,7 @@
   :filter '(eq system-name 'map)
   (with-slots (collision-map) system
     (unless collision-map
-      (setf collision-map (make-sparse-matrix :element-type 'boolean)))
+      (setf collision-map (make-sparse-matrix)))
     (with-coordinate entity ()
       (let ((start-x (truncate x))
             (start-y (truncate y)))
