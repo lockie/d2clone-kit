@@ -1,7 +1,7 @@
 (in-package :d2clone-kit)
 
 (cffi:define-foreign-library libphysfs
-  (:windows nil)  ;; TODO : test Ш1ИДОШ5
+  (:windows nil)
   (:unix (:or "libphysfs.so.3.0.2" "libphysfs.so.1"))
   (t (:default "libphysfs")))
 (cffi:use-foreign-library libphysfs)

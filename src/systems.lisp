@@ -101,6 +101,8 @@ See MAKE-PREFAB-COMPONENT"))
 
 (defmacro defcomponent (system name &rest slots)
   "Defines component structure with name NAME and slots SLOTS within system SYSTEM."
+  ;; TODO : rewrite components storage using sparse array index based on growable vector to
+  ;;  remove unnecessary NIL checks and increase cache friendliness
   (let* ((system-name (symbolicate system '-system))
          (plural-name (string-upcase (plural-of name)))
          (slot-names (mapcar #'car slots))

@@ -3,7 +3,14 @@
 
 (defclass sprite-system (system)
   ((name :initform 'sprite))
-  (:documentation "Handles movable sprites in Aseprite format."))
+  (:documentation "Handles movable sprites in Aseprite format.
+
+The following format features are unsupported yet:
+
+* color modes other than RGBA
+* group layers
+* layer blend modes
+* linked cels"))
 
 (deftype angle ()
   "Angle value in radians."

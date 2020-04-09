@@ -67,6 +67,15 @@
     #:virtual-binary-stream
     #:read-binary
     #:define-binary-struct)
+   ;; growable-vector.lisp
+   (:export
+    #:growable-vector
+    #:make-growable-vector
+    #:growable-vector-ref
+    #:%growable-vector-ref
+    #:growable-vector-length
+    #:growable-vector-clear
+    #:growable-vector-freeze)
    ;; log.lisp
    (:export
     #:defunl
@@ -92,10 +101,14 @@
     #:target-player)
    ;; priority-queue.lisp
    (:export
+    #:priority-queue
     #:make-priority-queue
+    #:priority-queue-find
     #:priority-queue-push
     #:priority-queue-push-many
     #:priority-queue-traverse
+    #:priority-queue-pop
+    #:priority-queue-remove
     #:priority-queue-clear)
    ;; renderer.lisp
    (:export

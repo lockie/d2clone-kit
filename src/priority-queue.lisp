@@ -4,6 +4,7 @@
             (:constructor %make-priority-queue)
             (:copier nil)
             (:predicate nil))
+  "A simple priority queue with DOUBLE-FLOAT priorities."
   (array nil :type simple-vector)
   (key nil :type (function (t) double-float) :read-only t))
 
@@ -37,6 +38,8 @@ Note: keys are expected to be DOUBLE-FLOATs."
  (inline priority-queue-find)
  (ftype (function (priority-queue t)) priority-queue-find))
 (defun priority-queue-find (queue element)
+  "Finds ELEMENT's position in QUEUE. Returns NIL if there's no such element.
+O(log N) complexity."
   (let* ((array (priority-queue-array queue))
          (key-fn (priority-queue-key queue))
          (position (binary-search key-fn (funcall key-fn element) array)))
@@ -67,7 +70,10 @@ Note: keys are expected to be DOUBLE-FLOATs."
  (inline priority-queue-push-many)
  (ftype (function (priority-queue vector)) priority-queue-push-many))
 (defun priority-queue-push-many (queue elements)
-  "Adds elements from vector ELEMENTS to priority queue QUEUE."
+  "Adds elements from vector ELEMENTS to priority queue QUEUE.
+
+A bit more performance-friendly than calling PRIORITY-QUEUE-PUSH many times
+(but complexity is still O(N log N))."
   (let* ((array (priority-queue-array queue))
          (old-length (length array)))
     (setf (priority-queue-array queue)
@@ -117,6 +123,7 @@ in appropriate order."
  (inline priority-queue-pop)
  (ftype (function (priority-queue)) priority-queue-pop))
 (defun priority-queue-pop (queue)
+  "Removes and returns the first (priority-wise) element in QUEUE."
   (multiple-value-bind (element new-array)
       (simple-vector-pop (priority-queue-array queue))
     (setf (priority-queue-array queue) new-array)
@@ -126,6 +133,7 @@ in appropriate order."
  (inline priority-queue-remove)
  (ftype (function (priority-queue array-index)) priority-queue-remove))
 (defun priority-queue-remove (queue index)
+  "Removes element from QUEUE denoted by INDEX."
   (let ((array (priority-queue-array queue)))
     (replace (priority-queue-array queue) array :start1 index :start2 (1+ index))
     (setf (priority-queue-array queue)

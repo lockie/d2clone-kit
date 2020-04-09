@@ -2,7 +2,19 @@
 
 (defclass map-system (system)
   ((name :initform 'map))
-  (:documentation "Handles map chunks in Tiled format."))
+  (:documentation "Handles map chunks in Tiled format.
+
+The following format features are unsupported yet:
+
+* maps made in Tiled < v0.15
+* tile flipping
+* external tileset files
+* non-staggered maps
+* stagger axis other than Y
+* odd tile size
+
+Also only integer map coordinates allowed for map chunks, otherwise the screen <-> map
+conversion maths are badly fucked up."))
 
 (defstruct map-tileset
   (first-id 0 :type fixnum)
@@ -210,7 +222,6 @@ See MAP->SCREEN"
         (unless (and (intp x)
                      (intp y))
           ;; TODO : restart for rounding coordinates
-          ;; Otherwise it will badly fuck up screen <-> map maths
           (error "Only integer map coordinates allowed for map chunks"))))))
 
 (defmethod system-draw ((system map-system) renderer)

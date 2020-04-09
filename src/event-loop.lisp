@@ -35,6 +35,7 @@ simple synchronous single-threaded event loop for now."))
   (setf (macro-function 'defevent) (macro-function 'deeds:define-event)))
 
 (defmacro issue (event-type &rest args)
+  "Shorthand macro to allow more convenient issuing of events."
   `(deeds:do-issue ,event-type ,@args))
 
 (defmacro defhandler (system event args &body options-and-body)

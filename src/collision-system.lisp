@@ -4,7 +4,10 @@
 (defclass collision-system (system)
   ((name :initform 'collision)
    (collision-map :initform nil))
-  (:documentation "Handles object collisions."))
+  (:documentation "Handles object collisions.
+
+To make tile collide (e.g. be non-walkable by characters), set custom
+boolean property *collides* to *true* in Tiled tileset."))
 
 ;; TODO : take into account characters?.. character movement event?..
 
