@@ -75,10 +75,10 @@ See ABSOLUTE->VIEWPORT"
   "Returns T if point with given viewport coordinates is visible on screeen."
   (with-system-config-options ((display-width display-height))
     (and
-     (and (> x (- delta))
-          (< x (+ delta display-width)))
-     (and (> y (- delta))
-          (< y (+ delta display-height))))))
+     (> x (- delta))
+     (< x (+ delta display-width))
+     (> y (- delta))
+     (< y (+ delta display-height)))))
 
 (declaim
  (inline range-visible-p)

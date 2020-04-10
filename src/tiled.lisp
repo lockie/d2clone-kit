@@ -1,7 +1,5 @@
 (in-package :d2clone-kit)
 
-;; NOTE: supporting only maps made in Tiled 0.15+
-;; NOTE: tile flipping is not supported
 
 (deftype rgba-color () '(simple-array unsigned-byte (4)))
 
@@ -68,7 +66,7 @@
          (case type
            ((bool) (string= val "true"))
            ((color)
-            (if (= (length val) 7)
+            (if (length= 7 val)
                 (vector
                  (parse-integer val :start 1 :end 3 :radix 16)
                  (parse-integer val :start 3 :end 5 :radix 16)

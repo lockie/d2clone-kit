@@ -103,10 +103,10 @@ Note: if goal point is not walkable, this function will stuck."
         (priority-queue-push open start-node)
         (let ((goal-node
                 (loop :for current := (priority-queue-pop open)
-                      :until (equal (list goal-col goal-row)
-                                    (multiple-value-list
-                                     (tile-index (path-node-x current)
-                                                 (path-node-y current))))
+                      :until (multiple-value-bind (current-x current-y)
+                                 (tile-index (path-node-x current)
+                                             (path-node-y current))
+                               (and (= goal-col current-x) (= goal-row current-y)))
                       :do (push current closed)
                           (dolist (neighbour +neighbours+)
                             (multiple-value-bind (neighbour-x neighbour-y)
@@ -219,19 +219,19 @@ Note: if goal point is not walkable, this function will stuck."
                 ;; TODO : this check is kinda redundant
                 ;;  (but left here to check dynamic collisions later)
                 ;; also it still sometimes stuck when it shouldnt (on corners)
-                (if (multiple-value-call #'collidesp
+                (cond
+                  ((multiple-value-call #'collidesp
                       (tile-index (+ x direction-x)
                                   (+ y direction-y)))
-                    (progn
-                      (setf target-x x
-                            target-y y
-                            path (make-array 0))
-                      (switch-stance entity 'idle))
-                    (progn
-                      (incf x (* 2d0 direction-x))
-                      (incf y (* 2d0 direction-y))
-                      (unless (eq stance 'walk)
-                        (switch-stance entity 'walk))))))))))
+                   (setf target-x x
+                         target-y y
+                         path (make-array 0))
+                   (switch-stance entity 'idle))
+                  (t
+                   (incf x (* 2d0 direction-x))
+                   (incf y (* 2d0 direction-y))
+                   (unless (eq stance 'walk)
+                     (switch-stance entity 'walk))))))))))
 
 (defmethod system-draw ((system character-system) renderer)
   (flet ((path-node-pos (x y)

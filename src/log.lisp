@@ -35,16 +35,17 @@
       ((do-trace (level function-name message)
          (when (trace-prefix "d2clone-kit" level (string (uiop:argv0)) 0 function-name)
            (trace-suffix (concatenate 'string message (string #\newline))))))
-    (let ((full-message (apply #'format (append (list nil message) args))))
-      (if (string= *last-message* full-message)
-          (incf *last-message-repetitions*)
-          (progn
-            (unless (zerop *last-message-repetitions*)
-              (do-trace 1 "trace" (format nil "[last message repeated ~a times]"
-                                          *last-message-repetitions*))
-              (setf *last-message-repetitions* 0))
-            (do-trace level (string-downcase *function-name*) full-message)
-            (setf *last-message* full-message))))))
+    (let ((full-message (apply #'format (list* nil message args))))
+      (cond
+        ((string= *last-message* full-message)
+         (incf *last-message-repetitions*))
+        (t
+         (unless (zerop *last-message-repetitions*)
+           (do-trace 1 "trace" (format nil "[last message repeated ~a times]"
+                                       *last-message-repetitions*))
+           (setf *last-message-repetitions* 0))
+         (do-trace level (string-downcase *function-name*) full-message)
+         (setf *last-message* full-message))))))
 
 (defmacro deflog (name level docstring)
   (let

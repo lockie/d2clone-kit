@@ -73,8 +73,8 @@
       (if (minusp char)
           (if (al:feof al-file)
               :eof
-              (error "error reading '~a': ~a" path (al:ferrmsg al-file))))
-      (code-char char))))
+              (error "error reading '~a': ~a" path (al:ferrmsg al-file)))
+          (code-char char)))))
 
 ;; TODO
 ;; (defmethod stream-read-sequence ((stream character-stream) sequence start end &key &allow-other-keys)
@@ -108,8 +108,8 @@
       (if (minusp (the fixnum char))
           (if (al:feof al-file)
               :eof
-              (error "error reading '~a': ~a" path (al:ferrmsg al-file))))
-      char)))
+              (error "error reading '~a': ~a" path (al:ferrmsg al-file)))
+          char))))
 
 (defmethod trivial-gray-streams:stream-read-sequence ((stream binary-stream) sequence start end &key &allow-other-keys)
   (declare (non-negative-fixnum start end))

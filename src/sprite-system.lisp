@@ -237,11 +237,13 @@ The following format features are unsupported yet:
         (let* ((all-frames (gethash stance stances))
                (remaining-frames (cdr (member frame all-frames :test #'=))))
           (setf frame
-                (if remaining-frames
-                    (first remaining-frames)
-                    (if (eq stance 'death)
-                        frame
-                        (first all-frames)))))))))
+                (cond
+                  (remaining-frames
+                   (first remaining-frames))
+                  ((eq stance 'death)
+                   frame)
+                  (t
+                   (first all-frames)))))))))
 
 (declaim
  (inline sprite-direction)
@@ -250,9 +252,9 @@ The following format features are unsupported yet:
   "Calculates sprite direction from angle value ANGLE assuming total sprite direction count DIRECTIONS. East direction is 0 degree angle; counted clockwise."
   (declare (angle angle))
   (when (minusp angle)
-    (setf angle (+ angle (* 2 pi))))
+    (incf angle (* 2 pi)))
   (nth-value
-   0 (truncate (rem (round (/ (* angle directions) (* 2 pi))) directions))))
+   0 (truncate (rem (round (* angle directions) (* 2 pi)) directions))))
 
 (defmethod system-draw ((system sprite-system) renderer)
   (with-system-config-options ((debug-sprite))
