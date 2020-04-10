@@ -1,6 +1,7 @@
 (asdf:defsystem :d2clone-kit
   :version "0.0.1"
   :description "Generic Diablo 2 clone game engine."
+  :homepage "https://lockie.gitlab.io/d2clone-kit"
   :author "Andrew Kravchuk <awkravchuk@gmail.com>"
   :license "GPL v3"
   :depends-on (:alexandria
