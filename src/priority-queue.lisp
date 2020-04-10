@@ -100,9 +100,9 @@ A bit more performance-friendly than calling PRIORITY-QUEUE-PUSH many times
 in appropriate order."
   (let ((array (priority-queue-array queue)))
     (loop
-      for i from (1- (length array)) downto 0
-      for element = (aref array i)
-      do (funcall fn element))))
+      :for i :from (1- (length array)) :downto 0
+      :for element := (aref array i)
+      :do (funcall fn element))))
 
 (declaim
  (inline simple-vector-peek)

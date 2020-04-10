@@ -180,33 +180,33 @@
      :speed (ase-binary-header-speed header)
      :frames
      (loop
-       with frames-count = (ase-binary-header-frames header)
-       with frames = (make-array frames-count)
-       for frame-index below frames-count
-       for frame = (let ((binary-frame (read-binary 'ase-binary-frame stream)))
-                     (unless (= (ase-binary-frame-magic binary-frame) +frame-magic+)
-                       (error "Invalid ASE frame"))
-                     (make-ase-frame
-                      :duration (ase-binary-frame-duration binary-frame)
-                      :chunks
-                      (loop
-                        with chunks-count = (ase-binary-frame-chunks binary-frame)
-                        with chunks = (make-array chunks-count)
-                        for chunk-index below chunks-count
-                        for chunk = (let ((chunk-header (read-binary
-                                                         'ase-binary-chunk-header stream)))
-                                      (read-chunk
-                                       (ase-binary-chunk-header-type chunk-header)
-                                       (make-instance
-                                        'virtual-binary-stream
-                                        :buffer
-                                        (read-binary
-                                         (the fixnum
-                                              (- (ase-binary-chunk-header-size chunk-header)
-                                                 6 ;; sizeof chunk-header
-                                                 ))
-                                         stream))))
-                        do (setf (elt chunks chunk-index) chunk)
-                        finally (return chunks))))
-       do (setf (elt frames frame-index) frame)
-       finally (return frames)))))
+       :with frames-count := (ase-binary-header-frames header)
+       :with frames := (make-array frames-count)
+       :for frame-index :below frames-count
+       :for frame := (let ((binary-frame (read-binary 'ase-binary-frame stream)))
+                       (unless (= (ase-binary-frame-magic binary-frame) +frame-magic+)
+                         (error "Invalid ASE frame"))
+                       (make-ase-frame
+                        :duration (ase-binary-frame-duration binary-frame)
+                        :chunks
+                        (loop
+                          :with chunks-count := (ase-binary-frame-chunks binary-frame)
+                          :with chunks := (make-array chunks-count)
+                          :for chunk-index :below chunks-count
+                          :for chunk := (let ((chunk-header (read-binary
+                                                             'ase-binary-chunk-header stream)))
+                                          (read-chunk
+                                           (ase-binary-chunk-header-type chunk-header)
+                                           (make-instance
+                                            'virtual-binary-stream
+                                            :buffer
+                                            (read-binary
+                                             (the fixnum
+                                                  (- (ase-binary-chunk-header-size chunk-header)
+                                                     6 ;; sizeof chunk-header
+                                                     ))
+                                             stream))))
+                          :do (setf (elt chunks chunk-index) chunk)
+                          :finally (return chunks))))
+       :do (setf (elt frames frame-index) frame)
+       :finally (return frames)))))

@@ -53,9 +53,9 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
       (cffi:with-foreign-object (event '(:union al:event))
         (sleep 0.016)
         ;; TODO : restart to continue loop
-        (loop do
-          (unless (loop while (al:get-next-event event-queue event)
-                        always (handle-event event))
+        (loop :do
+          (unless (loop :while (al:get-next-event event-queue event)
+                        :always (handle-event event))
             (loop-finish))
           (let ((current-tick (al:get-time)))
             (when (> (- current-tick last-repl-update) repl-update-interval)

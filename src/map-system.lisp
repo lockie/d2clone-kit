@@ -108,46 +108,44 @@ See MAP->SCREEN"
 (defun load-tiles (tiled-map)
   (let ((tilesets (tiled-map-tilesets tiled-map)))
     (if-let (last-tileset
-             (loop for tileset across tilesets
-                   for first-id = (tiled-tileset-first-id tileset)
-                   with max-id = 0 and argmax = nil
-                   when (> first-id max-id) do
+             (loop :for tileset :across tilesets
+                   :for first-id := (tiled-tileset-first-id tileset)
+                   :with max-id := 0 :and argmax := nil
+                   :when (> first-id max-id) :do
                      (setf max-id first-id)
                      (setf argmax tileset)
-                   finally (return argmax)))
+                   :finally (return argmax)))
       (let* ((tile-count (+ (tiled-tileset-first-id last-tileset)
                             (tiled-tileset-tile-count last-tileset)))
              (tiles (make-array tile-count :initial-element nil))
              (tiles-properties (make-array tile-count :initial-element nil)))
         (loop
-          for tileset across tilesets
-          do
-             (if-let ((first-id (tiled-tileset-first-id tileset))
-                      (tile-count (tiled-tileset-tile-count tileset))
-                      (columns (tiled-tileset-columns tileset))
-                      (tileset-tiles-properties (tiled-tileset-tiles-properties tileset))
-                      (bitmap (al:load-bitmap
-                               (format
-                                nil "maps/~a"
-                                (tiled-tileset-image-source tileset)))))
-               (let* ((entity (make-entity))
-                      (map-tileset (make-map-tileset
-                                    :first-id first-id
-                                    :sprite-batch entity)))
-                 (make-component
-                  (system-ref 'sprite-batch)
-                  entity
-                  :bitmap bitmap
-                  :sprite-width *tile-width*
-                  :sprite-height *tile-height*)
-                 (loop
-                   for i from first-id below (+ first-id tile-count)
-                   for index = (- i first-id)
-                   for (q r) = (multiple-value-list (floor index columns))
-                   do
-                      (setf
-                       (aref tiles i) map-tileset
-                       (aref tiles-properties i) (aref tileset-tiles-properties index))))))
+          :for tileset :across tilesets
+          :do (if-let ((first-id (tiled-tileset-first-id tileset))
+                       (tile-count (tiled-tileset-tile-count tileset))
+                       (columns (tiled-tileset-columns tileset))
+                       (tileset-tiles-properties (tiled-tileset-tiles-properties tileset))
+                       (bitmap (al:load-bitmap
+                                (format
+                                 nil "maps/~a"
+                                 (tiled-tileset-image-source tileset)))))
+                (let* ((entity (make-entity))
+                       (map-tileset (make-map-tileset
+                                     :first-id first-id
+                                     :sprite-batch entity)))
+                  (make-component
+                   (system-ref 'sprite-batch)
+                   entity
+                   :bitmap bitmap
+                   :sprite-width *tile-width*
+                   :sprite-height *tile-height*)
+                  (loop
+                    :for i :from first-id :below (+ first-id tile-count)
+                    :for index := (- i first-id)
+                    :for (q r) := (multiple-value-list (floor index columns))
+                    :do (setf
+                         (aref tiles i) map-tileset
+                         (aref tiles-properties i) (aref tileset-tiles-properties index))))))
         (values tiles tiles-properties))
       nil)))
 
@@ -159,24 +157,23 @@ See MAP->SCREEN"
       (error "only staggered maps supported"))
     (unless (eq (tiled-map-stagger-axis tiled-map) 'y)
       (error "only Y stagger axis supported"))
-    (loop for tileset across (tiled-map-tilesets tiled-map)
-          for tile-width = (tiled-tileset-tile-width tileset)
-          for tile-height = (tiled-tileset-tile-height tileset)
-          do
-             (if (zerop *tile-width*)
-                 (progn
-                   (unless (and (evenp tile-width) (evenp tile-height))
-                     (error "~s: wrong tileset size ~dx~d (expected to be even)"
-                            (tiled-tileset-name tileset)
-                            tile-width tile-height))
-                   (setf *tile-width* tile-width)
-                   (setf *tile-height* tile-height))
-                 (unless (and (= *tile-width* tile-width)
-                              (= *tile-height* tile-height))
-                   (error "~s: wrong tileset size ~dx~d (expected ~dx~d)"
-                          (tiled-tileset-name tileset)
-                          tile-width tile-height
-                          *tile-width* *tile-height*))))
+    (loop :for tileset :across (tiled-map-tilesets tiled-map)
+          :for tile-width := (tiled-tileset-tile-width tileset)
+          :for tile-height := (tiled-tileset-tile-height tileset)
+          :do (if (zerop *tile-width*)
+                  (progn
+                    (unless (and (evenp tile-width) (evenp tile-height))
+                      (error "~s: wrong tileset size ~dx~d (expected to be even)"
+                             (tiled-tileset-name tileset)
+                             tile-width tile-height))
+                    (setf *tile-width* tile-width)
+                    (setf *tile-height* tile-height))
+                  (unless (and (= *tile-width* tile-width)
+                               (= *tile-height* tile-height))
+                    (error "~s: wrong tileset size ~dx~d (expected ~dx~d)"
+                           (tiled-tileset-name tileset)
+                           tile-width tile-height
+                           *tile-width* *tile-height*))))
     (multiple-value-bind (tiles tiles-properties)
         (load-tiles tiled-map)
       (make-map-prefab
@@ -240,54 +237,54 @@ See MAP->SCREEN"
                        (+ (* (tiled-map-width tiled-map) *tile-width*) (truncate *tile-width* 2))
                        (* (1+ (tiled-map-height tiled-map)) (truncate *tile-height* 2)))
                   (loop
-                    with layer-count = (length (tiled-map-layers tiled-map))
-                    with from-col = (max 0 (ceiling (- start-x chunk-x 2)))
-                    with from-row = (max 0 (ceiling (- start-y chunk-y 2)))
-                    for layer across (tiled-map-layers tiled-map)
-                    for to-col = (min (ceiling (- end-x chunk-x -1))
-                                      (1- (tiled-layer-width layer)))
-                    for to-row = (min (ceiling (- end-y chunk-y -1))
-                                      (1- (tiled-layer-height layer)))
-                    do (loop
-                         with layer-order = (tiled-layer-order layer)
-                         with ground-layer-p = (ground-layer-p layer)
-                         with data = (tiled-layer-data layer)
-                         for row from from-row upto to-row
-                         do (loop for col from from-col upto to-col
-                                  do (let ((tile-index (aref data row col)))
-                                       (unless (zerop tile-index)
-                                         (multiple-value-bind (tile-x tile-y)
-                                             (map->screen
-                                              (coerce col 'double-float)
-                                              (coerce row 'double-float))
-                                           ;; TODO : translucent if obscures player!
-                                           (when-let (tileset (aref tiles tile-index))
-                                             (add-sprite-index-to-batch
-                                              (map-tileset-sprite-batch tileset)
-                                              (coerce
-                                               (+ tile-y chunk-viewport-y
-                                                  (tile-property tiles-properties tile-index 'z 0)
-                                                  (* display-width
-                                                     (- layer-order
-                                                        (* layer-count
-                                                           (if ground-layer-p 2 1)))))
-                                               'double-float)
-                                              (- tile-index (map-tileset-first-id tileset))
-                                              (+ tile-x chunk-viewport-x)
-                                              (+ tile-y chunk-viewport-y))))))))
-                    finally
-                       (when debug-grid
-                         (loop for row from from-row upto to-row
-                               do (loop for col from from-col upto to-col
-                                        do (multiple-value-bind (tile-x tile-y)
+                    :with layer-count := (length (tiled-map-layers tiled-map))
+                    :with from-col := (max 0 (ceiling (- start-x chunk-x 2)))
+                    :with from-row := (max 0 (ceiling (- start-y chunk-y 2)))
+                    :for layer :across (tiled-map-layers tiled-map)
+                    :for to-col := (min (ceiling (- end-x chunk-x -1))
+                                       (1- (tiled-layer-width layer)))
+                    :for to-row := (min (ceiling (- end-y chunk-y -1))
+                                       (1- (tiled-layer-height layer)))
+                    :do (loop
+                         :with layer-order := (tiled-layer-order layer)
+                         :with ground-layer-p := (ground-layer-p layer)
+                         :with data := (tiled-layer-data layer)
+                         :for row :from from-row :upto to-row
+                         :do (loop :for col :from from-col :upto to-col
+                                   :do (let ((tile-index (aref data row col)))
+                                         (unless (zerop tile-index)
+                                           (multiple-value-bind (tile-x tile-y)
                                                (map->screen
                                                 (coerce col 'double-float)
                                                 (coerce row 'double-float))
-                                             (add-debug-tile-rhomb
-                                              debug-entity
-                                              (+ tile-x chunk-viewport-x)
-                                              (+ tile-y chunk-viewport-y)
-                                              debug-grid nil))))))))))))))
+                                             ;; TODO : translucent if obscures player!
+                                             (when-let (tileset (aref tiles tile-index))
+                                               (add-sprite-index-to-batch
+                                                (map-tileset-sprite-batch tileset)
+                                                (coerce
+                                                 (+ tile-y chunk-viewport-y
+                                                    (tile-property tiles-properties tile-index 'z 0)
+                                                    (* display-width
+                                                       (- layer-order
+                                                          (* layer-count
+                                                             (if ground-layer-p 2 1)))))
+                                                 'double-float)
+                                                (- tile-index (map-tileset-first-id tileset))
+                                                (+ tile-x chunk-viewport-x)
+                                                (+ tile-y chunk-viewport-y))))))))
+                    :finally
+                       (when debug-grid
+                         (loop :for row :from from-row :upto to-row
+                               :do (loop :for col :from from-col :upto to-col
+                                         :do (multiple-value-bind (tile-x tile-y)
+                                                 (map->screen
+                                                  (coerce col 'double-float)
+                                                  (coerce row 'double-float))
+                                               (add-debug-tile-rhomb
+                                                debug-entity
+                                                (+ tile-x chunk-viewport-x)
+                                                (+ tile-y chunk-viewport-y)
+                                                debug-grid nil))))))))))))))
 
 (defhandler map-system quit (event)
   (setf *tile-width* 0)

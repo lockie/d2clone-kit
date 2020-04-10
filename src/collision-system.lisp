@@ -24,16 +24,16 @@ boolean property *collides* to *true* in Tiled tileset."))
       (let ((start-x (truncate x))
             (start-y (truncate y)))
         (with-map-chunk entity ()
-          (loop for layer across (tiled-map-layers tiled-map)
-                do (loop with data = (tiled-layer-data layer)
-                         for y from 0 below (tiled-layer-height layer)
-                         do (loop for x from 0 below (tiled-layer-width layer)
-                                  for tile = (aref data y x)
-                                  do (when (tile-property tiles-properties tile 'collides)
-                                       (setf
-                                        (sparse-matrix-ref collision-map
-                                                           (list (+ x start-x) (+ y start-y)))
-                                        t))))))))))
+          (loop :for layer :across (tiled-map-layers tiled-map)
+                :do (loop :with data := (tiled-layer-data layer)
+                          :for y :from 0 :below (tiled-layer-height layer)
+                          :do (loop :for x :from 0 :below (tiled-layer-width layer)
+                                    :for tile := (aref data y x)
+                                    :do (when (tile-property tiles-properties tile 'collides)
+                                          (setf
+                                           (sparse-matrix-ref collision-map
+                                                              (list (+ x start-x) (+ y start-y)))
+                                           t))))))))))
 
 (defmethod collides ((sytem collision-system) x y)
   "Returns whether tile located at integer map coordinates X, Y does collide with other objects

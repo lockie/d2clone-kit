@@ -95,8 +95,8 @@ See MAKE-PREFAB-COMPONENT"))
 
 (defun delete-entity (entity)
   "Deletes entity ENTITY."
-  (loop for system being the hash-values of *systems*
-        do (delete-component system entity))
+  (loop :for system :being :the :hash-values :of *systems*
+        :do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
 
 (defmacro defcomponent (system name &rest slots)
@@ -157,16 +157,16 @@ See MAKE-PREFAB-COMPONENT"))
          (with-gensyms (components)
            (let ((slot-names ',slot-names)
                  (loop-clauses (mapcan #'(lambda (s a)
-                                           `(for ,s across ,`(,@a ,components)))
+                                           `(:for ,s :across ,`(,@a ,components)))
                                        ',slot-names ',array-accessors))
                  (component-exps (mapcar #'(lambda (s type a)
                                              `(,s (the ,type (elt ,`(,@a ,components) entity))))
                                          ',slot-names ',slot-types ',array-accessors)))
              `(let ((,components (slot-value (gethash ',',system *systems*) 'components)))
-                (loop for entity from 0 below *entities-count*
+                (loop :for entity :from 0 :below *entities-count*
                       ,@loop-clauses
-                      when (and ,@slot-names)
-                        do (symbol-macrolet (,@component-exps) ,@body))))))
+                      :when (and ,@slot-names)
+                        :do (symbol-macrolet (,@component-exps) ,@body))))))
        (defmethod initialize-instance :after ((system ,system-name) &key)
          (with-slots (components) system
            (unless components

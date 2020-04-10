@@ -100,17 +100,17 @@
     (unless font
       (setf font (al:create-builtin-font)))
     (loop
-      with color = (al:map-rgb 255 255 255)
-      for designator in (reverse text-designators)
-      for text = (gethash designator texts)
-      for i from 0
-      unless (emptyp text)
-        do (render
-            renderer
-            5000d0
-            (let ((i i)
-                  (text text))
-              #'(lambda () (al:draw-text font color 0 (* i 10) 0 text)))))))
+      :with color := (al:map-rgb 255 255 255)
+      :for designator :in (reverse text-designators)
+      :for text := (gethash designator texts)
+      :for i :from 0
+      :unless (emptyp text)
+        :do (render
+             renderer
+             5000d0
+             (let ((i i)
+                   (text text))
+               #'(lambda () (al:draw-text font color 0 (* i 10) 0 text)))))))
 
 (defhandler debug-system quit (event)
   (with-slots (font) system

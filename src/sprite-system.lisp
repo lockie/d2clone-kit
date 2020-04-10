@@ -67,8 +67,8 @@ The following format features are unsupported yet:
   (* milliseconds 0.001d0))
 
 (defun load-sprite-frame-durations (ase-file stances)
-  (let ((total-stance-length (loop for stance-name being the hash-key of stances
-                                   sum (length (gethash stance-name stances)))))
+  (let ((total-stance-length (loop :for stance-name :being :the :hash-key :of stances
+                                   :sum (length (gethash stance-name stances)))))
     (delete-if
      #'identity
      (map '(vector double-float)
@@ -78,85 +78,83 @@ The following format features are unsupported yet:
      :start total-stance-length)))
 
 (defun load-sprite-stances (ase-file)
-  (loop
-    with stances = (make-hash :size 4 :test 'eq)
-    for frame across (ase-file-frames ase-file)
-    do (loop
-         for chunk across (ase-frame-chunks frame)
-         when (and chunk (ase-tags-chunk-p chunk))
-           do (loop
-                for tag across (ase-tags-chunk-tags chunk)
-                for tag-name = (ase-tag-name tag)
-                for stance-name = (format-symbol
-                                   'd2clone-kit "~{~:@(~a~)~^-~}"
-                                   (butlast
-                                    (uiop:split-string tag-name :separator '(#\-))))
-                do (if (uiop:string-suffix-p tag-name "-0")
-                       (setf (gethash stance-name stances)
-                             (loop for i from (ase-tag-from tag) upto (ase-tag-to tag) collect i))
-                       (when-let (stance-frames (gethash stance-name stances))
-                         (unless (= (1- (length stance-frames))
-                                    (- (ase-tag-to tag) (ase-tag-from tag)))
-                           (error "length mismatch for tag ~a" tag-name))))))
-    finally (return stances)))
+  (loop :with stances := (make-hash :size 4 :test 'eq)
+        :for frame :across (ase-file-frames ase-file)
+        :do (loop :for chunk :across (ase-frame-chunks frame)
+                  :when (and chunk (ase-tags-chunk-p chunk))
+                    :do (loop
+                          :for tag :across (ase-tags-chunk-tags chunk)
+                          :for tag-name := (ase-tag-name tag)
+                          :for stance-name := (format-symbol
+                                               'd2clone-kit "~{~:@(~a~)~^-~}"
+                                               (butlast
+                                                (uiop:split-string tag-name :separator '(#\-))))
+                          :do (if (uiop:string-suffix-p tag-name "-0")
+                                  (setf (gethash stance-name stances)
+                                        (loop :for i :from (ase-tag-from tag)
+                                              :upto (ase-tag-to tag)
+                                              :collect i))
+                                  (when-let (stance-frames (gethash stance-name stances))
+                                    (unless (= (1- (length stance-frames))
+                                               (- (ase-tag-to tag) (ase-tag-from tag)))
+                                      (error "length mismatch for tag ~a" tag-name))))))
+        :finally (return stances)))
 
 (defun load-sprite-layer-names (ase-file)
-  (loop
-    with layer-names = (make-growable-vector)
-    for frame across (ase-file-frames ase-file)
-    do (loop
-         for chunk across (ase-frame-chunks frame)
-         when (and chunk (ase-layer-chunk-p chunk))
-           do (let ((id (ase-layer-chunk-id chunk))
-                    (layer-name (ase-layer-chunk-name chunk)))
-                (setf (growable-vector-ref layer-names id)
-                      (format-symbol 'd2clone-kit "~:@(~a~)" layer-name))))
-    finally (return (growable-vector-freeze layer-names))))
+  (loop :with layer-names := (make-growable-vector)
+        :for frame :across (ase-file-frames ase-file)
+        :do (loop :for chunk :across (ase-frame-chunks frame)
+                  :when (and chunk (ase-layer-chunk-p chunk))
+                    :do (let ((id (ase-layer-chunk-id chunk))
+                              (layer-name (ase-layer-chunk-name chunk)))
+                          (setf (growable-vector-ref layer-names id)
+                                (format-symbol 'd2clone-kit "~:@(~a~)" layer-name))))
+        :finally (return (growable-vector-freeze layer-names))))
 
 (defun total-stance-length (stances)
-  (loop for stance-name being the hash-key of stances
-        sum (length (gethash stance-name stances))))
+  (loop :for stance-name :being :the :hash-key :of stances
+        :sum (length (gethash stance-name stances))))
 
 (defun directions (ase-file total-stance-length)
   (ceiling (length (ase-file-frames ase-file)) total-stance-length))
 
 (defun load-sprite-layers (ase-file layer-names stances total-stance-length directions)
   (loop
-    with cel-width = (ase-file-width ase-file)
-    with cel-height = (ase-file-height ase-file)
-    with frames = (ase-file-frames ase-file)
-    with frames-count = (length frames)
-    with bitmap-width = (* cel-width total-stance-length)
-    with bitmap-height = (* cel-height directions)
-    with layers-count = (length layer-names)
-    with layer-bitmaps = (make-array layers-count :element-type 'cffi:foreign-pointer
-                                                  :initial-element (cffi:null-pointer))
-    with locked-bitmaps = (loop
-                            for i below layers-count
-                            for bitmap = (al:create-bitmap bitmap-width bitmap-height)
-                            do (setf (elt layer-bitmaps i) bitmap)
-                            collect (al:lock-bitmap bitmap :abgr-8888 :writeonly))
-    for frame across frames
-    for frame-id below frames-count
-    do (loop
-         for chunk across (ase-frame-chunks frame)
-         when (and chunk (ase-cel-chunk-p chunk))
-           do (cffi:with-foreign-slots ((data pitch pixel-size)
+    :with cel-width := (ase-file-width ase-file)
+    :with cel-height := (ase-file-height ase-file)
+    :with frames := (ase-file-frames ase-file)
+    :with frames-count := (length frames)
+    :with bitmap-width := (* cel-width total-stance-length)
+    :with bitmap-height := (* cel-height directions)
+    :with layers-count := (length layer-names)
+    :with layer-bitmaps := (make-array layers-count :element-type 'cffi:foreign-pointer
+                                                    :initial-element (cffi:null-pointer))
+    :with locked-bitmaps := (loop
+                              :for i :below layers-count
+                              :for bitmap := (al:create-bitmap bitmap-width bitmap-height)
+                              :do (setf (elt layer-bitmaps i) bitmap)
+                              :collect (al:lock-bitmap bitmap :abgr-8888 :writeonly))
+    :for frame :across frames
+    :for frame-id :below frames-count
+    :do (loop
+         :for chunk across (ase-frame-chunks frame)
+         :when (and chunk (ase-cel-chunk-p chunk))
+           :do (cffi:with-foreign-slots ((data pitch pixel-size)
                                         (elt locked-bitmaps (ase-cel-chunk-layer-id chunk))
                                         (:struct locked-bitmap-region))
                 (multiple-value-bind (row col)
                     (truncate frame-id total-stance-length)
                   (loop
-                    with start-x = (* cel-width col)
-                    with start-y = (* cel-height row)
-                    for y from start-y below (+ start-y cel-height)
-                    for dst = (cffi:inc-pointer data (+ (* 4 start-x) (* y pitch)))
-                    do (cffi:with-pointer-to-vector-data (src (ase-cel-chunk-data chunk))
-                         (memcpy dst
-                                 (cffi:inc-pointer src (* 4 (- y start-y) cel-width))
-                                 (* 4 cel-width)))))))
-    finally
-       (loop for bitmap across layer-bitmaps do (al:unlock-bitmap bitmap))
+                    :with start-x := (* cel-width col)
+                    :with start-y := (* cel-height row)
+                    :for y :from start-y :below (+ start-y cel-height)
+                    :for dst := (cffi:inc-pointer data (+ (* 4 start-x) (* y pitch)))
+                    :do (cffi:with-pointer-to-vector-data (src (ase-cel-chunk-data chunk))
+                          (memcpy dst
+                                  (cffi:inc-pointer src (* 4 (- y start-y) cel-width))
+                                  (* 4 cel-width)))))))
+    :finally
+       (loop :for bitmap :across layer-bitmaps :do (al:unlock-bitmap bitmap))
        (return layer-bitmaps)))
 
 (defmethod make-prefab ((system sprite-system) prefab-name)
@@ -189,7 +187,7 @@ The following format features are unsupported yet:
       (setf directions (sprite-prefab-directions prefab))
       (setf frame-durations (sprite-prefab-frame-durations prefab))
       (let* ((layers (sprite-prefab-layers prefab))
-             (layer-names (loop for l being the hash-key of layers collect l)))
+             (layer-names (loop :for l :being :the :hash-key :of layers collect l)))
         (setf layer-batches (make-hash
                              :test 'eq
                              :initial-contents layers
@@ -266,8 +264,8 @@ The following format features are unsupported yet:
               (let ((x0 (- x (truncate (- width *tile-width*) 2)))
                     (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
                 (loop
-                  for layer being the hash-key using (hash-value toggled) of layers-toggled
-                  when toggled do
+                  :for layer :being :the :hash-key :using (hash-value toggled) :of layers-toggled
+                  :when toggled :do
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
                      (coerce (- y (truncate *tile-height* 2)) 'double-float)
