@@ -78,15 +78,16 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 
 (defunl start-engine (game-name)
   "Initializes and starts engine using assets specified by GAME-NAME."
-  (let ((data-dir
-          (merge-pathnames
-           (make-pathname :directory `(:relative ,game-name))
-           (uiop:xdg-data-home))))
+  (let* ((dir-name (sanitize-filename game-name))
+         (data-dir
+           (merge-pathnames
+            (make-pathname :directory `(:relative ,dir-name))
+            (uiop:xdg-data-home))))
     (ensure-directories-exist data-dir)
     (init-log data-dir)
-    (al:set-app-name game-name)
+    (al:set-app-name dir-name)
     (al:init)
-    (init-fs game-name data-dir)
+    (init-fs dir-name data-dir)
     (init-config))
   (unless (al:init-image-addon)
     (error "Initializing image addon failed"))

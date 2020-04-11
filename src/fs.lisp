@@ -56,6 +56,11 @@
   (when (zerop (physfs-deinit))
     (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
 
+(declaim (inline sanitize-filename) (ftype (function (string) string) sanitize-filename))
+(defun sanitize-filename (filename)
+  (values (cl-ppcre:regex-replace-all
+           "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename "")))
+
 (defclass character-stream (trivial-gray-streams:fundamental-character-input-stream)
   ((path :initarg :path :initform (error "missing path"))
    (al-file))

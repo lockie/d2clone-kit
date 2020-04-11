@@ -10,6 +10,7 @@
                :cl-csv
                :cl-inflector
                :cl-liballegro
+               :cl-ppcre
                :deeds
                :float-features
                :livesupport
