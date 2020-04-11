@@ -32,7 +32,8 @@
 (cffi:defcallback archives-search-callback :int ((data :pointer) (dir :string) (file :string))
   (declare (ignore data dir))
   (when (uiop:string-suffix-p file ".zip")
-    (mount (merge-pathnames (pathname (physfs-get-real-dir file))
+    (mount (merge-pathnames (uiop:ensure-directory-pathname
+                             (pathname (physfs-get-real-dir file)))
                             (pathname file))))
   1)
 
