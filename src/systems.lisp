@@ -194,16 +194,18 @@ See MAKE-PREFAB-COMPONENT"))
 (defmethod make-prefab :around (system prefab-name)
   (setf (prefab system prefab-name) (call-next-method)))
 
-(defgeneric make-prefab-component (system entity prefab)
-  (:documentation "Creates new component using prefab instance PREFAB as a template within system SYSTEM for entity ENTITY."))
+(defgeneric make-prefab-component (system entity prefab parameters)
+  (:documentation "Creates new component using prefab instance PREFAB as a template and optional
+extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
 
 (defmethod make-component :around (system entity &rest parameters)
-  (destructuring-bind (&key (prefab nil) &allow-other-keys) parameters
+  (destructuring-bind (&rest rest-parameters &key (prefab nil) &allow-other-keys) parameters
     (if prefab
         (make-prefab-component system entity
                                (if-let (prefab-instance (prefab system prefab))
                                  prefab-instance
-                                 (make-prefab system prefab)))
+                                 (make-prefab system prefab))
+                               (remove-from-plist rest-parameters :prefab))
         (call-next-method))
     (issue component-created :entity entity :system-name (name system))))
 

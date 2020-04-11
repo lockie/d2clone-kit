@@ -178,7 +178,7 @@ The following format features are unsupported yet:
      :directions directions
      :frame-durations frame-durations)))
 
-(defmethod make-prefab-component ((system sprite-system) entity prefab)
+(defmethod make-prefab-component ((system sprite-system) entity prefab parameters)
   (with-system-config-options ((debug-sprite))
     (with-sprite entity ()
       (setf width (ase-file-width (sprite-prefab-ase-file prefab)))
