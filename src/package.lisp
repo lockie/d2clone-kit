@@ -143,6 +143,7 @@
     #:make-component
     #:make-entity
     #:delete-entity
+    #:make-entity-initializer
     #:defcomponent
     #:prefab
     #:prefab-path

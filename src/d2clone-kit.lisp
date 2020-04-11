@@ -12,37 +12,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   "Runs game loop."
-  ;; TODO : init systems DSL style someplace else
-  (make-instance 'coordinate-system)
-  (make-instance 'debug-system)
-  (make-instance 'sprite-batch-system)
-  (make-instance 'collision-system)
-  (let ((camera-entity (make-entity)))
-    (make-component (make-instance 'camera-system) camera-entity)
-    (make-component (system-ref 'coordinate) camera-entity :x 0d0 :y 0d0))
-  (let ((map-entity (make-entity)))
-    (make-component (system-ref 'coordinate) map-entity :x 0d0 :y 0d0)
-    (make-component (make-instance 'map-system) map-entity :prefab 'map))
-  (let ((map-entity (make-entity)))
-    (make-component (system-ref 'coordinate) map-entity :x -10d0 :y 0d0)
-    (make-component (system-ref 'map) map-entity :prefab 'map2))
-  (let ((map-entity (make-entity)))
-    (make-component (system-ref 'coordinate) map-entity :x 0d0 :y -10d0)
-    (make-component (system-ref 'map) map-entity :prefab 'map3))
-  (let ((sprite-entity (make-entity)))
-    (make-component (make-instance 'sprite-system) sprite-entity :prefab 'heroine)
-    (toggle-layer sprite-entity 'head t)
-    (toggle-layer sprite-entity 'clothes t)
-    (make-component (make-instance 'player-system) sprite-entity)
-    (setf (camera-target) sprite-entity)
-    (make-component (make-instance 'character-system) sprite-entity :target-x 0d0 :target-y 0d0)
-    (make-component (system-ref 'coordinate) sprite-entity :x 0d0 :y 0d0))
-  ;; (let ((char-entity (make-entity)))
-  ;;   (make-component (system-ref 'sprite) char-entity :prefab 'heroine)
-  ;;   (toggle-layer char-entity 'clothes t)  ;; всадник без головы кек
-  ;;   (make-component (system-ref 'coordinate) char-entity :x 0d0 :y 0d0)
-  ;;   (make-component (make-instance 'character-system) char-entity :target-x 3d0 :target-y 3d0))
-
   (gc :full t)
   (log-info "Starting game loop")
   (with-system-config-options ((display-vsync display-fps))
@@ -76,7 +45,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
             (setf vsync (al:wait-for-vsync)))
           (al:flip-display))))))
 
-(defunl start-engine (game-name)
+(defunl start-engine (game-name initializers)
   "Initializes and starts engine using assets specified by GAME-NAME."
   (let* ((dir-name (sanitize-filename game-name))
          (data-dir
@@ -128,6 +97,12 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
       (unwind-protect
            (float-features:with-float-traps-masked
                (:invalid :inexact :overflow :underflow)
+             (make-instance 'debug-system)
+             (make-instance 'sprite-batch-system)
+             (make-instance 'collision-system)
+             (dolist (initializer initializers)
+               (funcall initializer))
+             (setf (camera-target) (player-entity))
              (game-loop event-queue))
         (log-info "Shutting engine down")
         (al:inhibit-screensaver nil)
@@ -144,4 +119,15 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
   "Runs built-in engine demo."
   ;; TODO : separate thread?
   (with-condition-reporter
-      (start-engine "demo")))
+    (start-engine
+     "demo"
+     (mapcar
+      #'d2c:make-entity-initializer
+      '(((:camera)
+         (:coordinate :x 0d0 :y 0d0))
+        ((:player)
+         (:coordinate :x 0d0 :y 0d0)
+         (:sprite :prefab 'heroine :layers-initially-toggled '(:head :clothes))
+         (:character :target-x 0d0 :target-y 0d0))
+        ((:coordinate :x 0d0 :y 0d0)
+         (:map :prefab 'map)))))))
