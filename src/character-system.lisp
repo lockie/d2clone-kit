@@ -211,8 +211,8 @@ Note: if goal point is not walkable, this function will stuck."
         (with-sprite entity ()
           (if (and (approx-equal target-x x speed) (approx-equal target-y y speed))
               (if (zerop (length path))
-                  (when (eq stance 'walk)
-                    (switch-stance entity 'idle))
+                  (when (eq stance :walk)
+                    (switch-stance entity :idle))
                   (follow-path entity))
               (let ((direction-x (* 0.5d0 speed (cos angle)))
                     (direction-y (* 0.5d0 speed (sin angle) (/ *tile-width* *tile-height*))))
@@ -226,12 +226,12 @@ Note: if goal point is not walkable, this function will stuck."
                    (setf target-x x
                          target-y y
                          path (make-array 0))
-                   (switch-stance entity 'idle))
+                   (switch-stance entity :idle))
                   (t
                    (incf x (* 2d0 direction-x))
                    (incf y (* 2d0 direction-y))
-                   (unless (eq stance 'walk)
-                     (switch-stance entity 'walk))))))))))
+                   (unless (eq stance :walk)
+                     (switch-stance entity :walk))))))))))
 
 (defmethod system-draw ((system character-system) renderer)
   (flet ((path-node-pos (x y)

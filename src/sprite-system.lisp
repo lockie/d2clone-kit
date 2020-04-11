@@ -19,22 +19,22 @@ The following format features are unsupported yet:
 (defcomponent sprite sprite
   (width 0 :type fixnum)
   (height 0 :type fixnum)
-  (layer-batches nil :type hash-table)  ;; layer name (symbol) -> sprite batch entity
-  (stances nil :type hash-table)  ;; stance name (symbol) -> list of frame #s
+  (layer-batches nil :type hash-table)  ;; layer name (keyword) -> sprite batch entity
+  (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum) ;; count of directions
   (frame-durations nil :type (simple-array double-float))
   ;; instance state
-  (stance nil :type symbol)
+  (stance nil :type keyword)
   (frame 0 :type fixnum)
   (angle 0d0 :type angle)
   (time-counter 0d0 :type double-float)
-  (layers-toggled nil :type hash-table)  ;; layer name (symbol) -> boolean
+  (layers-toggled nil :type hash-table)  ;; layer name (keyword) -> boolean
   (debug-entity -1 :type fixnum))
 
 (defprefab sprite "ase"
   (ase-file nil :type ase-file)
-  (layers nil :type hash-table)  ;; layer name (symbol) -> al_bitmap
-  (stances nil :type hash-table)  ;; stance name (symbol) -> list of frame #s
+  (layers nil :type hash-table)  ;; layer name (keyword) -> al_bitmap
+  (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum)  ;; count of directions
   (frame-durations nil :type (simple-array double-float)))
 
@@ -85,10 +85,11 @@ The following format features are unsupported yet:
                     :do (loop
                           :for tag :across (ase-tags-chunk-tags chunk)
                           :for tag-name := (ase-tag-name tag)
-                          :for stance-name := (format-symbol
-                                               'd2clone-kit "~{~:@(~a~)~^-~}"
-                                               (butlast
-                                                (uiop:split-string tag-name :separator '(#\-))))
+                          :for stance-name := (make-keyword
+                                               (format-symbol
+                                                nil "~{~:@(~a~)~^-~}"
+                                                (butlast
+                                                 (uiop:split-string tag-name :separator '(#\-)))))
                           :do (if (uiop:string-suffix-p tag-name "-0")
                                   (setf (gethash stance-name stances)
                                         (loop :for i :from (ase-tag-from tag)
@@ -108,7 +109,7 @@ The following format features are unsupported yet:
                     :do (let ((id (ase-layer-chunk-id chunk))
                               (layer-name (ase-layer-chunk-name chunk)))
                           (setf (growable-vector-ref layer-names id)
-                                (format-symbol 'd2clone-kit "~:@(~a~)" layer-name))))
+                                (make-keyword (format-symbol nil "~:@(~a~)" layer-name)))))
         :finally (return (growable-vector-freeze layer-names))))
 
 (defun total-stance-length (stances)
@@ -207,7 +208,7 @@ The following format features are unsupported yet:
                               :init-format :keys
                               :initial-contents layer-names
                               :init-default nil)))
-      (setf stance 'idle)
+      (setf stance :idle)
       (when debug-sprite
         (setf debug-entity (make-entity))
         (make-component (system-ref 'debug) debug-entity :order 1010d0)))))
@@ -218,7 +219,7 @@ The following format features are unsupported yet:
 
 (declaim
  (inline switch-stance)
- (ftype (function (fixnum symbol)) switch-stance))
+ (ftype (function (fixnum keyword)) switch-stance))
 (defun switch-stance (entity new-stance)
   "Immediately switches stance of the sprite ENTITY to NEW-STANCE."
   (with-sprite entity ()
@@ -240,7 +241,7 @@ The following format features are unsupported yet:
                 (cond
                   (remaining-frames
                    (first remaining-frames))
-                  ((eq stance 'death)
+                  ((eq stance :death)
                    frame)
                   (t
                    (first all-frames)))))))))
