@@ -13,7 +13,7 @@
   (debug-entity -1 :type fixnum))
 
 (defmethod make-component ((system character-system) entity &rest parameters)
-  (destructuring-bind (&key (speed 0.05d0) target-x target-y) parameters
+  (destructuring-bind (&key (speed 2d0) target-x target-y) parameters
     (with-character entity (s x y path debug-entity)
       (setf s speed)
       (setf x target-x)
@@ -209,29 +209,30 @@ Note: if goal point is not walkable, this function will stuck."
   (with-characters
       (with-coordinate entity ()
         (with-sprite entity ()
-          (if (and (approx-equal target-x x speed) (approx-equal target-y y speed))
-              (if (zerop (length path))
-                  (when (eq stance :walk)
-                    (switch-stance entity :idle))
-                  (follow-path entity))
-              (let ((direction-x (* 0.5d0 speed (cos angle)))
-                    (direction-y (* 0.5d0 speed (sin angle) (/ *tile-width* *tile-height*))))
-                ;; TODO : this check is kinda redundant
-                ;;  (but left here to check dynamic collisions later)
-                ;; also it still sometimes stuck when it shouldnt (on corners)
-                (cond
-                  ((multiple-value-call #'collidesp
-                      (tile-index (+ x direction-x)
-                                  (+ y direction-y)))
-                   (setf target-x x
-                         target-y y
-                         path (make-array 0))
-                   (switch-stance entity :idle))
-                  (t
-                   (incf x (* 2d0 direction-x))
-                   (incf y (* 2d0 direction-y))
-                   (unless (eq stance :walk)
-                     (switch-stance entity :walk))))))))))
+          (let ((delta (* dt speed)))
+            (if (and (approx-equal target-x x delta) (approx-equal target-y y delta))
+                (if (zerop (length path))
+                    (when (eq stance :walk)
+                      (switch-stance entity :idle))
+                    (follow-path entity))
+                (let ((direction-x (* 0.5d0 delta (cos angle)))
+                      (direction-y (* 0.5d0 delta (sin angle) (/ *tile-width* *tile-height*))))
+                  ;; TODO : this check is kinda redundant
+                  ;;  (but left here to check dynamic collisions later)
+                  ;; also it still sometimes stuck when it shouldnt (on corners)
+                  (cond
+                    ((multiple-value-call #'collidesp
+                       (tile-index (+ x direction-x)
+                                   (+ y direction-y)))
+                     (setf target-x x
+                           target-y y
+                           path (make-array 0))
+                     (switch-stance entity :idle))
+                    (t
+                     (incf x (* 2d0 direction-x))
+                     (incf y (* 2d0 direction-y))
+                     (unless (eq stance :walk)
+                       (switch-stance entity :walk)))))))))))
 
 (defmethod system-draw ((system character-system) renderer)
   (flet ((path-node-pos (x y)
