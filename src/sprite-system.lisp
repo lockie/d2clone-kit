@@ -207,7 +207,10 @@ The following format features are unsupported yet:
                               :test 'eq
                               :init-format :keys
                               :initial-contents layer-names
-                              :init-default nil)))
+                              :init-default nil))
+        (destructuring-bind (&key (layers-initially-toggled '())) parameters
+          (dolist (layer layers-initially-toggled)
+            (setf (gethash layer layers-toggled) t))))
       (setf stance :idle)
       (when debug-sprite
         (setf debug-entity (make-entity))
