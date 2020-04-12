@@ -76,6 +76,10 @@
     #:growable-vector-length
     #:growable-vector-clear
     #:growable-vector-freeze)
+    ;; hp-system.lisp
+   (:export
+    #:hp-system
+    #:deadp)
    ;; log.lisp
    (:export
     #:defunl
@@ -84,6 +88,9 @@
     #:log-warn
     #:log-error
     #:with-condition-reporter)
+   ;; mana-system.lisp
+   (:export
+    #:mana-system)
    ;; map-system.lisp
    (:export
     #:map-system

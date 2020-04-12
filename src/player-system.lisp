@@ -5,14 +5,24 @@
   ((name :initform 'player)
    (mouse-pressed :initform nil)
    (entity :initform -1)
+   (orb :initform nil)
+   (orb-fill :initform nil)
+   (orb-flare :initform nil)
+   (orb-tmp :initform nil)
    (debug-entity :initform -1))
   (:documentation "Handles player character."))
 
 (defcomponent player player)
 
-(defmethod make-component ((system player-system) entity &rest parameters)
+(defmethod make-component ((system player-system) player-entity &rest parameters)
   (declare (ignore parameters))
-  (setf (slot-value system 'entity) entity)
+  (with-slots (entity orb orb-fill orb-flare orb-tmp) system
+    (setf entity player-entity
+          orb (al:load-bitmap "images/orb.png")
+          orb-fill (al:load-bitmap "images/orb-fill.png")
+          orb-flare (al:load-bitmap "images/orb-flare.png")
+          orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
+                                    (al:get-bitmap-height orb-fill))))
   (with-system-config-options ((debug-cursor))
     (when debug-cursor
       (let ((debug-entity (make-entity)))
@@ -65,6 +75,64 @@
     (target-player)))
 
 (defmethod system-draw ((system player-system) renderer)
+  (with-system-config-options ((display-width display-height))
+    (with-slots (entity orb orb-fill orb-flare orb-tmp) system
+      (with-hp entity ()
+        (with-mana entity ()
+          (render
+           renderer
+           10000d0
+           #'(lambda ()
+               (let* ((fill-width (al:get-bitmap-width orb-fill))
+                      (fill-height (al:get-bitmap-height orb-fill))
+                      (orb-width (al:get-bitmap-width orb))
+                      (orb-height (al:get-bitmap-height orb))
+                      (fill-shift (+ fill-height (ceiling (- orb-height fill-height) 2))))
+                 (flet ((do-fill (color)
+                          (al:set-target-bitmap orb-tmp)
+                          (al:draw-bitmap orb-fill 0 0 0)
+                          (al:set-blender
+                           (cffi:foreign-enum-value 'al::blend-operations :dest-minus-src)
+                           (cffi:foreign-enum-value 'al::blend-mode :one)
+                           (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha))
+                          (al:draw-filled-rectangle 0 0 fill-width fill-height color)
+                          (al:set-target-backbuffer (al:get-current-display))
+                          (al:set-blender
+                           (cffi:foreign-enum-value 'al::blend-operations :add)
+                           (cffi:foreign-enum-value 'al::blend-mode :one)
+                           (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha))))
+                   (al:hold-bitmap-drawing t)
+                   (al:draw-bitmap orb 0 (- display-height orb-height) 0)
+                   (al:draw-bitmap orb (- display-width orb-width) (- display-height orb-height) 0)
+                   (al:hold-bitmap-drawing nil)
+                   ;; fill hp orb
+                   (do-fill (al:map-rgba 30 255 255 30))
+                   (let ((shift (floor (* fill-shift (- 1d0 (/ current-hp maximum-hp))))))
+                     (al:draw-bitmap-region
+                      orb-tmp
+                      (floor (- fill-width orb-width) 2)
+                      (+ shift (floor (- fill-height orb-height) 2))
+                      orb-width orb-height
+                      0 (+ shift (- display-height orb-height))
+                      0))
+                   ;; fill mana orb
+                   (do-fill (al:map-rgba 255 255 30 30))
+                   (let ((shift (floor (* fill-shift (- 1d0 (/ current-mana maximum-mana))))))
+                     (al:draw-bitmap-region
+                      orb-tmp
+                      (floor (- fill-width orb-width) 2)
+                      (+ shift (floor (- fill-height orb-height) 2))
+                      orb-width orb-height
+                      (- display-width orb-width)
+                      (+ shift (- display-height orb-height))
+                      0))
+                   (al:hold-bitmap-drawing t)
+                   (al:draw-bitmap orb-flare
+                                   0 (- display-height orb-height) 0)
+                   (al:draw-bitmap orb-flare
+                                   (- display-width orb-width)
+                                   (- display-height orb-height) 0)
+                   (al:hold-bitmap-drawing nil)))))))))
   (with-system-config-options ((debug-cursor))
     (when debug-cursor
       (multiple-value-bind (map-x map-y)

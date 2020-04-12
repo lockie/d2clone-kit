@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - DSL-like entitites initialization.
+- HP and mana subsystems as well as player's HP and mana orbs.
 
 ### Fixed
 - Minor deployment-related fixes.
