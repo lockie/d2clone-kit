@@ -46,17 +46,6 @@
                (:file "character-system")
                (:file "player-system")
                (:file "renderer")
-               (:file "d2clone-kit"))
-  ;; :around-compile (lambda (next)
-  ;;                   (proclaim '(optimize
-  ;;                               (debug 0)
-  ;;                               (safety 0)
-  ;;                               (compilation-speed 0)
-  ;;                               (speed 3)))
-  ;;                   (funcall next))
-  :defsystem-depends-on (:deploy)
-  :build-operation "deploy:deploy-op"
-  :build-pathname "d2clone"
-  :entry-point "d2clone-kit:demo")
+               (:file "d2clone-kit")))
 
 (pushnew :deeds-no-startup *features*)
