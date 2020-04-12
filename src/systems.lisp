@@ -104,7 +104,7 @@ See MAKE-PREFAB-COMPONENT"))
 
 ```
 '((:system-name1 :component-parameter1 \"value1\" :component-parameter2 2.0)
-  (:system-name2 :prefab 'prefab-name)
+  (:system-name2 :prefab :prefab-name)
   ;; ...
   )
 ```
