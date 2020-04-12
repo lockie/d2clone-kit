@@ -58,6 +58,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
     (al:init)
     (init-fs dir-name data-dir)
     (init-config))
+  (unless (al:init-primitives-addon)
+    (error "Initializing primitives addon failed"))
   (unless (al:init-image-addon)
     (error "Initializing image addon failed"))
   (al:init-font-addon)
