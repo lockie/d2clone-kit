@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Minor deployment-related fixes.
 - Fixed character movement speed maths.
+- Fixed bug causing memory faults on secondary start attempts after caught conditions.
 
 
 

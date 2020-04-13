@@ -15,11 +15,6 @@
 
 Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
 
-(deeds:define-handler (broadcast-quit allegro-event) (event event-type)
-  :filter '(eq event-type :display-close)
-  :class 'deeds:locally-blocking-handler
-  (issue quit))
-
 (defevent component-created ()
   ((entity :initarg :entity)
    (system-name :initarg :system-name))

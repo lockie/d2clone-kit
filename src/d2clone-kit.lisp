@@ -107,6 +107,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
              (setf (camera-target) (player-entity))
              (game-loop event-queue))
         (log-info "Shutting engine down")
+        (issue quit)
         (al:inhibit-screensaver nil)
         (unregister-all-systems)
         (al:destroy-display display)
