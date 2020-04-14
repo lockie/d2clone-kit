@@ -100,6 +100,8 @@
     #:screen->map*
     #:ground-layer-p
     #:tile-property)
+   (:export
+    #:mob-system)
    ;; player-system.lisp
    (:export
     #:player-system

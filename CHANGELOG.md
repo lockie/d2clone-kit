@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - DSL-like entitites initialization.
 - HP and mana subsystems as well as player's HP and mana orbs.
+- Mob system.
 
 ### Fixed
 - Minor deployment-related fixes.
 - Fixed character movement speed maths.
 - Fixed bug causing memory faults on secondary start attempts after caught conditions.
+- Fixed bug when the character was registered as colliding with some stuff when it really wasn't.
 
 
 

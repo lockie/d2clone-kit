@@ -24,7 +24,7 @@
 
 (declaim
  (inline sparse-matrix-ref)
- (ftype (function (sparse-matrix list)) sparse-matrix-ref))
+ (ftype (function (sparse-matrix cons)) sparse-matrix-ref))
 (defun sparse-matrix-ref (sparse-matrix subscripts)
   "Returns SPARSE-MATRIX element identified by list SUBSCRIPTS or NIL if there's no such element."
   (if-let (index (gethash subscripts (sparse-matrix-indices sparse-matrix)))
@@ -33,7 +33,7 @@
 
 (declaim
  (inline (setf sparse-matrix-ref))
- (ftype (function (t sparse-matrix list) t) (setf sparse-matrix-ref)))
+ (ftype (function (t sparse-matrix cons) t) (setf sparse-matrix-ref)))
 (defun (setf sparse-matrix-ref) (value sparse-matrix subscripts)
   "Sets SPARSE-MATRIX element identified by list SUBSCRIPTS to VALUE.
 To remove an element from sparse matrix, use SPARSE-MATRIX-REMOVE.
@@ -53,7 +53,7 @@ See SPARSE-MATRIX-REMOVE"
 
 (declaim
  (inline sparse-matrix-remove)
- (ftype (function (sparse-matrix list)) sparse-matrix-remove))
+ (ftype (function (sparse-matrix cons)) sparse-matrix-remove))
 (defun sparse-matrix-remove (sparse-matrix subscripts)
   "Removes element identified by list SUBSCRIPTS from SPARSE-MATRIX.
 Returns number of deleted elements or NIL if there's no such element in matrix."
