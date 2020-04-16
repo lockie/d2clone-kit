@@ -66,6 +66,7 @@ See WITH-SYSTEM-CONFIG-OPTIONS"
   (display vsync :type boolean :default nil)
   (display fps :type boolean :default nil)
   (display multisampling :type fixnum :default 0)
+  (display font :type string :default "")
   (debug grid :type list :default nil)
   (debug sprite :type list :default nil)
   (debug cursor :type list :default nil)

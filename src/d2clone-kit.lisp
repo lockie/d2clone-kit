@@ -45,6 +45,11 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
             (setf vsync (al:wait-for-vsync)))
           (al:flip-display))))))
 
+;; TODO : put this to UI subsystem?..
+(defvar *small-ui-font*)
+(defvar *medium-ui-font*)
+(defvar *large-ui-font*)
+
 (defunl start-engine (game-name initializers)
   "Initializes and starts engine using assets specified by GAME-NAME."
   (let* ((dir-name (sanitize-filename game-name))
@@ -80,6 +85,26 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
       (al:set-new-display-option :sample-buffers 1 :require)
       (al:set-new-display-option :samples display-multisampling :require))
 
+    (with-system-config-options ((display-font))
+      (if (length= 0 display-font)
+          (let ((builtin-font (al:create-builtin-font)))
+            (log-warn "No font specified in config, loading builtin font")
+            (setf *small-ui-font* builtin-font
+                  *medium-ui-font* builtin-font
+                  *large-ui-font* builtin-font))
+          (let ((font-name (format nil "fonts/~a" display-font)))
+            (setf *small-ui-font* (al:load-ttf-font font-name -8 0)
+                  *medium-ui-font* (al:load-ttf-font font-name -12 0)
+                  *large-ui-font* (al:load-ttf-font font-name -20 0))
+            (when (or (cffi:null-pointer-p *small-ui-font*)
+                      (cffi:null-pointer-p *medium-ui-font*)
+                      (cffi:null-pointer-p *large-ui-font*))
+              (log-warn "Loading ~a failed, falling back to builtin font")
+              (let ((builtin-font (al:create-builtin-font)))
+                (setf *small-ui-font* builtin-font
+                      *medium-ui-font* builtin-font
+                      *large-ui-font* builtin-font))))))
+
     (let ((display (al:create-display display-width display-height))
           (event-queue (al:create-event-queue)))
       (when (cffi:null-pointer-p display)
@@ -113,6 +138,12 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (unregister-all-systems)
         (al:destroy-display display)
         (al:destroy-event-queue event-queue)
+        (al:destroy-font *large-ui-font*)
+        (al:destroy-font *medium-ui-font*)
+        (al:destroy-font *small-ui-font*)
+        (setf *small-ui-font* (cffi:null-pointer)
+              *medium-ui-font* (cffi:null-pointer)
+              *large-ui-font* (cffi:null-pointer))
         (al:stop-samples)
         (close-config)
         (close-fs)

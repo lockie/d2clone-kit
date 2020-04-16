@@ -55,6 +55,7 @@
     (unless (deadp player-entity)
       (with-slots (last-target) (system-ref 'player)
         (if (minusp last-target)
+            ;; TODO : rewrite using multiple-value-call
             (multiple-value-bind (x y) (mouse-position mouse-event)
               (multiple-value-bind (new-screen-x new-screen-y)
                   (viewport->absolute x y)
@@ -139,17 +140,53 @@
                    (al:draw-bitmap orb-flare
                                    (- display-width orb-width)
                                    (- display-height orb-height) 0)
-                   (al:hold-bitmap-drawing nil)))))))))
+                   (al:hold-bitmap-drawing nil))))))))
+
+    (multiple-value-bind (cursor-map-x cursor-map-y)
+        (multiple-value-call #'screen->map
+          (multiple-value-call #'viewport->absolute
+            (mouse-position)))
+
+      (flet ((draw-mob-health-bar (entity)
+               (unless (= entity (player-entity))
+                 (render
+                  renderer
+                  10000d0
+                  (let ((entity entity))
+                    #'(lambda ()
+                        (with-mob entity ()
+                          (with-hp entity ()
+                            (let* ((text-width (al:get-text-width *large-ui-font* name))
+                                   (bar-width (truncate (* (+ text-width 40)
+                                                           (/ current-hp maximum-hp))))
+                                   (name-offset (truncate (- display-width text-width) 2)))
+                              (al:draw-filled-rectangle
+                               (- name-offset 20) 24
+                               (+ name-offset text-width 20) 52
+                               (al:map-rgba 10 10 10 128))
+                              (al:draw-filled-rectangle
+                               (- name-offset 20) 24
+                               (+ name-offset bar-width -20) 52
+                               (al:map-rgba 200 10 10 128))
+                              (al:draw-text
+                               *large-ui-font*
+                               (al:map-rgba 255 255 255 10)
+                               name-offset 26
+                               0 name))))))))))
+        (with-slots (last-target) system
+        (if (minusp last-target)
+            (when-let (target (multiple-value-call #'character-at
+                                (system-ref 'collision)
+                                (tile-index cursor-map-x cursor-map-y)))
+              (draw-mob-health-bar target))
+            (draw-mob-health-bar last-target))))
+
   (with-system-config-options ((debug-cursor))
     (when debug-cursor
-      (multiple-value-bind (map-x map-y)
-          (multiple-value-call #'screen->map
-            (multiple-value-call #'viewport->absolute
-              (mouse-position)))
         (multiple-value-bind (x y)
             (multiple-value-call #'absolute->viewport
-              (map->screen (coerce (floor map-x) 'double-float)
-                           (coerce (floor map-y) 'double-float)))
+              (map->screen (coerce (floor cursor-map-x) 'double-float)
+                           (coerce (floor cursor-map-y) 'double-float)))
           (add-debug-rectangle
            (slot-value system 'debug-entity)
-           x y *tile-width* *tile-height* debug-cursor))))))
+           x y *tile-width* *tile-height* debug-cursor)))))))
