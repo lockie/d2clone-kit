@@ -60,7 +60,7 @@ See RENDER"))
 (declaim (inline system-ref))
 (defun system-ref (name)
   "Returns system instance by its name symbol NAME."
-  (gethash name *systems*))
+  (values (gethash name *systems*)))
 
 (defmacro with-systems (var &body body)
   "Executes BODY in loop for each system, binding system instance to variable VAR."

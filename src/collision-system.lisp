@@ -10,8 +10,6 @@
 To make tile collide (e.g. be non-walkable by characters), set custom
 boolean property *collides* to *true* in Tiled tileset."))
 
-;; TODO : take into account characters?.. character movement event?..
-
 ;; TODO : delete component event?..
 
 ;; TODO : optimize this by packing coordinates into single fixnum (31 bits ought to be enough for anyone)
