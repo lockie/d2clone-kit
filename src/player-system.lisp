@@ -101,7 +101,7 @@
                       (orb-width (al:get-bitmap-width orb))
                       (orb-height (al:get-bitmap-height orb))
                       (fill-shift (+ fill-height (ceiling (- orb-height fill-height) 2))))
-                 (flet ((do-fill (color)
+                 (flet ((fill-orb (color)
                           (al:set-target-bitmap orb-tmp)
                           (al:draw-bitmap orb-fill 0 0 0)
                           (al:set-blender
@@ -113,32 +113,26 @@
                           (al:set-blender
                            (cffi:foreign-enum-value 'al::blend-operations :add)
                            (cffi:foreign-enum-value 'al::blend-mode :one)
-                           (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha))))
+                           (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha)))
+                        (draw-filling (fraction dx)
+                          (let ((shift (floor (* fill-shift (- 1d0 fraction)))))
+                            (al:draw-bitmap-region
+                             orb-tmp
+                             (floor (- fill-width orb-width) 2)
+                             (+ shift (floor (- fill-height orb-height) 2))
+                             orb-width orb-height
+                             dx (+ shift (- display-height orb-height))
+                             0))))
                    (al:hold-bitmap-drawing t)
                    (al:draw-bitmap orb 0 (- display-height orb-height) 0)
                    (al:draw-bitmap orb (- display-width orb-width) (- display-height orb-height) 0)
                    (al:hold-bitmap-drawing nil)
-                   ;; fill hp orb
-                   (do-fill (al:map-rgba 30 255 255 30))
-                   (let ((shift (floor (* fill-shift (- 1d0 (/ current-hp maximum-hp))))))
-                     (al:draw-bitmap-region
-                      orb-tmp
-                      (floor (- fill-width orb-width) 2)
-                      (+ shift (floor (- fill-height orb-height) 2))
-                      orb-width orb-height
-                      0 (+ shift (- display-height orb-height))
-                      0))
-                   ;; fill mana orb
-                   (do-fill (al:map-rgba 255 255 30 30))
-                   (let ((shift (floor (* fill-shift (- 1d0 (/ current-mana maximum-mana))))))
-                     (al:draw-bitmap-region
-                      orb-tmp
-                      (floor (- fill-width orb-width) 2)
-                      (+ shift (floor (- fill-height orb-height) 2))
-                      orb-width orb-height
-                      (- display-width orb-width)
-                      (+ shift (- display-height orb-height))
-                      0))
+                   ;; hp orb
+                   (fill-orb (al:map-rgba 30 255 255 30))
+                   (draw-filling (/ current-hp maximum-hp) 0)
+                   ;; mana orb
+                   (fill-orb (al:map-rgba 255 255 30 30))
+                   (draw-filling (/ current-mana maximum-mana) (- display-width orb-width))
                    (al:hold-bitmap-drawing t)
                    (al:draw-bitmap orb-flare
                                    0 (- display-height orb-height) 0)
