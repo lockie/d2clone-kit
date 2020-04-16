@@ -46,6 +46,7 @@
                (:file "hp-system")
                (:file "mana-system")
                (:file "character-system")
+               (:file "combat-system")
                (:file "player-system")
                (:file "mob-system")
                (:file "renderer")

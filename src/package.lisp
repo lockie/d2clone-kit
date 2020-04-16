@@ -21,12 +21,19 @@
    (:export
     #:character-system
     #:a*
-    #:set-character-target)
+    #:face-target
+    #:set-character-target
+    #:stop-entity)
    ;; collision-system.lisp
    (:export
     #:collision-system
+    #:character-at
     #:collides
     #:collidesp)
+   ;; combat-system
+   (:export
+    #:combat-system
+    #:attack)
    ;; config.lisp
    (:export
     #:defoptions
@@ -59,7 +66,9 @@
    (:export
     #:allegro-event
     #:quit
-    #:component-created)
+    #:component-created
+    #:character-moved
+    #:entity-died)
    ;; fs.lisp
    (:export
     #:character-stream
@@ -79,6 +88,7 @@
     ;; hp-system.lisp
    (:export
     #:hp-system
+    #:set-hp
     #:deadp)
    ;; log.lisp
    (:export

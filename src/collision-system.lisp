@@ -54,6 +54,17 @@ boolean property *collides* to *true* in Tiled tileset."))
           (sparse-matrix-remove characters-collision-map (cons old-col old-row))
           (setf (sparse-matrix-ref characters-collision-map (cons new-col new-row)) entity))))))
 
+(defhandler collision-system entity-died (event entity)
+  (with-coordinate entity ()
+    (multiple-value-bind (col row)
+        (tile-index x y)
+      (with-slots (characters-collision-map) system
+        (sparse-matrix-remove characters-collision-map (cons col row))))))
+
+(defmethod character-at ((system collision-system) x y)
+  "Returns character entity at ingeter map coordinates X, Y or NIL if there's no character there."
+  (sparse-matrix-ref (slot-value system 'characters-collision-map) (cons x y)))
+
 (defmethod collides ((sytem collision-system) x y &key (character nil))
   "Returns whether tile located at integer map coordinates X, Y does collide with other objects
 using collision system SYSTEM.

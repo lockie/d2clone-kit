@@ -50,12 +50,20 @@
 
 (defun target-player (&optional (mouse-event nil))
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
-  (multiple-value-bind (x y) (mouse-position mouse-event)
-    (multiple-value-bind (new-screen-x new-screen-y)
-        (viewport->absolute x y)
-      (multiple-value-bind (new-x new-y)
-          (screen->map new-screen-x new-screen-y)
-        (set-character-target (player-entity) new-x new-y)))))
+  ;; TODO : replicate pressed mouse mob target feature
+  (let ((player-entity (player-entity)))
+    (unless (deadp player-entity)
+      (multiple-value-bind (x y) (mouse-position mouse-event)
+        (multiple-value-bind (new-screen-x new-screen-y)
+            (viewport->absolute x y)
+          (multiple-value-bind (new-x new-y)
+              (screen->map new-screen-x new-screen-y)
+            (if-let (target
+                     (multiple-value-call #'character-at
+                       (system-ref 'collision)
+                       (tile-index new-x new-y)))
+              (attack player-entity target)
+              (set-character-target player-entity new-x new-y))))))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)

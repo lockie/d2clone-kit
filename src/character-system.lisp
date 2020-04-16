@@ -153,6 +153,15 @@ Note: if goal point is not walkable, this function will stuck."
                                          :element-type 'cons
                                          :initial-contents result))))))))
 
+(declaim
+ (inline face-target)
+ (ftype (function (double-float double-float double-float double-float) double-float)
+        face-target))
+(defun face-target (character-x character-y target-x target-y)
+  "Returns the angle that the character at CHARACTER-X, CHARACTER-Y should be facing to look
+at point TARGET-X, TARGET-Y."
+  (atan (* (- target-y character-y) 0.5d0) (- target-x character-x)))
+
 (declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
 (defun follow-path (character-entity)
   (with-coordinate character-entity ()
@@ -163,13 +172,14 @@ Note: if goal point is not walkable, this function will stuck."
           (setf path new-path
                 target-x (car target)
                 target-y (cdr target)
-                angle (atan (* (- target-y y) 0.5d0) (- target-x x))))))))
+                angle (face-target x y target-x target-y)))))))
 
 (declaim
  (ftype (function ((or null fixnum) double-float double-float double-float double-float)
                   (values double-float double-float)) closest-walkable-point))
 (defun closest-walkable-point (character-entity x y target-x target-y)
   "Returns walkable point closest to target on line from X, Y to TARGET-X, TARGET-Y."
+  ;; TODO : when there's some obstacle between, that's a problem
   (let ((new-target-x target-x)
         (new-target-y target-y))
     (loop
@@ -205,8 +215,10 @@ Note: if goal point is not walkable, this function will stuck."
                         current-target-x current-target-y)
                        1d0)))
           (setf path (a* x y new-target-x new-target-y))
-          (unless (zerop (length path))
-            (follow-path entity)))))))
+          (if (zerop (length path))
+              (setf target-x new-target-x
+                    target-y new-target-y)
+              (follow-path entity)))))))
 
 (declaim
  (inline approx-equal)
@@ -232,6 +244,17 @@ Note: if goal point is not walkable, this function will stuck."
     (6 (values x (- y 2)))
     (7 (values (+ x (mod y 2)) (1- y)))))
 
+(declaim
+ (inline stop-entity)
+ (ftype (function (fixnum)) stop-entity))
+(defun stop-entity (entity)
+  "Stops the ENTITY from moving."
+  (with-coordinate entity ()
+    (with-character entity ()
+      (setf target-x x
+            target-y y
+            path (make-array 0)))))
+
 (defmethod system-update ((system character-system) dt)
   (with-characters
       (with-coordinate entity ()
@@ -255,9 +278,7 @@ Note: if goal point is not walkable, this function will stuck."
                       (multiple-value-call #'collidesp
                         (multiple-value-call #'next-tile
                           angle (tile-index x y))))
-                     (setf target-x x
-                           target-y y
-                           path (make-array 0))
+                     (stop-entity entity)
                      (switch-stance entity :idle))
                     (t
                      (let ((old-x x)
@@ -296,3 +317,6 @@ Note: if goal point is not walkable, this function will stuck."
               :do (unless start
                     (add-debug-point debug-entity x y r g b a))
                   (add-debug-point debug-entity x y r g b a)))))))
+
+(defhandler character-system entity-died (event entity)
+  (stop-entity entity))

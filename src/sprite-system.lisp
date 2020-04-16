@@ -313,3 +313,6 @@ The following format features are unsupported yet:
                      x0 y0))
                 (when debug-sprite
                   (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
+
+(defhandler sprite-system entity-died (event entity)
+  (switch-stance entity :death))

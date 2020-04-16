@@ -36,3 +36,9 @@ Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
    :new-x (error "NEW-X required")
    :new-y (error "NEW-Y required"))
   (:documentation "Event class issued when a character is about to move."))
+
+(defevent entity-died ()
+  ((entity :initarg :entity))
+  (:default-initargs
+   :entity (error "ENTITY required"))
+  (:documentation "Event class issued when entity's HP reaches zero."))
