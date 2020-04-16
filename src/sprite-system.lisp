@@ -23,6 +23,7 @@ The following format features are unsupported yet:
   (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum) ;; count of directions
   (frame-durations nil :type (simple-array double-float))
+  (frame-data nil :type (simple-array hash-table))
   ;; instance state
   (stance nil :type keyword)
   (frame 0 :type fixnum)
@@ -36,7 +37,8 @@ The following format features are unsupported yet:
   (layers nil :type hash-table)  ;; layer name (keyword) -> al_bitmap
   (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum)  ;; count of directions
-  (frame-durations nil :type (simple-array double-float)))
+  (frame-durations nil :type (simple-array double-float))
+  (frame-data nil :type (simple-array hash-table)))
 
 (defun toggle-layer (entity layer &optional (on nil on-supplied-p))
   "Toggles layer LAYER on sprite entity ENTITY."
@@ -66,16 +68,14 @@ The following format features are unsupported yet:
 (defun seconds (milliseconds)
   (* milliseconds 0.001d0))
 
-(defun load-sprite-frame-durations (ase-file stances)
-  (let ((total-stance-length (loop :for stance-name :being :the :hash-key :of stances
-                                   :sum (length (gethash stance-name stances)))))
-    (delete-if
-     #'identity
-     (map '(vector double-float)
-          #'(lambda (frame)
-              (seconds (ase-frame-duration frame)))
-          (ase-file-frames ase-file))
-     :start total-stance-length)))
+(defun load-sprite-frame-durations (ase-file total-stance-length)
+  (delete-if
+   #'identity
+   (map '(vector double-float)
+        #'(lambda (frame)
+            (seconds (ase-frame-duration frame)))
+        (ase-file-frames ase-file))
+   :start total-stance-length))
 
 (defun load-sprite-stances (ase-file)
   (loop :with stances := (make-hash :size 4 :test 'eq)
@@ -158,6 +158,29 @@ The following format features are unsupported yet:
        (loop :for bitmap :across layer-bitmaps :do (al:unlock-bitmap bitmap))
        (return layer-bitmaps)))
 
+(defun load-sprite-frame-data (ase-file total-stance-length)
+  (let ((result (make-array total-stance-length
+                            :element-type 'hash-table
+                            :initial-contents
+                            (loop :repeat total-stance-length
+                                  :collect (make-hash-table)))))
+    (loop
+      :for frame :across (ase-file-frames ase-file)
+      :when (ase-frame-chunks frame)
+        :do (loop
+              :for chunk across (ase-frame-chunks frame)
+              :when (and chunk (ase-user-data-chunk-p chunk))
+                :do (let ((text (ase-user-data-chunk-text chunk))
+                          (cel-id (ase-user-data-chunk-cel-id chunk)))
+                      (unless (or (> cel-id total-stance-length)
+                                  (length= 0 text))
+                        (setf (aref result cel-id)
+                              (plist-hash-table
+                               (with-input-from-string (s text)
+                                 (read s))
+                               :test 'eq))))))
+    result))
+
 (defmethod make-prefab ((system sprite-system) prefab-name)
   (let* ((ase-file (load-aseprite
                     (make-instance 'binary-stream
@@ -165,7 +188,8 @@ The following format features are unsupported yet:
          (stances (load-sprite-stances ase-file))
          (total-stance-length (total-stance-length stances))
          (directions (directions ase-file total-stance-length))
-         (frame-durations (load-sprite-frame-durations ase-file stances))
+         (frame-durations (load-sprite-frame-durations ase-file total-stance-length))
+         (frame-data (load-sprite-frame-data ase-file total-stance-length))
          (layer-names (load-sprite-layer-names ase-file))
          (layer-bitmaps
            (load-sprite-layers ase-file layer-names stances total-stance-length directions))
@@ -177,7 +201,8 @@ The following format features are unsupported yet:
      :layers layers
      :stances stances
      :directions directions
-     :frame-durations frame-durations)))
+     :frame-durations frame-durations
+     :frame-data frame-data)))
 
 (defmethod make-prefab-component ((system sprite-system) entity prefab parameters)
   (with-system-config-options ((debug-sprite))
@@ -187,6 +212,7 @@ The following format features are unsupported yet:
       (setf stances (sprite-prefab-stances prefab))
       (setf directions (sprite-prefab-directions prefab))
       (setf frame-durations (sprite-prefab-frame-durations prefab))
+      (setf frame-data (sprite-prefab-frame-data prefab))
       (let* ((layers (sprite-prefab-layers prefab))
              (layer-names (loop :for l :being :the :hash-key :of layers collect l)))
         (setf layer-batches (make-hash
@@ -239,15 +265,22 @@ The following format features are unsupported yet:
       (when (> time-counter time-delta)
         (decf time-counter time-delta)
         (let* ((all-frames (gethash stance stances))
-               (remaining-frames (cdr (member frame all-frames :test #'=))))
+               (remaining-frames (cdr (member frame all-frames :test #'=)))
+               (data (aref frame-data frame))
+               (next-stance (values (gethash :next-stance data)))
+               (last-stance (values (gethash :last-stance data))))
           (setf frame
                 (cond
                   (remaining-frames
                    (first remaining-frames))
-                  ((eq stance :death)
+                  (last-stance
                    frame)
+                  (next-stance
+                   (setf stance next-stance)
+                   (first (gethash next-stance stances)))
                   (t
-                   (first all-frames)))))))))
+                   (setf stance :idle)
+                   (first (gethash :idle stances))))))))))
 
 (declaim
  (inline sprite-direction)
