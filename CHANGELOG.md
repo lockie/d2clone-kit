@@ -9,12 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DSL-like entitites initialization.
 - HP and mana subsystems as well as player's HP and mana orbs.
 - Mob system.
+- Support for Aseprite cel user data.
+- Combat system.
+- Ability to do target lock by not releasing mouse button, just like in D2.
+- Mob health bar.
+
+### Changed
+- Next animation handling.
 
 ### Fixed
 - Minor deployment-related fixes.
 - Fixed character movement speed maths.
 - Fixed bug causing memory faults on secondary start attempts after caught conditions.
 - Fixed bug when the character was registered as colliding with some stuff when it really wasn't.
+- Fixed bug when the player character would start moving when it was not asked to.
 
 
 
