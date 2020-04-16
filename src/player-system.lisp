@@ -5,6 +5,7 @@
   ((name :initform 'player)
    (mouse-pressed :initform nil)
    (entity :initform -1)
+   (last-target :initform -1)
    (orb :initform nil)
    (orb-fill :initform nil)
    (orb-flare :initform nil)
@@ -50,20 +51,22 @@
 
 (defun target-player (&optional (mouse-event nil))
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
-  ;; TODO : replicate pressed mouse mob target feature
   (let ((player-entity (player-entity)))
     (unless (deadp player-entity)
-      (multiple-value-bind (x y) (mouse-position mouse-event)
-        (multiple-value-bind (new-screen-x new-screen-y)
-            (viewport->absolute x y)
-          (multiple-value-bind (new-x new-y)
-              (screen->map new-screen-x new-screen-y)
-            (if-let (target
-                     (multiple-value-call #'character-at
-                       (system-ref 'collision)
-                       (tile-index new-x new-y)))
-              (attack player-entity target)
-              (set-character-target player-entity new-x new-y))))))))
+      (with-slots (last-target) (system-ref 'player)
+        (if (minusp last-target)
+            (multiple-value-bind (x y) (mouse-position mouse-event)
+              (multiple-value-bind (new-screen-x new-screen-y)
+                  (viewport->absolute x y)
+                (multiple-value-bind (new-x new-y)
+                    (screen->map new-screen-x new-screen-y)
+                  (if-let (target
+                           (multiple-value-call #'character-at
+                             (system-ref 'collision)
+                             (tile-index new-x new-y)))
+                    (attack player-entity (setf last-target target))
+                    (set-character-target player-entity new-x new-y)))))
+            (attack player-entity last-target))))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)
@@ -76,7 +79,9 @@
   :filter '(eq event-type :mouse-button-up)
   (let ((allegro-event (slot-value event 'event)))
     (when (= 1 (cffi:foreign-slot-value allegro-event '(:struct al:mouse-event) 'al::button))
-      (setf (slot-value system 'mouse-pressed) nil))))
+      (with-slots (mouse-pressed last-target) system
+        (setf mouse-pressed nil
+              last-target -1)))))
 
 (defmethod system-update ((system player-system) dt)
   (when (slot-value system 'mouse-pressed)
