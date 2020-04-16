@@ -211,7 +211,7 @@ Note: if goal point is not walkable, this function will stuck."
 (declaim
  (inline approx-equal)
  (ftype (function (double-float double-float &optional double-float) boolean) approx-equal))
-(defun approx-equal (a b &optional (epsilon 0.01d0))
+(defun approx-equal (a b &optional (epsilon 0.05d0))
   (< (abs (- a b)) epsilon))
 
 (declaim
@@ -237,7 +237,9 @@ Note: if goal point is not walkable, this function will stuck."
       (with-coordinate entity ()
         (with-sprite entity ()
           (let ((delta (* dt speed)))
-            (if (and (approx-equal target-x x delta) (approx-equal target-y y delta))
+            ;; TODO : the condition here actually should be "if the next delta movement along the
+            ;;  current angle makes the character further away from target".
+            (if (and (approx-equal target-x x) (approx-equal target-y y))
                 (if (zerop (length path))
                     (when (eq stance :walk)
                       (switch-stance entity :idle))
