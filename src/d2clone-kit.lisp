@@ -50,8 +50,10 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defvar *medium-ui-font*)
 (defvar *large-ui-font*)
 
-(defunl start-engine (game-name initializers)
-  "Initializes and starts engine using assets specified by GAME-NAME."
+(defunl start-engine (game-name initializers &rest config)
+  "Initializes and starts engine to run the game named by GAME-NAME.
+INITIALIZERS is list of FUNCALL'able entity initializers which are called just before entering
+game loop with no parameters. CONFIG plist is used to override variables read from config file."
   (let* ((dir-name (sanitize-filename game-name))
          (data-dir
            (merge-pathnames
@@ -74,6 +76,12 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
     (error "Intializing audio addon failed"))
   (unless (al:init-acodec-addon)
     (error "Initializing audio codec addon failed"))
+
+  (doplist (key val config)
+    (apply #'(setf config)
+           (cons val
+                 (mapcar #'make-keyword
+                         (uiop:split-string (string key) :separator '(#\-))))))
 
   (with-system-config-options
       ((display-windowed display-multisampling display-width display-height))
@@ -170,5 +178,15 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
          (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
          (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
          (:hp :current 50d0 :maximum 50d0))
+        ;; ((:mob :name "Spiderant")
+        ;;  (:coordinate :x 4d0 :y 4d0)
+        ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
+        ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+        ;;  (:hp :current 50d0 :maximum 50d0))
+        ;; ((:mob :name "Spiderant")
+        ;;  (:coordinate :x 3d0 :y 3d0)
+        ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
+        ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+        ;;  (:hp :current 50d0 :maximum 50d0))
         ((:coordinate :x 0d0 :y 0d0)
          (:map :prefab :map)))))))
