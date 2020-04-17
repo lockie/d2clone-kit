@@ -7,7 +7,7 @@
   (:documentation "Handles close combat."))
 
 (defcomponent combat combat
-  (attack-range 1.45d0 :type double-float)
+  (attack-range 1.5d0 :type double-float)
   (target -1 :type fixnum))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
