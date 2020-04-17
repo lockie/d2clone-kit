@@ -49,25 +49,27 @@
         (al:with-current-mouse-state state
           (mouse-position-values al:mouse-state state)))))
 
+(defun character-under-cursor (cursor-map-x cursor-map-y)
+  ;; XXX HACK. Need to use some sort of bounding box for sprites; see #21
+  (with-mobs
+    (with-coordinate entity ()
+      (when (< (euclidean-distance x y cursor-map-x cursor-map-y) 1.4d0)
+        (return entity)))))
+
 (defun target-player (&optional (mouse-event nil))
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
   (let ((player-entity (player-entity)))
     (unless (deadp player-entity)
       (with-slots (last-target) (system-ref 'player)
         (if (minusp last-target)
-            ;; TODO : rewrite using multiple-value-call
-            (multiple-value-bind (x y) (mouse-position mouse-event)
-              (multiple-value-bind (new-screen-x new-screen-y)
-                  (viewport->absolute x y)
-                (multiple-value-bind (new-x new-y)
-                    (screen->map new-screen-x new-screen-y)
-                  (if-let (target
-                           (multiple-value-call #'character-at
-                             (system-ref 'collision)
-                             (tile-index new-x new-y)))
-                    (attack player-entity (setf last-target target))
-                    (set-character-target player-entity new-x new-y)))))
-            (attack player-entity last-target))))))
+            (multiple-value-bind (new-x new-y)
+                (multiple-value-call #'screen->map
+                  (multiple-value-call #'viewport->absolute
+                    (mouse-position mouse-event)))
+              (if-let (target (character-under-cursor new-x new-y))
+                (attack player-entity (setf last-target target))
+                (set-character-target player-entity new-x new-y))))
+        (attack player-entity last-target)))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)
@@ -174,19 +176,17 @@
                                name-offset 26
                                0 name))))))))))
         (with-slots (last-target) system
-        (if (minusp last-target)
-            (when-let (target (multiple-value-call #'character-at
-                                (system-ref 'collision)
-                                (tile-index cursor-map-x cursor-map-y)))
-              (draw-mob-health-bar target))
-            (draw-mob-health-bar last-target))))
+          (if (minusp last-target)
+              (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
+                (draw-mob-health-bar target))
+              (draw-mob-health-bar last-target))))
 
-  (with-system-config-options ((debug-cursor))
-    (when debug-cursor
-        (multiple-value-bind (x y)
-            (multiple-value-call #'absolute->viewport
-              (map->screen (coerce (floor cursor-map-x) 'double-float)
-                           (coerce (floor cursor-map-y) 'double-float)))
-          (add-debug-rectangle
-           (slot-value system 'debug-entity)
-           x y *tile-width* *tile-height* debug-cursor)))))))
+      (with-system-config-options ((debug-cursor))
+        (when debug-cursor
+          (multiple-value-bind (x y)
+              (multiple-value-call #'absolute->viewport
+                (map->screen (coerce (floor cursor-map-x) 'double-float)
+                             (coerce (floor cursor-map-y) 'double-float)))
+            (add-debug-rectangle
+             (slot-value system 'debug-entity)
+             x y *tile-width* *tile-height* debug-cursor)))))))
