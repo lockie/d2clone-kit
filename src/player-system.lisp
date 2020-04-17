@@ -53,7 +53,8 @@
   ;; XXX HACK. Need to use some sort of bounding box for sprites; see #21
   (with-mobs
     (with-coordinate entity ()
-      (when (< (euclidean-distance x y cursor-map-x cursor-map-y) 1.4d0)
+      (when (and (< (euclidean-distance x y cursor-map-x cursor-map-y) 1.4d0)
+                 (not (deadp entity)))
         (return entity)))))
 
 (defun target-player (&optional (mouse-event nil))
@@ -89,8 +90,12 @@
               last-target -1)))))
 
 (defmethod system-update ((system player-system) dt)
-  (when (slot-value system 'mouse-pressed)
-    (target-player)))
+  (with-slots (mouse-pressed last-target) system
+    (when (and (not (minusp last-target))
+               (deadp last-target))
+      (setf last-target -1))
+    (when mouse-pressed
+      (target-player))))
 
 (defmethod system-draw ((system player-system) renderer)
   (with-system-config-options ((display-width display-height))
