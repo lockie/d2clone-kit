@@ -47,8 +47,8 @@
                (:file "mana-system")
                (:file "character-system")
                (:file "combat-system")
-               (:file "player-system")
                (:file "mob-system")
+               (:file "player-system")
                (:file "renderer")
                (:file "d2clone-kit")))
 
