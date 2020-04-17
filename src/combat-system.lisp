@@ -7,8 +7,8 @@
   (:documentation "Handles close combat."))
 
 (defcomponent combat combat
-  (attack-range 1.5d0 :type double-float)
-  (target -1 :type fixnum))
+  (target -1 :type fixnum)
+  (attack-range 1.5d0 :type double-float))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
   (declare (ignore system entity parameters))
@@ -50,7 +50,8 @@
                   (when (<= (euclidean-distance target-x target-y current-x current-y)
                             attack-range)
                     (switch-stance target :hit)
-                    ;; TODO : microstuns?..
+                    (with-combat target (targets-target)
+                      (setf targets-target -1))
                     (with-hp target (target-max-hp target-current-hp)
                       (let ((damage (random (* target-max-hp 0.2d0))))
                         (set-hp target (- target-current-hp damage)))))
