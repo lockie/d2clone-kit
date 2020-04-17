@@ -38,7 +38,9 @@ Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
   (:documentation "Event class issued when a character is about to move."))
 
 (defevent entity-died ()
-  ((entity :initarg :entity))
+  ((entity :initarg :entity)
+   (damage-fraction :initarg :damage-fraction))
   (:default-initargs
-   :entity (error "ENTITY required"))
+   :entity (error "ENTITY required")
+   :damage-fraction (error "DAMAGE-FRACTION required"))
   (:documentation "Event class issued when entity's HP reaches zero."))

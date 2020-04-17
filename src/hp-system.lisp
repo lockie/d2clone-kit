@@ -23,8 +23,9 @@
   (with-hp entity ()
     (cond
       ((<= new-hp 0d0)
-       (setf current-hp 0d0)
-       (issue entity-died :entity entity))
+       (let ((damage-fraction (/ (- current-hp new-hp) maximum-hp)))
+         (setf current-hp 0d0)
+         (issue entity-died :entity entity :damage-fraction damage-fraction)))
       (t
        (setf current-hp new-hp)))))
 

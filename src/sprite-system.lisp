@@ -323,8 +323,13 @@ The following format features are unsupported yet:
                 (when debug-sprite
                   (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
 
-(defhandler sprite-system entity-died (event entity)
+(defhandler sprite-system entity-died (event entity damage-fraction)
   (with-sprite entity ()
-    (setf stance :death)
-    (setf frame (first (gethash :death stances)))
-    (setf time-counter 0d0)))
+    (let ((new-stance
+            (if (and (gethash :critdeath stances)
+                     (> damage-fraction 0.1d0))
+                :critdeath
+                :death)))
+      (setf stance new-stance)
+      (setf frame (first (gethash new-stance stances)))
+      (setf time-counter 0d0))))
