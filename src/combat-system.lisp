@@ -48,7 +48,9 @@
                    (setf angle (face-target current-x current-y attack-target-x attack-target-y))
                    (switch-stance entity :swing)))
                 ;; land the blow
-                (when (and (eq stance :swing) (= frame (car (last (gethash :swing stances)))))
+                (when (and (not (minusp target))  ;; zero-length path case
+                           (eq stance :swing)
+                           (= frame (car (last (gethash :swing stances)))))
                   (when (<= (euclidean-distance target-x target-y current-x current-y)
                             attack-range)
                     (switch-stance target :hit)
