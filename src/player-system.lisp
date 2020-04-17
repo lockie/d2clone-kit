@@ -163,11 +163,11 @@
                               (al:draw-filled-rectangle
                                (- name-offset 20) 24
                                (+ name-offset text-width 20) 52
-                               (al:map-rgba 10 10 10 128))
+                               (al:map-rgba 0 0 0 220))
                               (al:draw-filled-rectangle
                                (- name-offset 20) 24
                                (+ name-offset bar-width -20) 52
-                               (al:map-rgba 200 10 10 128))
+                               (al:map-rgba 40 0 0 0))
                               (al:draw-text
                                *large-ui-font*
                                (al:map-rgba 255 255 255 10)
