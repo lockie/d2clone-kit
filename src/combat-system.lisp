@@ -39,7 +39,9 @@
                            (simple-vector-peek path))
                      (unless (and (= final-target-x attack-target-x)
                                   (= final-target-y attack-target-y))
-                       (set-character-target entity attack-target-x attack-target-y))))
+                       (set-character-target entity attack-target-x attack-target-y)
+                       (when (length= 0 path)
+                         (setf target -1)))))
                   ;; start the blow
                   (t
                    (stop-entity entity)
