@@ -247,12 +247,21 @@ The following format features are unsupported yet:
   nil)
 
 (declaim
+ (inline stance-interruptible-p)
+ (ftype (function (fixnum) boolean)))
+(defun stance-interruptible-p (entity)
+  "Returns whether current stance can be interrupted for ENTITY."
+  (with-sprite entity ()
+    (not (gethash :non-interruptible (aref frame-data frame)))))
+
+(declaim
  (inline switch-stance)
  (ftype (function (fixnum keyword)) switch-stance))
 (defun switch-stance (entity new-stance)
   "Immediately switches stance of the sprite ENTITY to NEW-STANCE."
   (with-sprite entity ()
-    (unless (eq stance new-stance)
+    (unless (or (eq stance new-stance)
+                (gethash :non-interruptible (aref frame-data frame)))
       (setf stance new-stance)
       (setf frame (first (gethash stance stances)))
       (setf time-counter 0d0))))
@@ -315,4 +324,7 @@ The following format features are unsupported yet:
                   (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
 
 (defhandler sprite-system entity-died (event entity)
-  (switch-stance entity :death))
+  (with-sprite entity ()
+    (setf stance :death)
+    (setf frame (first (gethash :death stances)))
+    (setf time-counter 0d0)))

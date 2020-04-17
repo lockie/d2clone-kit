@@ -150,6 +150,7 @@
     #:sprite-system
     #:angle
     #:toggle-layer
+    #:stance-interruptible-p
     #:switch-stance
     #:sprite-direction)
    ;; systems.lisp

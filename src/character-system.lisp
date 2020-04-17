@@ -257,37 +257,37 @@ at point TARGET-X, TARGET-Y."
 
 (defmethod system-update ((system character-system) dt)
   (with-characters
-      (with-coordinate entity ()
-        (with-sprite entity ()
-          (let ((delta (* dt speed)))
-            ;; TODO : the condition here actually should be "if the next delta movement along the
-            ;;  current angle makes the character further away from target".
-            (if (and (approx-equal target-x x) (approx-equal target-y y))
-                (if (zerop (length path))
-                    (when (eq stance :walk)
-                      (switch-stance entity :idle))
-                    (follow-path entity))
-                (let ((direction-x (* delta (cos angle)))
-                      (direction-y (* delta (sin angle) (/ *tile-width* *tile-height*))))
-                  (cond
-                    ((and
-                      (not (equal
-                            (multiple-value-list (tile-index x y))
-                            (multiple-value-list (tile-index (+ x direction-x)
-                                                             (+ y direction-y)))))
-                      (multiple-value-call #'collidesp
-                        (multiple-value-call #'next-tile
-                          angle (tile-index x y))))
-                     (stop-entity entity)
-                     (switch-stance entity :idle))
-                    (t
-                     (let ((old-x x)
-                           (old-y y))
-                       (incf x direction-x)
-                       (incf y direction-y)
-                       (issue character-moved
-                              :entity entity :old-x old-x :old-y old-y :new-x x :new-y y))
-                     (unless (eq stance :walk)
+      (when (stance-interruptible-p entity)
+        (with-coordinate entity ()
+          (with-sprite entity ()
+            (let ((delta (* dt speed)))
+              ;; TODO : the condition here actually should be "if the next delta movement along the
+              ;;  current angle makes the character further away from target".
+              (if (and (approx-equal target-x x) (approx-equal target-y y))
+                  (if (zerop (length path))
+                      (when (eq stance :walk)
+                        (switch-stance entity :idle))
+                      (follow-path entity))
+                  (let ((direction-x (* delta (cos angle)))
+                        (direction-y (* delta (sin angle) (/ *tile-width* *tile-height*))))
+                    (cond
+                      ((and
+                        (not (equal
+                              (multiple-value-list (tile-index x y))
+                              (multiple-value-list (tile-index (+ x direction-x)
+                                                               (+ y direction-y)))))
+                        (multiple-value-call #'collidesp
+                          (multiple-value-call #'next-tile
+                            angle (tile-index x y))))
+                       (stop-entity entity)
+                       (switch-stance entity :idle))
+                      (t
+                       (let ((old-x x)
+                             (old-y y))
+                         (incf x direction-x)
+                         (incf y direction-y)
+                         (issue character-moved
+                                :entity entity :old-x old-x :old-y old-y :new-x x :new-y y))
                        (switch-stance entity :walk)))))))))))
 
 (defmethod system-draw ((system character-system) renderer)
@@ -317,6 +317,3 @@ at point TARGET-X, TARGET-Y."
               :do (unless start
                     (add-debug-point debug-entity x y r g b a))
                   (add-debug-point debug-entity x y r g b a)))))))
-
-(defhandler character-system entity-died (event entity)
-  (stop-entity entity))
