@@ -107,7 +107,7 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
             (when (or (cffi:null-pointer-p *small-ui-font*)
                       (cffi:null-pointer-p *medium-ui-font*)
                       (cffi:null-pointer-p *large-ui-font*))
-              (log-warn "Loading ~a failed, falling back to builtin font")
+              (log-warn "Loading ~a failed, falling back to builtin font" font-name)
               (setf *small-ui-font* (al:create-builtin-font)
                     *medium-ui-font* (al:create-builtin-font)
                     *large-ui-font* (al:create-builtin-font))))))
