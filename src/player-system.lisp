@@ -60,16 +60,18 @@
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
   (let ((player-entity (player-entity)))
     (unless (deadp player-entity)
-      (with-slots (last-target) (system-ref 'player)
+      (with-slots (mouse-pressed last-target) (system-ref 'player)
         (if (minusp last-target)
             (multiple-value-bind (new-x new-y)
                 (multiple-value-call #'screen->map
                   (multiple-value-call #'viewport->absolute
                     (mouse-position mouse-event)))
-              (if-let (target (character-under-cursor new-x new-y))
+              (if-let (target (and
+                               (not mouse-pressed)
+                               (character-under-cursor new-x new-y)))
                 (attack player-entity (setf last-target target))
-                (set-character-target player-entity new-x new-y))))
-        (attack player-entity last-target)))))
+                (set-character-target player-entity new-x new-y)))
+            (attack player-entity last-target))))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)
@@ -175,10 +177,11 @@
                                (al:map-rgba 255 255 255 10)
                                name-offset 26
                                0 name))))))))))
-        (with-slots (last-target) system
+        (with-slots (mouse-pressed last-target) system
           (if (minusp last-target)
-              (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
-                (draw-mob-health-bar target))
+              (unless mouse-pressed
+                (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
+                  (draw-mob-health-bar target)))
               (draw-mob-health-bar last-target))))
 
       (with-system-config-options ((debug-cursor))
