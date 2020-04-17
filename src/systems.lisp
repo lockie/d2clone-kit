@@ -111,8 +111,8 @@ See MAKE-PREFAB-COMPONENT"))
 Corresponding systems are created by initializer function on-demand."
   (let ((component-clauses
           (loop :for component :in spec
-                :for system = (ensure-symbol (car component))
-                :for parameters = (cdr component)
+                :for system := (ensure-symbol (car component))
+                :for parameters := (cdr component)
                 :collect `(let ((system (system-ref ',system)))
                             (unless system
                                (setf system (make-instance
