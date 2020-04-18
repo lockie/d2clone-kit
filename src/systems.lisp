@@ -196,7 +196,8 @@ Corresponding systems are created by initializer function on-demand."
        (defmethod initialize-instance :after ((system ,system-name) &key)
          (with-slots (components) system
            (unless components
-             (setf components (,(symbolicate 'make- name))))))
+             (setf components (,(symbolicate 'make- name)))))
+         (preload-prefabs system))
        (defmethod system-adjust-components ((system ,system-name) new-size)
          (declare (type (integer 0 ,array-dimension-limit) new-size))
          (with-slots (components) system
@@ -216,6 +217,11 @@ Corresponding systems are created by initializer function on-demand."
   (:documentation "Returns prefab file path for system SYSTEM and prefab name symbol PREFAB-NAME."))
 (defgeneric make-prefab (system prefab-name)
   (:documentation "Loads prefab with name symbol PREFAB-NAME within system SYSTEM."))
+
+(defgeneric preload-prefabs (system)
+  (:documentation "Loads all prefabs for SYSTEM to avoid in-game performance degradations."))
+
+(defmethod preload-prefabs ((system system)))
 
 (defmethod make-prefab :around (system prefab-name)
   (setf (prefab system prefab-name) (call-next-method)))
@@ -240,18 +246,22 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
   (let ((storage-name (symbolicate '* system '- 'prefabs '*))
         (system-name (symbolicate system '- 'system))
         (struct-name (symbolicate system '- 'prefab))
-        (path-format (format nil "~(~as/~~(~~a~~).~a~)" system (eval extension)))
+        (path-format (format nil "~(~as/~~(~~a~~).~a~)" system extension))
         (ro-slots (mapcar #'(lambda (s) (append s '(:read-only t))) slots)))
     `(progn
        (defparameter ,storage-name (make-hash-table :test 'eq))
        (defmethod prefab ((system ,system-name) prefab-name)
-         (gethash prefab-name ,storage-name))
+         (values (gethash prefab-name ,storage-name)))
        (defmethod (setf prefab) (new-prefab (system ,system-name) prefab-name)
          (setf (gethash prefab-name ,storage-name) new-prefab))
+       (defmethod prefab-path ((system ,system-name) prefab-name)
+         (format nil ,path-format prefab-name))
+       (defmethod preload-prefabs ((system ,system-name))
+         (enumerate-directory ,(format nil "~(~as~)" system)
+           (when (string= ,extension (pathname-type file))
+             (make-prefab system (make-keyword (string-upcase (pathname-name file)))))))
        (defhandler ,system-name quit (event)
          :after '(:end)
          (clrhash ,storage-name))
-       (defmethod prefab-path ((system ,system-name) prefab-name)
-         (format nil ,path-format prefab-name))
        (defstruct ,struct-name
          ,@ro-slots))))

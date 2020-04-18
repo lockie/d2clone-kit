@@ -168,5 +168,6 @@
     #:prefab
     #:prefab-path
     #:make-prefab
+    #:preload-prefabs
     #:make-prefab-component
     #:defprefab))
