@@ -91,11 +91,10 @@
 
 (defmethod system-update ((system player-system) dt)
   (with-slots (mouse-pressed last-target) system
-    (when (and (not (minusp last-target))
-               (deadp last-target))
-      (setf last-target -1))
-    (when mouse-pressed
-      (target-player))))
+    (unless (and (not (minusp last-target))
+                 (deadp last-target))
+      (when mouse-pressed
+        (target-player)))))
 
 (defmethod system-draw ((system player-system) renderer)
   (with-system-config-options ((display-width display-height))
@@ -187,7 +186,8 @@
               (unless mouse-pressed
                 (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
                   (draw-mob-health-bar target)))
-              (draw-mob-health-bar last-target))))
+              (unless (deadp last-target)
+                (draw-mob-health-bar last-target)))))
 
       (with-system-config-options ((debug-cursor))
         (when debug-cursor
