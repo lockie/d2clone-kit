@@ -24,6 +24,7 @@ The following format features are unsupported yet:
   (directions 0 :type fixnum) ;; count of directions
   (frame-durations nil :type (simple-array double-float))
   (frame-data nil :type (simple-array hash-table))
+  (prefab-name nil :type keyword)
   ;; instance state
   (stance nil :type keyword)
   (frame 0 :type fixnum)
@@ -234,10 +235,12 @@ The following format features are unsupported yet:
                               :init-format :keys
                               :initial-contents layer-names
                               :init-default nil))
-        (destructuring-bind (&key (layers-initially-toggled '())) parameters
+        (destructuring-bind (&key (layers-initially-toggled '()) prefab) parameters
           (dolist (layer layers-initially-toggled)
-            (setf (gethash layer layers-toggled) t))))
+            (setf (gethash layer layers-toggled) t))
+          (setf prefab-name prefab)))
       (setf stance :idle)
+      (issue sprite-stance-changed :entity entity :stance :idle)
       (when debug-sprite
         (setf debug-entity (make-entity))
         (make-component (system-ref 'debug) debug-entity :order 1010d0)))))
@@ -263,8 +266,9 @@ The following format features are unsupported yet:
     (unless (or (eq stance new-stance)
                 (gethash :non-interruptible (aref frame-data frame)))
       (setf stance new-stance)
-      (setf frame (first (gethash stance stances)))
-      (setf time-counter 0d0))))
+      (setf frame (first (gethash new-stance stances)))
+      (setf time-counter 0d0)
+      (issue sprite-stance-changed :entity entity :stance new-stance))))
 
 (defmethod system-update ((system sprite-system) dt)
   (declare (double-float dt))
@@ -286,9 +290,11 @@ The following format features are unsupported yet:
                    frame)
                   (next-stance
                    (setf stance next-stance)
+                   (issue sprite-stance-changed :entity entity :stance next-stance)
                    (first (gethash next-stance stances)))
                   (t
                    (setf stance :idle)
+                   (issue sprite-stance-changed :entity entity :stance :idle)
                    (first (gethash :idle stances))))))))))
 
 (declaim
@@ -332,4 +338,5 @@ The following format features are unsupported yet:
                 :death)))
       (setf stance new-stance)
       (setf frame (first (gethash new-stance stances)))
-      (setf time-counter 0d0))))
+      (setf time-counter 0d0)
+      (issue sprite-stance-changed :entity entity :stance new-stance))))

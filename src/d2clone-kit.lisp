@@ -76,6 +76,8 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
     (error "Intializing audio addon failed"))
   (unless (al:init-acodec-addon)
     (error "Initializing audio codec addon failed"))
+  (unless (al:restore-default-mixer)
+    (error "Initializing default audio mixer failed"))
 
   (doplist (key val config)
     (apply #'(setf config)
@@ -135,6 +137,7 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
              (make-instance 'sprite-batch-system)
              (make-instance 'collision-system)
              (make-instance 'combat-system)
+             (make-instance 'sound-system)
              (dolist (initializer initializers)
                (funcall initializer))
              (setf (camera-target) (player-entity))

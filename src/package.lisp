@@ -134,6 +134,9 @@
     #:make-renderer
     #:render
     #:do-draw)
+   ;; sound-system.lisp
+   (:export
+    #:sound-system)
    ;; sparse-matrix.lisp
    (:export
     #:sparse-matrix

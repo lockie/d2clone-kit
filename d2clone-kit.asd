@@ -43,6 +43,7 @@
                (:file "map-system")
                (:file "collision-system")
                (:file "sprite-system")
+               (:file "sound-system")
                (:file "hp-system")
                (:file "mana-system")
                (:file "character-system")

@@ -237,7 +237,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
                                (if-let (prefab-instance (prefab system prefab))
                                  prefab-instance
                                  (make-prefab system prefab))
-                               (remove-from-plist rest-parameters :prefab))
+                               rest-parameters)
         (call-next-method))
     (issue component-created :entity entity :system-name (name system))))
 
