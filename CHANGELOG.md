@@ -13,9 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Combat system.
 - Ability to do target lock by not releasing mouse button, just like in D2.
 - Mob health bar.
+- Non-interruptible sprite animations.
+- Abitily to override config options in call to START-ENGINE.
+- Prefab preloading.
+- Sound system.
 
 ### Changed
 - Next animation handling.
+
+### Removed
+- Unnecessary camera component.
 
 ### Fixed
 - Minor deployment-related fixes.
