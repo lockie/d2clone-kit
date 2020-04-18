@@ -58,6 +58,10 @@
   (declare (ignore system entity parameters))
   nil)
 
+(defmethod delete-component :before ((system sound-system) entity)
+  (with-sound entity ()
+    (al:stop-sample-instance sample-instance)))
+
 (defmethod system-update ((system sound-system) dt)
   (with-sounds
       (if (al:get-sample-instance-playing sample-instance)

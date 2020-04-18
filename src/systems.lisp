@@ -205,6 +205,18 @@ Corresponding systems are created by initializer function on-demand."
        (defmethod delete-component ((system ,system-name) entity)
          (with-slots (components) system
            (setf ,@delete-exprs)))
+       (defmethod make-component :before ((system ,system-name) entity &rest parameters)
+         (with-slots (components) system
+           (when (and ,@(mapcar
+                         #'(lambda (a) `(aref (,@a components) entity))
+                         array-accessors))
+             (delete-component system entity))))
+       (defmethod make-prefab-component :before ((system ,system-name) entity prefab parameters)
+         (with-slots (components) system
+           (when (and ,@(mapcar
+                         #'(lambda (a) `(aref (,@a components) entity))
+                         array-accessors))
+             (delete-component system entity))))
        ,@getter-decls ,@setter-decls)))
 
 (defgeneric prefab (system prefab-name)
