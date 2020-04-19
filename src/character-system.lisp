@@ -261,9 +261,7 @@ at point TARGET-X, TARGET-Y."
         (with-coordinate entity ()
           (with-sprite entity ()
             (let ((delta (* dt speed)))
-              ;; TODO : the condition here actually should be "if the next delta movement along the
-              ;;  current angle makes the character further away from target".
-              (if (and (approx-equal target-x x) (approx-equal target-y y))
+              (if (not (approx-equal angle (face-target x y target-x target-y)))
                   (if (zerop (length path))
                       (when (eq stance :walk)
                         (switch-stance entity :idle))
