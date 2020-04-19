@@ -22,6 +22,8 @@
   "Sets current hit points of ENTITY to NEW-HP."
   (with-hp entity ()
     (cond
+      ((> new-hp maximum-hp)
+       (setf current-hp maximum-hp))
       ((<= new-hp 0d0)
        (let ((damage-fraction (/ (- current-hp new-hp) maximum-hp)))
          (setf current-hp 0d0)
