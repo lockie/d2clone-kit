@@ -168,7 +168,7 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
     (start-engine
      "demo"
      (mapcar
-      #'d2c:make-entity-initializer
+      #'make-entity-initializer
       '(((:camera)
          (:coordinate :x 0d0 :y 0d0))
         ((:player)
@@ -176,12 +176,14 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
          (:sprite :prefab :heroine :layers-initially-toggled '(:head :clothes))
          (:character :target-x 0d0 :target-y 0d0)
          (:hp :current 100d0 :maximum 100d0)
-         (:mana :current 100d0 :maximum 100d0))
+         (:mana :current 100d0 :maximum 100d0)
+         (:combat :min-damage 1d0 :max-damage 2d0))
         ((:mob :name "Spiderant")
          (:coordinate :x 2d0 :y 2d0)
          (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
          (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
-         (:hp :current 50d0 :maximum 50d0))
+         (:hp :current 10d0 :maximum 10d0)
+         (:combat :min-damage 1d0 :max-damage 10d0))
         ;; ((:mob :name "Spiderant")
         ;;  (:coordinate :x 4d0 :y 4d0)
         ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
