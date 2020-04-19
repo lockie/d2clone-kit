@@ -48,6 +48,7 @@
                (:file "mana-system")
                (:file "character-system")
                (:file "combat-system")
+               (:file "item-system")
                (:file "mob-system")
                (:file "player-system")
                (:file "renderer")

@@ -137,6 +137,7 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
              (make-instance 'sprite-batch-system)
              (make-instance 'collision-system)
              (make-instance 'combat-system)
+             (make-instance 'item-system)
              (make-instance 'sound-system)
              (dolist (initializer initializers)
                (funcall initializer))
