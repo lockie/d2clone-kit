@@ -52,6 +52,14 @@
                (:file "mob-system")
                (:file "player-system")
                (:file "renderer")
-               (:file "d2clone-kit")))
+               (:file "d2clone-kit"))
+  :around-compile (lambda (next)
+                    (when (find :release *features*)
+                      (proclaim '(optimize
+                                  (speed 3)
+                                  (debug 0)
+                                  (compilation-speed 0)
+                                  (safety 1))))
+                    (funcall next)))
 
 (pushnew :deeds-no-startup *features*)
