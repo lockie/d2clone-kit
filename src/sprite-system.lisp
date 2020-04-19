@@ -241,6 +241,9 @@ The following format features are unsupported yet:
           (setf prefab-name prefab)))
       (setf stance :idle)
       (issue sprite-stance-changed :entity entity :stance :idle)
+      (setf frame 0
+            angle 0d0
+            time-counter 0d0)
       (when debug-sprite
         (setf debug-entity (make-entity))
         (make-component (system-ref 'debug) debug-entity :order 1010d0)))))
