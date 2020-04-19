@@ -182,7 +182,7 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
          (:coordinate :x 2d0 :y 2d0)
          (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
          (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
-         (:hp :current 10d0 :maximum 10d0)
+         (:hp :current 15d0 :maximum 15d0)
          (:combat :min-damage 1d0 :max-damage 10d0))
         ;; ((:mob :name "Spiderant")
         ;;  (:coordinate :x 4d0 :y 4d0)

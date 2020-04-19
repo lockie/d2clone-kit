@@ -28,6 +28,8 @@
         (with-combat attacker-entity ()
           (setf target target-entity))))))
 
+(defconstant +stun-threshold+ 0.08d0)
+
 (defmethod system-update ((system combat-system) dt)
   (with-combats
       (unless (or (minusp target) (deadp entity))
@@ -59,11 +61,12 @@
                            (= frame (car (last (gethash :swing stances)))))
                   (when (<= (euclidean-distance target-x target-y current-x current-y)
                             attack-range)
-                    (with-combat target (targets-target)
-                      (setf targets-target -1))
                     (with-hp target (target-max-hp target-current-hp)
                       (let ((damage (+ min-damage (random (- max-damage min-damage)))))
-                        (set-hp target (- target-current-hp damage)))
-                      (unless (zerop target-current-hp)
-                        (switch-stance target :hit))))
+                        (set-hp target (- target-current-hp damage))
+                        (when (> damage (* target-max-hp +stun-threshold+))
+                          (unless (zerop target-current-hp)
+                            (switch-stance target :hit))
+                          (with-combat target (targets-target)
+                            (setf targets-target -1))))))
                   (setf target -1)))))))))
