@@ -11,9 +11,10 @@
   (vision-range 10d0 :type double-float))
 
 (defmethod make-component ((system mob-system) entity &rest parameters)
-  (destructuring-bind (&key name) parameters
-    (with-mob entity (mob-name)
-      (setf mob-name name))))
+  (destructuring-bind (&key name (vision-range 10d0)) parameters
+    (with-mob entity (mob-name mob-vision-range)
+      (setf mob-name name
+            mob-vision-range vision-range))))
 
 (defmethod system-update ((system mob-system) dt)
   (let ((player-entity (player-entity)))
