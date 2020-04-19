@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Abitily to override config options in call to START-ENGINE.
 - Prefab preloading.
 - Sound system.
+- ECS improvements.
 
 ### Changed
 - Next animation handling.

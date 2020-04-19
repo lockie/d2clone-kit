@@ -78,7 +78,27 @@ See MAKE-PREFAB-COMPONENT"))
 
 (defgeneric system-adjust-components (system new-size))
 
-(defgeneric delete-component (system entity))
+(defmethod system-adjust-components ((system system) new-size)
+  ;; default implementation for componentless systems
+  )
+
+(defgeneric delete-component (system entity)
+  (:documentation "Deletes SYSTEM's component from ENTITY."))
+
+(defmethod delete-component ((system system) entity)
+  (declare (ignore system entity))
+  ;; default implementation for componentless systems
+  )
+
+;; TODO : automatically delete entities with no components?..
+
+(defgeneric has-component-p (system entity)
+  (:documentation "Returns T when ENTITY has the SYSTEM's component in it."))
+
+(defmethod has-component-p ((system system) entity)
+  (declare (ignore system entity))
+  ;; default implementation for componentless systems
+  )
 
 (defunl make-entity ()
   "Allocates new entity."
@@ -96,6 +116,7 @@ See MAKE-PREFAB-COMPONENT"))
 (defun delete-entity (entity)
   "Deletes entity ENTITY."
   (loop :for system :being :the :hash-values :of *systems*
+        :when (has-component-p system entity)
         :do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
 
@@ -144,10 +165,12 @@ Corresponding systems are created by initializer function on-demand."
                             slot-names slot-defaults slot-types slot-ro))
          (slot-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref))) slot-names))
          (array-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s))) slot-names))
-         (adjust-assignments (mapcar #'(lambda (a)
+         (adjust-assignments (mapcar #'(lambda (a d)
                                          (let ((acc `(,@a components)))
-                                           `(setf ,acc (adjust-array ,acc new-size))))
-                                     array-accessors))
+                                           `(setf ,acc
+                                                  (adjust-array ,acc new-size
+                                                                :initial-element ,d))))
+                                     array-accessors slot-defaults))
          (getter-decls (mapcan
                         #'(lambda (s a type)
                             `((declaim
@@ -205,18 +228,19 @@ Corresponding systems are created by initializer function on-demand."
        (defmethod delete-component ((system ,system-name) entity)
          (with-slots (components) system
            (setf ,@delete-exprs)))
+       (defmethod has-component-p ((system ,system-name) entity)
+         (with-slots (components) system
+           (and ,@(mapcar
+                   #'(lambda (a) `(aref (,@a components) entity))
+                   array-accessors))))
        (defmethod make-component :before ((system ,system-name) entity &rest parameters)
-         (with-slots (components) system
-           (when (and ,@(mapcar
-                         #'(lambda (a) `(aref (,@a components) entity))
-                         array-accessors))
-             (delete-component system entity))))
+         (declare (ignore parameters))
+         (when (has-component-p system entity)
+           (delete-component system entity)))
        (defmethod make-prefab-component :before ((system ,system-name) entity prefab parameters)
-         (with-slots (components) system
-           (when (and ,@(mapcar
-                         #'(lambda (a) `(aref (,@a components) entity))
-                         array-accessors))
-             (delete-component system entity))))
+         (declare (ignore parameters))
+         (when (has-component-p system entity)
+           (delete-component system entity)))
        ,@getter-decls ,@setter-decls)))
 
 (defgeneric prefab (system prefab-name)

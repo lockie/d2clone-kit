@@ -164,6 +164,8 @@
     #:system-ref
     #:with-systems
     #:make-component
+    #:delete-component
+    #:has-component-p
     #:make-entity
     #:delete-entity
     #:make-entity-initializer

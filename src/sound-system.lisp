@@ -34,7 +34,6 @@
            (clamp (* pan-factor (- x camera-x)) -1f0 1f0)))))))
 
 (defmethod make-prefab-component ((system sound-system) entity prefab parameters)
-  ;; TODO checking that component already exists in entity?..
   (with-sound entity ()
     (setf sample-instance (al::create-sample-instance (sound-prefab-sample prefab)))
     (al:attach-sample-instance-to-mixer sample-instance (al:get-default-mixer))
