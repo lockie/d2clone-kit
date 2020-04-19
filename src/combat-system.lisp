@@ -8,11 +8,17 @@
 
 (defcomponent combat combat
   (target -1 :type fixnum)
-  (attack-range 1.5d0 :type double-float))
+  (attack-range 1.5d0 :type double-float)
+  (min-damage 1d0 :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
+  (max-damage nil :type double-float))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
   (declare (ignore system entity parameters))
-  nil)
+  (destructuring-bind (&key (attack-range 1.5d0) (min-damage 1d0) max-damage) parameters
+    (with-combat entity (target entity-attack-range entity-min-damage entity-max-damage)
+      (setf entity-attack-range attack-range
+            entity-min-damage min-damage
+            entity-max-damage max-damage))))
 
 (defun attack (attacker-entity target-entity)
   "Initiates a close combat attack of TARGET-ENTITY by ATTACKER-ENTITY."
@@ -56,7 +62,7 @@
                     (with-combat target (targets-target)
                       (setf targets-target -1))
                     (with-hp target (target-max-hp target-current-hp)
-                      (let ((damage (random (* target-max-hp 0.2d0))))
+                      (let ((damage (+ min-damage (random (- max-damage min-damage)))))
                         (set-hp target (- target-current-hp damage)))
                       (unless (zerop target-current-hp)
                         (switch-stance target :hit))))
