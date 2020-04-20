@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing memory faults on secondary start attempts after caught conditions.
 - Fixed bug when the character was registered as colliding with some stuff when it really wasn't.
 - Fixed bug when the player character would start moving when it was not asked to.
+- Fixed bug when the player character would keep moving when it was not asked to.
 
 
 
