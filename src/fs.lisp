@@ -29,17 +29,25 @@
     (when (zerop (physfs-mount path-string (cffi:null-pointer) (if append 1 0)))
       (log-warn "...failed: ~a" (physfs-get-last-error)))))
 
+(declaim ((function (string string)) *enumerate-directory-callback*))
+(defvar *enumerate-directory-callback*)
+
+(cffi:defcallback enumerate-directory-trampoline :int
+    ((data :pointer) (directory :string) (file :string))
+  (declare (ignore data))
+  (funcall *enumerate-directory-callback* directory file))
+
 (defmacro enumerate-directory (dir &body body)
   "Enumerates directory DIR. Executes BODY for each file with corresponding variables
 DIRECTORY and FILE bound."
-  (let ((callback-name (gensym "ENUMERATE-CALLBACK")))
+  (let ((callback-name (gensym "ENUMERATE-DIRECTORY-CALLBACK")))
     `(progn
-       (cffi:defcallback ,callback-name :int ((data :pointer) (directory :string) (file :string))
-         (declare (ignore data))
-         (declare (ignorable directory file))
+       (defun ,callback-name (directory file)
+         (declare (string directory file) (ignorable directory file))
          ,@body
          1)
-       (physfs-enumerate ,dir (cffi:callback ,callback-name) (cffi:null-pointer)))))
+       (setf *enumerate-directory-callback* #',callback-name)
+       (physfs-enumerate ,dir (cffi:callback enumerate-directory-trampoline) (cffi:null-pointer)))))
 
 (defunl init-fs (game-name data-dir)
   (when (zerop (physfs-init (first (uiop/image:raw-command-line-arguments))))
