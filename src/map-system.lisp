@@ -181,7 +181,7 @@ See MAP->SCREEN"
        :tiles tiles
        :tiles-properties tiles-properties))))
 
-(defmethod make-prefab-component ((system map-system) entity prefab)
+(defmethod make-prefab-component ((system map-system) entity prefab parameters)
   (with-system-config-options ((debug-grid))
     (with-map-chunk entity ()
       (setf tiled-map (map-prefab-tiled-map prefab))

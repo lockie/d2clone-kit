@@ -15,11 +15,6 @@
 
 Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
 
-(deeds:define-handler (broadcast-quit allegro-event) (event event-type)
-  :filter '(eq event-type :display-close)
-  :class 'deeds:locally-blocking-handler
-  (issue quit))
-
 (defevent component-created ()
   ((entity :initarg :entity)
    (system-name :initarg :system-name))
@@ -27,3 +22,33 @@ Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
    :entity (error "ENTITY required")
    :system-name (error "SYSTEM-NAME required"))
   (:documentation "Event class issued when a new component is created."))
+
+(defevent sprite-stance-changed ()
+  ((entity :initarg :entity)
+   (stance :initarg :stance))
+  (:default-initargs
+   :entity (error "ENTITY required")
+   :stance (error "STANCE required"))
+  (:documentation "Event class issued when sprite stance is changed."))
+
+(defevent character-moved ()
+  ((entity :initarg :entity)
+   (old-x :initarg :old-x)
+   (old-y :initarg :old-y)
+   (new-x :initarg :new-x)
+   (new-y :initarg :new-y))
+  (:default-initargs
+   :entity (error "ENTITY required")
+   :old-x (error "OLD-X required")
+   :old-y (error "OLD-Y required")
+   :new-x (error "NEW-X required")
+   :new-y (error "NEW-Y required"))
+  (:documentation "Event class issued when a character is about to move."))
+
+(defevent entity-died ()
+  ((entity :initarg :entity)
+   (damage-fraction :initarg :damage-fraction))
+  (:default-initargs
+   :entity (error "ENTITY required")
+   :damage-fraction (error "DAMAGE-FRACTION required"))
+  (:documentation "Event class issued when entity's HP reaches zero."))

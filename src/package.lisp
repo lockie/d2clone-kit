@@ -21,12 +21,19 @@
    (:export
     #:character-system
     #:a*
-    #:set-character-target)
+    #:face-target
+    #:set-character-target
+    #:stop-entity)
    ;; collision-system.lisp
    (:export
     #:collision-system
+    #:character-at
     #:collides
     #:collidesp)
+   ;; combat-system
+   (:export
+    #:combat-system
+    #:attack)
    ;; config.lisp
    (:export
     #:defoptions
@@ -59,7 +66,9 @@
    (:export
     #:allegro-event
     #:quit
-    #:component-created)
+    #:component-created
+    #:character-moved
+    #:entity-died)
    ;; fs.lisp
    (:export
     #:character-stream
@@ -76,6 +85,11 @@
     #:growable-vector-length
     #:growable-vector-clear
     #:growable-vector-freeze)
+    ;; hp-system.lisp
+   (:export
+    #:hp-system
+    #:set-hp
+    #:deadp)
    ;; log.lisp
    (:export
     #:defunl
@@ -84,6 +98,9 @@
     #:log-warn
     #:log-error
     #:with-condition-reporter)
+   ;; mana-system.lisp
+   (:export
+    #:mana-system)
    ;; map-system.lisp
    (:export
     #:map-system
@@ -93,6 +110,8 @@
     #:screen->map*
     #:ground-layer-p
     #:tile-property)
+   (:export
+    #:mob-system)
    ;; player-system.lisp
    (:export
     #:player-system
@@ -115,6 +134,9 @@
     #:make-renderer
     #:render
     #:do-draw)
+   ;; sound-system.lisp
+   (:export
+    #:sound-system)
    ;; sparse-matrix.lisp
    (:export
     #:sparse-matrix
@@ -131,6 +153,7 @@
     #:sprite-system
     #:angle
     #:toggle-layer
+    #:stance-interruptible-p
     #:switch-stance
     #:sprite-direction)
    ;; systems.lisp
@@ -141,11 +164,15 @@
     #:system-ref
     #:with-systems
     #:make-component
+    #:delete-component
+    #:has-component-p
     #:make-entity
     #:delete-entity
+    #:make-entity-initializer
     #:defcomponent
     #:prefab
     #:prefab-path
     #:make-prefab
+    #:preload-prefabs
     #:make-prefab-component
     #:defprefab))

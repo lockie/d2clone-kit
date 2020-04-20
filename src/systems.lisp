@@ -60,7 +60,7 @@ See RENDER"))
 (declaim (inline system-ref))
 (defun system-ref (name)
   "Returns system instance by its name symbol NAME."
-  (gethash name *systems*))
+  (values (gethash name *systems*)))
 
 (defmacro with-systems (var &body body)
   "Executes BODY in loop for each system, binding system instance to variable VAR."
@@ -78,7 +78,27 @@ See MAKE-PREFAB-COMPONENT"))
 
 (defgeneric system-adjust-components (system new-size))
 
-(defgeneric delete-component (system entity))
+(defmethod system-adjust-components ((system system) new-size)
+  ;; default implementation for componentless systems
+  )
+
+(defgeneric delete-component (system entity)
+  (:documentation "Deletes SYSTEM's component from ENTITY."))
+
+(defmethod delete-component ((system system) entity)
+  (declare (ignore system entity))
+  ;; default implementation for componentless systems
+  )
+
+;; TODO : automatically delete entities with no components?..
+
+(defgeneric has-component-p (system entity)
+  (:documentation "Returns T when ENTITY has the SYSTEM's component in it."))
+
+(defmethod has-component-p ((system system) entity)
+  (declare (ignore system entity))
+  ;; default implementation for componentless systems
+  )
 
 (defunl make-entity ()
   "Allocates new entity."
@@ -96,8 +116,35 @@ See MAKE-PREFAB-COMPONENT"))
 (defun delete-entity (entity)
   "Deletes entity ENTITY."
   (loop :for system :being :the :hash-values :of *systems*
+        :when (has-component-p system entity)
         :do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
+
+(defun make-entity-initializer (spec)
+  "Creates FUNCALL'able entity initializer following specification SPEC structured as follows:
+
+```
+'((:system-name1 :component-parameter1 \"value1\" :component-parameter2 2.0)
+  (:system-name2 :prefab :prefab-name)
+  ;; ...
+  )
+```
+Corresponding systems are created by initializer function on-demand."
+  (let ((component-clauses
+          (loop :for component :in spec
+                :for system := (ensure-symbol (car component) :d2clone-kit)
+                :for parameters := (cdr component)
+                :collect `(let ((system (system-ref ',system)))
+                            (unless system
+                               (setf system (make-instance
+                                             ',(format-symbol :d2clone-kit "~a-SYSTEM" system))))
+                            (make-component system entity ,@parameters)))))
+    (compile
+     nil
+     `(lambda ()
+        (let ((entity (make-entity)))
+          ,@component-clauses
+          entity)))))
 
 (defmacro defcomponent (system name &rest slots)
   "Defines component structure with name NAME and slots SLOTS within system SYSTEM."
@@ -118,10 +165,12 @@ See MAKE-PREFAB-COMPONENT"))
                             slot-names slot-defaults slot-types slot-ro))
          (slot-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref))) slot-names))
          (array-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s))) slot-names))
-         (adjust-assignments (mapcar #'(lambda (a)
+         (adjust-assignments (mapcar #'(lambda (a d)
                                          (let ((acc `(,@a components)))
-                                           `(setf ,acc (adjust-array ,acc new-size))))
-                                     array-accessors))
+                                           `(setf ,acc
+                                                  (adjust-array ,acc new-size
+                                                                :initial-element ,d))))
+                                     array-accessors slot-defaults))
          (getter-decls (mapcan
                         #'(lambda (s a type)
                             `((declaim
@@ -170,7 +219,8 @@ See MAKE-PREFAB-COMPONENT"))
        (defmethod initialize-instance :after ((system ,system-name) &key)
          (with-slots (components) system
            (unless components
-             (setf components (,(symbolicate 'make- name))))))
+             (setf components (,(symbolicate 'make- name)))))
+         (preload-prefabs system))
        (defmethod system-adjust-components ((system ,system-name) new-size)
          (declare (type (integer 0 ,array-dimension-limit) new-size))
          (with-slots (components) system
@@ -178,6 +228,19 @@ See MAKE-PREFAB-COMPONENT"))
        (defmethod delete-component ((system ,system-name) entity)
          (with-slots (components) system
            (setf ,@delete-exprs)))
+       (defmethod has-component-p ((system ,system-name) entity)
+         (with-slots (components) system
+           (and ,@(mapcar
+                   #'(lambda (a) `(aref (,@a components) entity))
+                   array-accessors))))
+       (defmethod make-component :before ((system ,system-name) entity &rest parameters)
+         (declare (ignore parameters))
+         (when (has-component-p system entity)
+           (delete-component system entity)))
+       (defmethod make-prefab-component :before ((system ,system-name) entity prefab parameters)
+         (declare (ignore parameters))
+         (when (has-component-p system entity)
+           (delete-component system entity)))
        ,@getter-decls ,@setter-decls)))
 
 (defgeneric prefab (system prefab-name)
@@ -191,19 +254,26 @@ See MAKE-PREFAB-COMPONENT"))
 (defgeneric make-prefab (system prefab-name)
   (:documentation "Loads prefab with name symbol PREFAB-NAME within system SYSTEM."))
 
+(defgeneric preload-prefabs (system)
+  (:documentation "Loads all prefabs for SYSTEM to avoid in-game performance degradations."))
+
+(defmethod preload-prefabs ((system system)))
+
 (defmethod make-prefab :around (system prefab-name)
   (setf (prefab system prefab-name) (call-next-method)))
 
-(defgeneric make-prefab-component (system entity prefab)
-  (:documentation "Creates new component using prefab instance PREFAB as a template within system SYSTEM for entity ENTITY."))
+(defgeneric make-prefab-component (system entity prefab parameters)
+  (:documentation "Creates new component using prefab instance PREFAB as a template and optional
+extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
 
 (defmethod make-component :around (system entity &rest parameters)
-  (destructuring-bind (&key (prefab nil) &allow-other-keys) parameters
+  (destructuring-bind (&rest rest-parameters &key (prefab nil) &allow-other-keys) parameters
     (if prefab
         (make-prefab-component system entity
                                (if-let (prefab-instance (prefab system prefab))
                                  prefab-instance
-                                 (make-prefab system prefab)))
+                                 (make-prefab system prefab))
+                               rest-parameters)
         (call-next-method))
     (issue component-created :entity entity :system-name (name system))))
 
@@ -212,18 +282,22 @@ See MAKE-PREFAB-COMPONENT"))
   (let ((storage-name (symbolicate '* system '- 'prefabs '*))
         (system-name (symbolicate system '- 'system))
         (struct-name (symbolicate system '- 'prefab))
-        (path-format (format nil "~(~as/~~(~~a~~).~a~)" system (eval extension)))
+        (path-format (format nil "~(~as/~~(~~a~~).~a~)" system extension))
         (ro-slots (mapcar #'(lambda (s) (append s '(:read-only t))) slots)))
     `(progn
        (defparameter ,storage-name (make-hash-table :test 'eq))
        (defmethod prefab ((system ,system-name) prefab-name)
-         (gethash prefab-name ,storage-name))
+         (values (gethash prefab-name ,storage-name)))
        (defmethod (setf prefab) (new-prefab (system ,system-name) prefab-name)
          (setf (gethash prefab-name ,storage-name) new-prefab))
+       (defmethod prefab-path ((system ,system-name) prefab-name)
+         (format nil ,path-format prefab-name))
+       (defmethod preload-prefabs ((system ,system-name))
+         (enumerate-directory ,(format nil "~(~as~)" system)
+           (when (string= ,extension (pathname-type file))
+             (make-prefab system (make-keyword (string-upcase (pathname-name file)))))))
        (defhandler ,system-name quit (event)
          :after '(:end)
          (clrhash ,storage-name))
-       (defmethod prefab-path ((system ,system-name) prefab-name)
-         (format nil ,path-format prefab-name))
        (defstruct ,struct-name
          ,@ro-slots))))

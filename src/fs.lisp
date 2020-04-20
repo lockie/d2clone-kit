@@ -29,12 +29,17 @@
     (when (zerop (physfs-mount path-string (cffi:null-pointer) (if append 1 0)))
       (log-warn "...failed: ~a" (physfs-get-last-error)))))
 
-(cffi:defcallback archives-search-callback :int ((data :pointer) (dir :string) (file :string))
-  (declare (ignore data dir))
-  (when (uiop:string-suffix-p file ".zip")
-    (mount (merge-pathnames (pathname (physfs-get-real-dir file))
-                            (pathname file))))
-  1)
+(defmacro enumerate-directory (dir &body body)
+  "Enumerates directory DIR. Executes BODY for each file with corresponding variables
+DIRECTORY and FILE bound."
+  (let ((callback-name (gensym "ENUMERATE-CALLBACK")))
+    `(progn
+       (cffi:defcallback ,callback-name :int ((data :pointer) (directory :string) (file :string))
+         (declare (ignore data))
+         (declare (ignorable directory file))
+         ,@body
+         1)
+       (physfs-enumerate ,dir (cffi:callback ,callback-name) (cffi:null-pointer)))))
 
 (defunl init-fs (game-name data-dir)
   (when (zerop (physfs-init (first (uiop/image:raw-command-line-arguments))))
@@ -42,6 +47,7 @@
   (physfs-permit-symbolic-links 1)
   (when (zerop (physfs-set-write-dir (namestring data-dir)))
     (error "failed to initialize filesystem writing: ~a" (physfs-get-last-error)))
+  (mount (merge-pathnames (truename "..") "assets"))
   (mount data-dir)
   (mount (physfs-get-base-dir))
   (dolist (dir (uiop/configuration:xdg-data-dirs))
@@ -49,12 +55,21 @@
      (merge-pathnames
       (make-pathname :directory `(:relative ,game-name))
       dir)))
-  (physfs-enumerate "/" (cffi:callback archives-search-callback) (cffi:null-pointer))
+  (enumerate-directory "/"
+    (when (uiop:string-suffix-p file ".zip")
+      (mount (merge-pathnames (uiop:ensure-directory-pathname
+                               (pathname (physfs-get-real-dir file)))
+                              (pathname file)))))
   (al:set-physfs-file-interface))
 
 (defunl close-fs ()
   (when (zerop (physfs-deinit))
     (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
+
+(declaim (inline sanitize-filename) (ftype (function (string) string) sanitize-filename))
+(defun sanitize-filename (filename)
+  (values (cl-ppcre:regex-replace-all
+           "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename "")))
 
 (defclass character-stream (trivial-gray-streams:fundamental-character-input-stream)
   ((path :initarg :path :initform (error "missing path"))

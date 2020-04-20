@@ -12,37 +12,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   "Runs game loop."
-  ;; TODO : init systems DSL style someplace else
-  (make-instance 'coordinate-system)
-  (make-instance 'debug-system)
-  (make-instance 'sprite-batch-system)
-  (make-instance 'collision-system)
-  (let ((camera-entity (make-entity)))
-    (make-component (make-instance 'camera-system) camera-entity)
-    (make-component (system-ref 'coordinate) camera-entity :x 0d0 :y 0d0))
-  (let ((map-entity (make-entity)))
-    (make-component (system-ref 'coordinate) map-entity :x 0d0 :y 0d0)
-    (make-component (make-instance 'map-system) map-entity :prefab 'map))
-  (let ((map-entity (make-entity)))
-    (make-component (system-ref 'coordinate) map-entity :x -10d0 :y 0d0)
-    (make-component (system-ref 'map) map-entity :prefab 'map2))
-  (let ((map-entity (make-entity)))
-    (make-component (system-ref 'coordinate) map-entity :x 0d0 :y -10d0)
-    (make-component (system-ref 'map) map-entity :prefab 'map3))
-  (let ((sprite-entity (make-entity)))
-    (make-component (make-instance 'sprite-system) sprite-entity :prefab 'heroine)
-    (toggle-layer sprite-entity 'head t)
-    (toggle-layer sprite-entity 'clothes t)
-    (make-component (make-instance 'player-system) sprite-entity)
-    (setf (camera-target) sprite-entity)
-    (make-component (make-instance 'character-system) sprite-entity :target-x 0d0 :target-y 0d0)
-    (make-component (system-ref 'coordinate) sprite-entity :x 0d0 :y 0d0))
-  ;; (let ((char-entity (make-entity)))
-  ;;   (make-component (system-ref 'sprite) char-entity :prefab 'heroine)
-  ;;   (toggle-layer char-entity 'clothes t)  ;; всадник без головы кек
-  ;;   (make-component (system-ref 'coordinate) char-entity :x 0d0 :y 0d0)
-  ;;   (make-component (make-instance 'character-system) char-entity :target-x 3d0 :target-y 3d0))
-
   (gc :full t)
   (log-info "Starting game loop")
   (with-system-config-options ((display-vsync display-fps))
@@ -76,18 +45,28 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
             (setf vsync (al:wait-for-vsync)))
           (al:flip-display))))))
 
-(defunl start-engine (game-name)
-  "Initializes and starts engine using assets specified by GAME-NAME."
-  (let ((data-dir
-          (merge-pathnames
-           (make-pathname :directory `(:relative ,game-name))
-           (uiop:xdg-data-home))))
+;; TODO : put this to UI subsystem?..
+(defvar *small-ui-font*)
+(defvar *medium-ui-font*)
+(defvar *large-ui-font*)
+
+(defunl start-engine (game-name initializers &rest config)
+  "Initializes and starts engine to run the game named by GAME-NAME.
+INITIALIZERS is list of FUNCALL'able entity initializers which are called just before entering
+game loop with no parameters. CONFIG plist is used to override variables read from config file."
+  (let* ((dir-name (sanitize-filename game-name))
+         (data-dir
+           (merge-pathnames
+            (make-pathname :directory `(:relative ,dir-name))
+            (uiop:xdg-data-home))))
     (ensure-directories-exist data-dir)
     (init-log data-dir)
-    (al:set-app-name game-name)
+    (al:set-app-name dir-name)
     (al:init)
-    (init-fs game-name data-dir)
+    (init-fs dir-name data-dir)
     (init-config))
+  (unless (al:init-primitives-addon)
+    (error "Initializing primitives addon failed"))
   (unless (al:init-image-addon)
     (error "Initializing image addon failed"))
   (al:init-font-addon)
@@ -97,6 +76,14 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
     (error "Intializing audio addon failed"))
   (unless (al:init-acodec-addon)
     (error "Initializing audio codec addon failed"))
+  (unless (al:restore-default-mixer)
+    (error "Initializing default audio mixer failed"))
+
+  (doplist (key val config)
+    (apply #'(setf config)
+           (cons val
+                 (mapcar #'make-keyword
+                         (uiop:split-string (string key) :separator '(#\-))))))
 
   (with-system-config-options
       ((display-windowed display-multisampling display-width display-height))
@@ -107,6 +94,25 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
     (unless (zerop display-multisampling)
       (al:set-new-display-option :sample-buffers 1 :require)
       (al:set-new-display-option :samples display-multisampling :require))
+
+    (with-system-config-options ((display-font))
+      (if (length= 0 display-font)
+          (progn
+            (log-warn "No font specified in config, loading builtin font")
+            (setf *small-ui-font* (al:create-builtin-font)
+                  *medium-ui-font* (al:create-builtin-font)
+                  *large-ui-font* (al:create-builtin-font)))
+          (let ((font-name (format nil "fonts/~a" display-font)))
+            (setf *small-ui-font* (al:load-ttf-font font-name -8 0)
+                  *medium-ui-font* (al:load-ttf-font font-name -12 0)
+                  *large-ui-font* (al:load-ttf-font font-name -20 0))
+            (when (or (cffi:null-pointer-p *small-ui-font*)
+                      (cffi:null-pointer-p *medium-ui-font*)
+                      (cffi:null-pointer-p *large-ui-font*))
+              (log-warn "Loading ~a failed, falling back to builtin font" font-name)
+              (setf *small-ui-font* (al:create-builtin-font)
+                    *medium-ui-font* (al:create-builtin-font)
+                    *large-ui-font* (al:create-builtin-font))))))
 
     (let ((display (al:create-display display-width display-height))
           (event-queue (al:create-event-queue)))
@@ -127,12 +133,28 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
       (unwind-protect
            (float-features:with-float-traps-masked
                (:invalid :inexact :overflow :underflow)
+             (make-instance 'debug-system)
+             (make-instance 'sprite-batch-system)
+             (make-instance 'collision-system)
+             (make-instance 'combat-system)
+             (make-instance 'item-system)
+             (make-instance 'sound-system)
+             (dolist (initializer initializers)
+               (funcall initializer))
+             (setf (camera-target) (player-entity))
              (game-loop event-queue))
         (log-info "Shutting engine down")
+        (issue quit)
         (al:inhibit-screensaver nil)
         (unregister-all-systems)
         (al:destroy-display display)
         (al:destroy-event-queue event-queue)
+        (al:destroy-font *large-ui-font*)
+        (al:destroy-font *medium-ui-font*)
+        (al:destroy-font *small-ui-font*)
+        (setf *small-ui-font* (cffi:null-pointer)
+              *medium-ui-font* (cffi:null-pointer)
+              *large-ui-font* (cffi:null-pointer))
         (al:stop-samples)
         (close-config)
         (close-fs)
@@ -143,4 +165,34 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
   "Runs built-in engine demo."
   ;; TODO : separate thread?
   (with-condition-reporter
-      (start-engine "demo")))
+    (start-engine
+     "demo"
+     (mapcar
+      #'make-entity-initializer
+      '(((:camera)
+         (:coordinate :x 0d0 :y 0d0))
+        ((:player)
+         (:coordinate :x 0d0 :y 0d0)
+         (:sprite :prefab :heroine :layers-initially-toggled '(:head :clothes))
+         (:character :target-x 0d0 :target-y 0d0)
+         (:hp :current 100d0 :maximum 100d0)
+         (:mana :current 100d0 :maximum 100d0)
+         (:combat :min-damage 1d0 :max-damage 2d0))
+        ((:mob :name "Spiderant")
+         (:coordinate :x 2d0 :y 2d0)
+         (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
+         (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+         (:hp :current 15d0 :maximum 15d0)
+         (:combat :min-damage 1d0 :max-damage 10d0))
+        ;; ((:mob :name "Spiderant")
+        ;;  (:coordinate :x 4d0 :y 4d0)
+        ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
+        ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+        ;;  (:hp :current 50d0 :maximum 50d0))
+        ;; ((:mob :name "Spiderant")
+        ;;  (:coordinate :x 3d0 :y 3d0)
+        ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
+        ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+        ;;  (:hp :current 50d0 :maximum 50d0))
+        ((:coordinate :x 0d0 :y 0d0)
+         (:map :prefab :map)))))))

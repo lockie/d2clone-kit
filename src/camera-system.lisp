@@ -7,8 +7,6 @@
    (target :initform nil))
   (:documentation "Handles camera entity."))
 
-(defcomponent camera camera)
-
 (defhandler camera-system quit (event)
   (setf (slot-value system 'entity) -1))
 

@@ -1,5 +1,5 @@
 (asdf:defsystem :d2clone-kit
-  :version "0.0.1"
+  :version "0.1.0"
   :description "Generic Diablo 2 clone game engine."
   :homepage "https://lockie.gitlab.io/d2clone-kit"
   :author "Andrew Kravchuk <awkravchuk@gmail.com>"
@@ -10,6 +10,7 @@
                :cl-csv
                :cl-inflector
                :cl-liballegro
+               :cl-ppcre
                :deeds
                :float-features
                :livesupport
@@ -42,20 +43,23 @@
                (:file "map-system")
                (:file "collision-system")
                (:file "sprite-system")
+               (:file "sound-system")
+               (:file "hp-system")
+               (:file "mana-system")
                (:file "character-system")
+               (:file "combat-system")
+               (:file "item-system")
+               (:file "mob-system")
                (:file "player-system")
                (:file "renderer")
                (:file "d2clone-kit"))
-  ;; :around-compile (lambda (next)
-  ;;                   (proclaim '(optimize
-  ;;                               (debug 0)
-  ;;                               (safety 0)
-  ;;                               (compilation-speed 0)
-  ;;                               (speed 3)))
-  ;;                   (funcall next))
-  :defsystem-depends-on (:deploy)
-  :build-operation "deploy:deploy-op"
-  :build-pathname "d2clone"
-  :entry-point "d2clone-kit:demo")
+  :around-compile (lambda (next)
+                    (when (find :release *features*)
+                      (proclaim '(optimize
+                                  (speed 3)
+                                  (debug 0)
+                                  (compilation-speed 0)
+                                  (safety 1))))
+                    (funcall next)))
 
 (pushnew :deeds-no-startup *features*)

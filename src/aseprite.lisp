@@ -64,6 +64,14 @@
   (layer-id 0 :type fixnum)
   (data nil :type (vector (unsigned-byte 8))))
 
+(defstruct (ase-user-data-chunk (:include ase-chunk (type 'user-data)))
+  (cel-id 0 :type fixnum)
+  (text "" :type string)
+  (red 0 :type unsigned-byte)
+  (green 0 :type unsigned-byte)
+  (blue 0 :type unsigned-byte)
+  (alpha 0 :type unsigned-byte))
+
 (defstruct ase-frame
   (duration 0 :type fixnum)
   (chunks nil :type (vector (or ase-chunk null))))
@@ -76,8 +84,8 @@
 
 (defgeneric read-chunk (type stream))
 
-(defvar *layer-id*)
 (declaim (type fixnum *layer-id*))
+(defvar *layer-id*)
 
 (defmethod read-chunk ((type (eql #x2004)) stream)
   (read-binary 'word stream) ;; flags
@@ -126,8 +134,13 @@
 (deftype sprite-dimension ()
   `(integer 0 ,(isqrt (truncate most-positive-fixnum 4))))
 
+(declaim (type fixnum *cel-id*))
+(defvar *cel-id*)
+
 (defmethod read-chunk ((type (eql #x2005)) stream)
   (let ((layer-id (read-binary 'word stream)))
+    (when (zerop layer-id)
+      (incf *cel-id*))
     (read-binary 'word stream)  ;; X position
     (read-binary 'word stream)  ;; Y position
     (read-binary 'byte stream)  ;; opacity
@@ -160,6 +173,23 @@
               (make-ase-tag :from from :to to :name name))))
     (make-ase-tags-chunk :tags tags)))
 
+(defmethod read-chunk ((type (eql #x2020)) stream)
+  (let ((flags (read-binary 'dword stream))
+        (text "")
+        (r 0) (g 0) (b 0) (a 0))
+    (unless (zerop (logand flags 1))
+      (setf text (read-binary 'ase-string stream)))
+    (unless (zerop (logand flags 2))
+      (setf
+       r (read-binary 'byte stream)
+       g (read-binary 'byte stream)
+       b (read-binary 'byte stream)
+       a (read-binary 'byte stream)))
+    (make-ase-user-data-chunk
+     :cel-id *cel-id*
+     :text text
+     :red r :green g :blue b :alpha a)))
+
 (defmethod read-chunk (type stream)
   (declare (ignore type stream))
   nil)
@@ -169,6 +199,7 @@
 
 (defun load-aseprite (stream)
   (let* ((*layer-id* 0)
+         (*cel-id* -1)
          (header (read-binary 'ase-binary-header stream)))
     (unless (= (ase-binary-header-magic header) +header-magic+)
       (error "Invalid ASE file"))
