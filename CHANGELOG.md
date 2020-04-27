@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed compilation on CCL.
+- Assets are now loaded using path relative to executable, not to current working directory.
 
 
 ## [0.1.0] - 2020-04-20
