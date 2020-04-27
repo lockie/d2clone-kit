@@ -55,7 +55,12 @@ DIRECTORY and FILE bound."
   (physfs-permit-symbolic-links 1)
   (when (zerop (physfs-set-write-dir (namestring data-dir)))
     (error "failed to initialize filesystem writing: ~a" (physfs-get-last-error)))
-  (mount (merge-pathnames (truename "..") "assets"))
+  (mount (merge-pathnames
+          (truename
+           (if (uiop:argv0)
+               (merge-pathnames "../" (directory-namestring (uiop:argv0)))
+               "../"))
+          "assets"))
   (mount data-dir)
   (mount (physfs-get-base-dir))
   (dolist (dir (uiop/configuration:xdg-data-dirs))
