@@ -24,36 +24,24 @@
           (setf debug-entity (make-entity))
           (make-component (system-ref 'debug) debug-entity :order 1050d0))))))
 
-(eval-when (:compile-toplevel)
-  (defconstant +neighbours+ '((0d0 -2d0)
-                              (0.5d0 -1d0)
-                              (1d0 0d0)
-                              (-0.5d0 -1d0)
-                              (0.5d0 1d0)
-                              (-1d0 0d0)
-                              (-0.5d0 1d0)
-                              (0d0 2d0))))
-
 (declaim
  (inline euclidean-distance)
  (ftype (function (double-float double-float double-float double-float) double-float)
         euclidean-distance))
 (defun euclidean-distance (x1 y1 x2 y2)
   (flet ((sqr (x) (the double-float (* x x))))
-    (let ((ortho-x (- x2 x1))
-          (ortho-y (* 0.5d0 (- y2 y1))))
-      (sqrt
-       (+
-        (sqr (+ ortho-y ortho-x))
-        (sqr (- ortho-y ortho-x)))))))
+    (sqrt
+     (+
+      (sqr (- x1 x2))
+      (sqr (- y1 y2))))))
 
 (defstruct (path-node
             (:constructor make-path-node (x y))
             (:copier nil)
             (:predicate nil))
   (cost 0d0 :type double-float)
-  (x 0d0 :type double-float :read-only t)
-  (y 0d0 :type double-float :read-only t)
+  (x 0 :type fixnum :read-only t)
+  (y 0 :type fixnum :read-only t)
   (parent nil :type (or path-node null)))
 
 (declaim (inline make-path-node))
@@ -81,6 +69,16 @@
               (loop-finish))
         :finally (return list))))
 
+(eval-when (:compile-toplevel)
+  (defconstant +neighbours+ '((1  . 0)
+                              (1  . -1)
+                              (0  . -1)
+                              (-1 . -1)
+                              (-1 . 0)
+                              (-1 . 1)
+                              (0  . 1)
+                              (1  . 1))))
+
 ;; TODO : optimize
 ;; TODO : penalize turns?..
 ;; TODO : separate thread?..
@@ -91,67 +89,68 @@ Returns simple array containing conses of x and y path node world coordinates.
 
 Note: if goal point is not walkable, this function will stuck."
   (declare (optimize (speed 3)))
-  (multiple-value-bind (goal-col goal-row)
-      (tile-index goal-x goal-y)
-    (multiple-value-bind (initial-x initial-y)
-        (multiple-value-bind (i-x i-y)
-            (tile-index start-x start-y)
-          (tile-pos (coerce i-x 'double-float) (coerce i-y 'double-float)))
-      (let ((open (make-priority-queue #'path-node-cost))
-            (closed nil)
-            (start-node (make-path-node initial-x initial-y)))
-        (priority-queue-push open start-node)
-        (let ((goal-node
-                (loop :for current := (priority-queue-pop open)
-                      :until (multiple-value-bind (current-x current-y)
-                                 (tile-index (path-node-x current)
-                                             (path-node-y current))
-                               (and (= goal-col current-x) (= goal-row current-y)))
-                      :do (push current closed)
-                          (dolist (neighbour +neighbours+)
-                            (multiple-value-bind (neighbour-x neighbour-y)
-                                (tile-pos (+ (path-node-x current)
-                                             (the double-float (car neighbour)))
-                                          (+ (path-node-y current)
-                                             (the double-float (cadr neighbour))))
-                              (let* ((cost (+ (euclidean-distance
-                                               start-x start-y
-                                               (path-node-x current) (path-node-y current))
-                                              1d0
-                                              (if (multiple-value-call #'collidesp
-                                                    (tile-index neighbour-x neighbour-y))
-                                                  10000d0 0d0)))
-                                     (neighbour-cost (euclidean-distance
-                                                      start-x start-y
-                                                      neighbour-x neighbour-y))
-                                     (neighbour-node (make-path-node neighbour-x neighbour-y))
-                                     (neighbour-open-index (priority-queue-find open neighbour-node)))
-                                (if (and (< cost neighbour-cost) neighbour-open-index)
-                                    ;; new path is better
-                                    (priority-queue-remove open neighbour-open-index)
-                                    (let ((neighbour-closed-index
-                                            (position neighbour-node closed :test #'path-node-equal)))
-                                      (cond
-                                        ((and neighbour-closed-index (< cost neighbour-cost))
-                                         ;; XXX this does happen with the chosen metric.
-                                         (setf closed (remove-nth closed neighbour-closed-index)))
-                                        ((and (not neighbour-open-index)
-                                              (not neighbour-closed-index))
-                                         (setf (path-node-cost neighbour-node)
-                                               (+ cost (euclidean-distance neighbour-x neighbour-y
-                                                                           goal-x goal-y))
-                                               (path-node-parent neighbour-node)
-                                               current)
-                                         (priority-queue-push open neighbour-node))))))))
-                      :finally (return current))))
-          (loop
-            :with result := (make-array 0 :element-type 'cons :adjustable t :fill-pointer t)
-            :for node := goal-node :then (path-node-parent node)
-            :until (eq start-node node)
-            :do (vector-push-extend (cons (path-node-x node) (path-node-y node)) result)
-            :finally (return (make-array (length result)
-                                         :element-type 'cons
-                                         :initial-contents result))))))))
+  (let* ((goal-col (floor goal-x))
+         (goal-row (floor goal-y))
+         (initial-x (round start-x))
+         (initial-y (round start-y))
+         (open (make-priority-queue #'path-node-cost))
+         (closed nil)
+         (start-node (make-path-node initial-x initial-y)))
+    (priority-queue-push open start-node)
+    (let ((goal-node
+            (loop :for current := (priority-queue-pop open)
+                  :until (and (= goal-col (path-node-x current))
+                              (= goal-row (path-node-y current)))
+                  :do (push current closed)
+                      (dolist (neighbour +neighbours+)
+                        (let ((neighbour-x (+ (path-node-x current)
+                                              (the fixnum (car neighbour))))
+                              (neighbour-y (+ (path-node-y current)
+                                              (the fixnum (cdr neighbour)))))
+                          (let* ((cost (+ (euclidean-distance
+                                           start-x start-y
+                                           (coerce (path-node-x current) 'double-float)
+                                           (coerce (path-node-y current) 'double-float))
+                                          (sqrt (+ (expt (the fixnum (car neighbour)) 2)
+                                                   (expt (the fixnum (cdr neighbour)) 2)))
+                                          (if (collidesp neighbour-x neighbour-y)
+                                              10000d0 0d0)))
+                                 (neighbour-cost (euclidean-distance
+                                                  start-x start-y
+                                                  (coerce neighbour-x 'double-float)
+                                                  (coerce neighbour-y 'double-float)))
+                                 (neighbour-node (make-path-node neighbour-x neighbour-y))
+                                 (neighbour-open-index (priority-queue-find open neighbour-node)))
+                            (if (and (< cost neighbour-cost) neighbour-open-index)
+                                ;; new path is better
+                                (priority-queue-remove open neighbour-open-index)
+                                (let ((neighbour-closed-index
+                                        (position neighbour-node closed :test #'path-node-equal)))
+                                  (cond
+                                    ((and neighbour-closed-index (< cost neighbour-cost))
+                                     ;; XXX this does happen with the chosen metric.
+                                     (setf closed (remove-nth closed neighbour-closed-index)))
+                                    ((and (not neighbour-open-index)
+                                          (not neighbour-closed-index))
+                                     (setf (path-node-cost neighbour-node)
+                                           (+ cost (euclidean-distance
+                                                    (coerce neighbour-x 'double-float)
+                                                    (coerce neighbour-y 'double-float)
+                                                    goal-x goal-y))
+                                           (path-node-parent neighbour-node) current)
+                                     (priority-queue-push open neighbour-node))))))))
+                  :finally (return current))))
+      (loop
+        :with result := (make-array 0 :element-type 'cons :adjustable t :fill-pointer t)
+        :for node := goal-node :then (path-node-parent node)
+        :until (eq start-node node)
+        :do (vector-push-extend (cons
+                                 (coerce (path-node-x node) 'double-float)
+                                 (coerce (path-node-y node) 'double-float))
+                                result)
+        :finally (return (make-array (length result)
+                                     :element-type 'cons
+                                     :initial-contents result))))))
 
 (declaim
  (inline face-target)
@@ -160,7 +159,8 @@ Note: if goal point is not walkable, this function will stuck."
 (defun face-target (character-x character-y target-x target-y)
   "Returns the angle that the character at CHARACTER-X, CHARACTER-Y should be facing to look
 at point TARGET-X, TARGET-Y."
-  (atan (* (- target-y character-y) 0.5d0) (- target-x character-x)))
+  (atan (- target-y character-y)
+        (- target-x character-x)))
 
 (declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
 (defun follow-path (character-entity)
@@ -185,17 +185,12 @@ at point TARGET-X, TARGET-Y."
     (loop
       :with dx := (- new-target-x x) :and dy := (* (- new-target-y y) 0.5d0)
       :with a := (atan dy dx) :and r := (sqrt (+ (* dx dx) (* dy dy)))
-      :for (col row) := (multiple-value-list (tile-index new-target-x new-target-y))
-      :while (collidesp col row :character character-entity)
+      :while (collidesp (floor new-target-x) (floor new-target-y) :character character-entity)
       :do (setf r (- r 0.5d0)
                 new-target-x (+ x (* r (cos a)))
                 new-target-y (+ y (* 2d0 r (sin a))))
       :finally
-         (return
-           (multiple-value-bind (col row)
-               (tile-index new-target-x new-target-y)
-             (tile-pos (coerce col 'double-float)
-                       (coerce row 'double-float)))))))
+         (return (values new-target-x new-target-y)))))
 
 ;; TODO : some sort of generic SoA class/macro with getter/setter functions
 (declaim
@@ -227,24 +222,6 @@ at point TARGET-X, TARGET-Y."
   (< (abs (- a b)) epsilon))
 
 (declaim
- (inline next-tile)
- (ftype (function (angle fixnum fixnum) (values fixnum fixnum))
-        next-tile))
-(defun next-tile (angle x y)
-  (declare (angle angle))
-  (when (minusp angle)
-    (setf angle (+ angle (* 2 pi))))
-  (ecase (round (* 4 angle) pi)
-    ((0 8) (values (1+ x) y))
-    (1 (values (+ x (mod y 2)) (1+ y)))
-    (2 (values x (+ y 2)))
-    (3 (values (- x (- 1 (mod y 2))) (1+ y)))
-    (4 (values (1- x) y))
-    (5 (values (- x (- 1 (mod y 2))) (1- y)))
-    (6 (values x (- y 2)))
-    (7 (values (+ x (mod y 2)) (1- y)))))
-
-(declaim
  (inline stop-entity)
  (ftype (function (fixnum)) stop-entity))
 (defun stop-entity (entity)
@@ -262,21 +239,15 @@ at point TARGET-X, TARGET-Y."
           (with-sprite entity ()
             (let ((delta (* dt speed)))
               (if (not (approx-equal angle (face-target x y target-x target-y)))
-                  (if (zerop (length path))
+                  (if (length= 0 path)
                       (when (eq stance :walk)
                         (switch-stance entity :idle))
                       (follow-path entity))
                   (let ((direction-x (* delta (cos angle)))
-                        (direction-y (* delta (sin angle) (/ *tile-width* *tile-height*))))
+                        (direction-y (* delta (sin angle))))
                     (cond
-                      ((and
-                        (not (equal
-                              (multiple-value-list (tile-index x y))
-                              (multiple-value-list (tile-index (+ x direction-x)
-                                                               (+ y direction-y)))))
-                        (multiple-value-call #'collidesp
-                          (multiple-value-call #'next-tile
-                            angle (tile-index x y))))
+                      ((collidesp (round (+ x direction-x))
+                                  (round (+ y direction-y)))
                        (stop-entity entity)
                        (switch-stance entity :idle))
                       (t
@@ -290,15 +261,12 @@ at point TARGET-X, TARGET-Y."
 
 (defmethod system-draw ((system character-system) renderer)
   (flet ((path-node-pos (x y)
-           (multiple-value-bind (mx my)
-               (multiple-value-bind (xi yi)
-                   (tile-index x y)
-                 (map->screen
-                  (coerce xi 'double-float)
-                  (coerce yi 'double-float)))
-             (absolute->viewport
-              (+ mx (floor *tile-width* 2))
-              (+ my (floor *tile-height* 2))))))
+           (multiple-value-bind (screen-x screen-y)
+               (multiple-value-call #'absolute->viewport
+                 (orthogonal->screen x y))
+             (values
+              (+ screen-x (floor *tile-width* 2))
+              (+ screen-y (floor *tile-height* 2))))))
     (with-system-config-options ((debug-path))
       (when debug-path
         (with-characters

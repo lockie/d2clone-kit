@@ -41,7 +41,14 @@
    ;; coordinate-system.lisp
    (:export
     #:coordinate-system
-    #:world->screen
+    #:orthogonal->isometric
+    #:isometric->orthogonal
+    #:isometric->orthogonal*
+    #:isometric->screen
+    #:isometric->screen*
+    #:screen->isometric*
+    #:orthogonal->screen
+    #:screen->orthogonal*
     #:with-screen-coordinate)
    ;; d2clone-kit.lisp
    (:export
@@ -104,10 +111,6 @@
    ;; map-system.lisp
    (:export
     #:map-system
-    #:tile-index
-    #:map->screen
-    #:screen->map
-    #:screen->map*
     #:ground-layer-p
     #:tile-property)
    (:export
@@ -142,7 +145,8 @@
     #:sparse-matrix
     #:make-sparse-matrix
     #:sparse-matrix-ref
-    #:sparse-matrix-remove)
+    #:sparse-matrix-remove
+    #:sparse-matrix-traverse)
    ;; sprite-batch-system.lisp
    (:export
     #:sprite-batch-system

@@ -60,3 +60,14 @@ Returns number of deleted elements or NIL if there's no such element in matrix."
   (when-let (index (gethash subscripts (sparse-matrix-indices sparse-matrix)))
     (remhash subscripts (sparse-matrix-indices sparse-matrix))
     (vector-push-extend index (sparse-matrix-deleted-indices sparse-matrix))))
+
+(declaim
+ (inline sparse-matrix-traverse)
+ (ftype (function (sparse-matrix (function (cons t)))) sparse-matrix-traverse))
+(defun sparse-matrix-traverse (sparse-matrix fn)
+  "Calls two argument function FN on elements of SPARSE-MATRIX in unpsecified order.
+First argument to FN is subscript, second is the element itself."
+  (let ((array (sparse-matrix-array sparse-matrix)))
+    (loop :for subscript :being :the :hash-key
+            :using (hash-value index) of (sparse-matrix-indices sparse-matrix)
+          :do (funcall fn subscript (growable-vector-ref array index)))))

@@ -71,5 +71,6 @@ See WITH-SYSTEM-CONFIG-OPTIONS"
   (debug sprite :type list :default nil)
   (debug cursor :type list :default nil)
   (debug path :type list :default nil)
+  (debug collisions :type list :default nil)
 
   )

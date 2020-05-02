@@ -64,7 +64,7 @@
       (with-slots (mouse-pressed last-target) (system-ref 'player)
         (if (minusp last-target)
             (multiple-value-bind (new-x new-y)
-                (multiple-value-call #'screen->map
+                (multiple-value-call #'screen->orthogonal*
                   (multiple-value-call #'viewport->absolute
                     (mouse-position mouse-event)))
               (if-let (target (and
@@ -151,7 +151,7 @@
                    (al:hold-bitmap-drawing nil))))))))
 
     (multiple-value-bind (cursor-map-x cursor-map-y)
-        (multiple-value-call #'screen->map
+        (multiple-value-call #'screen->orthogonal*
           (multiple-value-call #'viewport->absolute
             (mouse-position)))
 
@@ -193,8 +193,8 @@
         (when debug-cursor
           (multiple-value-bind (x y)
               (multiple-value-call #'absolute->viewport
-                (map->screen (coerce (floor cursor-map-x) 'double-float)
-                             (coerce (floor cursor-map-y) 'double-float)))
+                (orthogonal->screen (coerce (truncate cursor-map-x) 'double-float)
+                                    (coerce (truncate cursor-map-y) 'double-float)))
             (add-debug-rectangle
              (slot-value system 'debug-entity)
              x y *tile-width* *tile-height* debug-cursor)))))))

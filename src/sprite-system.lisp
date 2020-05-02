@@ -300,16 +300,21 @@ The following format features are unsupported yet:
                    (issue sprite-stance-changed :entity entity :stance :idle)
                    (first (gethash :idle stances))))))))))
 
+(defconstant +isometric-angle+ (* pi (/ 45 180)))
+
 (declaim
  (inline sprite-direction)
- (ftype (function (fixnum angle) unsigned-byte) sprite-direction))
+ (ftype (function (fixnum double-float) unsigned-byte) sprite-direction))
 (defun sprite-direction (directions angle)
   "Calculates sprite direction from angle value ANGLE assuming total sprite direction count DIRECTIONS. East direction is 0 degree angle; counted clockwise."
-  (declare (angle angle))
-  (when (minusp angle)
-    (incf angle (* 2 pi)))
-  (nth-value
-   0 (truncate (rem (round (* angle directions) (* 2 pi)) directions))))
+  ;; (declare (angle angle))
+  (let ((angle (+ angle +isometric-angle+)))
+    (when (minusp angle)
+      (incf angle (* 2 pi)))
+    (when (> angle (* 2 pi))
+      (decf angle (* 2 pi)))
+    (nth-value
+     0 (truncate (rem (round (* angle directions) (* 2 pi)) directions)))))
 
 (defmethod system-draw ((system sprite-system) renderer)
   (with-system-config-options ((debug-sprite))

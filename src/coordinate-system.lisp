@@ -3,11 +3,14 @@
 
 (defclass coordinate-system (system)
   ((name :initform 'coordinate))
-  (:documentation "Stores world coordinates."))
+  (:documentation "Stores orthogonal world coordinates."))
 
 ;; TODO : разобраться с типами
 ;; (deftype coordinate () `(integer ,(truncate most-negative-fixnum 256)
 ;;                                  ,(truncate most-positive-fixnum 256)))
+;; (deftype float-coordinate () `(double-float
+;;                                ,(/ most-negative-fixnum 2d0)
+;;                                ,(/ most-positive-fixnum 2d0)))
 
 (defcomponent coordinate coordinate
   (x 0d0 :type double-float)
@@ -15,18 +18,92 @@
 
 (defmethod make-component ((system coordinate-system) entity &rest parameters)
   (destructuring-bind (&key x y) parameters
-    (with-coordinate entity (point-x point-y)
-      (setf point-x x)
-      (setf point-y y))))
+    (with-coordinate entity (coord-x coord-y)
+      (setf coord-x x)
+      (setf coord-y y))))
 
 (declaim
- (inline world->screen)
- (ftype (function (double-float double-float) (values fixnum fixnum)) world->screen))
-(defun world->screen (x y)
-  "Converts world coordinate units to screen pixel units."
+ (inline orthogonal->isometric)
+ (ftype (function (double-float double-float) (values double-float double-float))
+        orthogonal->isometric))
+(defun orthogonal->isometric (x y)
+  "Translates orthogonal coordinates X, Y into isometric coordinates."
   (values
-   (floor (* x *tile-width*))
-   (floor (* y *tile-height*) 2)))
+   (- x y)
+   (* (+ x y) 0.5d0)))
+
+(declaim
+ (inline isometric->orthogonal)
+ (ftype (function (double-float double-float) (values double-float double-float))
+        isometric->orthogonal))
+(defun isometric->orthogonal (x y)
+  "Translates isometric coordinates X, Y into ortogonal coordinates."
+  (values
+   (+ y (* 0.5d0 x))
+   (- y (* 0.5d0 x))))
+
+(declaim
+ (inline isometric->orthogonal*)
+ (ftype (function (double-float double-float) (values double-float double-float))
+        isometric->orthogonal*))
+(defun isometric->orthogonal* (x y)
+  "Translates isometric coordinates X, Y into orthogonal coordinates, taking tile staggering into account."
+  (let ((stagger (* 0.5d0 (rem (abs (floor y)) 2))))
+    (values (+ (* 0.5d0 y) x stagger)
+            (- (* 0.5d0 y) x stagger))))
+
+(declaim
+ (inline isometric->screen)
+ (ftype (function (double-float double-float) (values fixnum fixnum))
+        isometric->screen))
+(defun isometric->screen (x y)
+  "Translates isometric coordinates X, Y into screen coordinates."
+  (values
+   (floor (* x *tile-width*) 2)
+   (floor (* y *tile-height*))))
+
+(declaim
+ (inline isometric->screen*)
+ (ftype (function (double-float double-float) (values fixnum fixnum))
+        isometric->screen*))
+(defun isometric->screen* (x y)
+  "Translates isometric coordinates X, Y into screen coordinates, taking tile staggering into account."
+  (values
+   (floor (+ (* x *tile-width*) (* (rem (abs (floor y)) 2) (floor *tile-width* 2))) 2)
+   (floor (* y *tile-height*))))
+
+(declaim
+ (inline screen->isometric*)
+ (ftype (function (fixnum fixnum) (values double-float double-float))
+        screen->isometric*))
+(defun screen->isometric* (x y)
+  "Translates screen coordinates X, Y into isometric coordinates, taking tile staggering into account."
+  (let ((iso-y (coerce (/ y *tile-height*) 'double-float)))
+    (values
+     (coerce
+      (/ (- (* x 2) (* (rem (abs (floor iso-y)) 2) (floor *tile-width* 2))) *tile-width*)
+      'double-float)
+     iso-y)))
+
+(declaim
+ (inline orthogonal->screen)
+ (ftype (function (double-float double-float) (values fixnum fixnum))
+        orthogonal->screen))
+(defun orthogonal->screen (x y)
+  "Translates orthogonal coordinates X, Y into screen coordinates."
+  (multiple-value-call
+      #'isometric->screen
+    (orthogonal->isometric x y)))
+
+(declaim
+ (inline screen->orthogonal*)
+ (ftype (function (fixnum fixnum) (values double-float double-float))
+        screen->orthogonal*))
+(defun screen->orthogonal* (x y)
+  "Translates screen coordinates X, Y into orthogonal coordinates, taking tile staggering into account."
+  (multiple-value-call
+      #'isometric->orthogonal
+    (screen->isometric* x y)))
 
 (defmacro with-screen-coordinate (entity bindings &body body)
   "Executes BODY with ENTITY's screen pixel coordinates bound to two symbols in BINDINGS list. If BINDINGS are not set, coordinates are bound to symbols X and Y."
@@ -36,5 +113,5 @@
          (map-x (gensym "x"))
          (map-y (gensym "y")))
     `(with-coordinate ,entity (,map-x ,map-y)
-       (multiple-value-bind (,screen-x ,screen-y) (world->screen ,map-x ,map-y)
+       (multiple-value-bind (,screen-x ,screen-y) (orthogonal->screen ,map-x ,map-y)
          ,@body))))
