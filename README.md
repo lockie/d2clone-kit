@@ -37,10 +37,12 @@ $ sbcl --quit --eval "(progn (ql:register-local-projects) (ql:quickload :d2clone
 ```
 
 ## Glossary
-* **map coordinates** - *world coordinates* of tile in staggered map grid.
+* **isometric coordinates** - coordinates in isometric projection.
+* **orthogonal coordinates** - floating point in-game world coordinates. One unit of length corresponds to one map tile width, typically 64 pixels.
 * **prefab** - system-specific object loaded from file and used as a template to create new instances of system's component.
+* **screen coordinates** - integer screen pixel coordinates.
 * **viewport coordinates** - screen pixel coordinates relative to the current camera position.
-* **world coordinates** - floating point in-game world coordinates. One unit of length corresponds to one map tile width, typically 64 pixels.
+
 
 ## Legal
 d2clone-kit is licensed under the GNU GPL license version 3. See [LICENSE](https://gitlab.com/lockie/d2clone-kit/-/blob/master/LICENSE).

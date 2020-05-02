@@ -39,44 +39,42 @@
                                      (al:map-rgba 255 255 255 0) x y 0 text)))))))))))
 
 (eval-when (:compile-toplevel)
-  (defconstant +angles+
-    (mapcar #'(lambda (x) (+ 0.01d0 (/ (* x pi) 180d0)))
-            '(90 45 135 0 180))))
+  (defconstant +item-neighbours+ '((1 . 1)
+                                   (1 . 0)
+                                   (0 . 1)
+                                   (1 . -1)
+                                   (-1 . 1))))
 
 (defun drop-item (owner-entity item)
-  (flet ((entity-tile-index (entity)
+  (flet ((entity-tile (entity)
            (with-coordinate entity ()
-             (multiple-value-bind (col row)
-                 (tile-index x y)
-               (cons col row)))))
+             (cons (round x) (round y)))))
     (let ((forbidden-positions '()))
       (with-items
-          (push (entity-tile-index entity) forbidden-positions))
-      (push (entity-tile-index (player-entity)) forbidden-positions)
-      (with-coordinate owner-entity (owner-x owner-y)
-        (multiple-value-bind (owner-col owner-row)
-            (tile-index owner-x owner-y)
-          (let ((positions
-                  (mapcar
-                   #'(lambda (angle)
-                       (multiple-value-bind (x y)
-                           (next-tile angle owner-col owner-row)
-                         (cons x y)))
-                   +angles+)))
-            (when-let (position
-                       (some
-                        #'(lambda (p)
-                            (unless
-                                (or (find p forbidden-positions :test #'equal)
-                                    (collidesp (car p) (cdr p)))
-                              p))
-                        positions))
-              (let ((item-entity (make-entity)))
-                (multiple-value-bind (x y)
-                    (tile-pos (coerce (car position) 'double-float)
-                              (coerce (cdr position) 'double-float))
-                  (make-component (system-ref 'coordinate) item-entity :x x :y (- y 0.5d0)))
-                (make-component (system-ref 'item) item-entity :type item)))))))))
+          (push (entity-tile entity) forbidden-positions))
+      (push (entity-tile (player-entity)) forbidden-positions)
+      (with-coordinate owner-entity ()
+        (let* ((owner-x (round x))
+               (owner-y (round y))
+               (positions
+                 (mapcar
+                  #'(lambda (delta)
+                      (cons (+ owner-x (car delta))
+                            (+ owner-y (cdr delta))))
+                  +item-neighbours+)))
+          (when-let (position
+                     (some
+                      #'(lambda (p)
+                          (unless (or (find p forbidden-positions :test #'equal)
+                                      (collidesp (car p) (cdr p)))
+                            p))
+                      positions))
+            (let ((item-entity (make-entity)))
+              (make-component (system-ref 'coordinate) item-entity
+                              :x (- (coerce (car position) 'double-float) 0.49d0)
+                              :y (- (coerce (cdr position) 'double-float) 0.49d0))
+              (make-component (system-ref 'item) item-entity
+                              :type item))))))))
 
 (eval-when (:compile-toplevel)
   (defconstant +gulp-initializer+
@@ -121,18 +119,14 @@
 (defhandler item-system character-moved (event entity new-x new-y)
   :filter '(= entity (player-entity))
   (let ((coordinate-system (system-ref 'coordinate)))
-    (with-coordinate entity (player-x player-y)
-      (multiple-value-bind (player-col player-row)
-          (tile-index player-x player-y)
-        (with-items
-            (when (has-component-p coordinate-system entity)
-              (with-coordinate entity ()
-                (multiple-value-bind (item-col item-row)
-                    (tile-index x y)
-                  (when (and (= item-col player-col)
-                             (= item-row player-row))
-                    (pickup-item entity)
-                    (return))))))))))
+    (with-coordinate (player-entity) (player-x player-y)
+      (with-items
+          (when (has-component-p coordinate-system entity)
+            (with-coordinate entity ()
+              (when (and (approx-equal x player-x 0.49d0)
+                         (approx-equal y player-y 0.49d0))
+                (pickup-item entity)
+                (return))))))))
 
 (eval-when (:compile-toplevel)
   ;; https://stackoverflow.com/a/29361029/1336774

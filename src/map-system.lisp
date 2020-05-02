@@ -35,76 +35,6 @@ conversion maths are badly fucked up."))
 (defparameter *tile-width* 0)
 (defparameter *tile-height* 0)
 
-(deftype float-coordinate () `(double-float
-                               ,(/ most-negative-fixnum 2d0)
-                               ,(/ most-positive-fixnum 2d0)))
-
-(declaim
- (inline tile-index)
- (ftype (function (double-float double-float) (values fixnum fixnum)) tile-index))
-(defun tile-index (x y)
-  "Returns index of tile containing point with world coordinates X, Y."
-  (let ((tx (floor (the float-coordinate (+ (* y 0.5d0) x -0.5d0))))
-        (ty (floor (the float-coordinate (- (* y 0.5d0) x -1.5d0)))))
-    (values
-     (1+ (floor (- tx ty) 2))
-     (the fixnum (+ tx ty)))))
-
-(declaim
- (inline tile-pos)
- (ftype (function (float-coordinate float-coordinate) (values double-float double-float))
-        tile-pos))
-(defun tile-pos (col row)
-  (let ((x (floor col))
-        (y (floor row)))
-    (values
-     (if (oddp y)
-         (+ 0.5d0 x)
-         (coerce x 'double-float))
-     (coerce y 'double-float))))
-
-(declaim
- (inline map->screen)
- (ftype (function (double-float double-float) (values fixnum fixnum)) map->screen))
-(defun map->screen (x y)
-  "Converts map coordinates to screen pixel coordinates.
-
-See SCREEN->MAP
-See SCREEN->MAP*"
-  (values
-   (floor (+ (* x *tile-width*) (* (rem (abs (floor y)) 2) (floor *tile-width* 2))))
-   (floor (* y *tile-height*) 2)))
-
-(declaim
- (inline screen->map)
- (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map))
-(defun screen->map (x y)
-  "Converts screen pixel coordinates to map coordinates of nearest tile.
-
-See SCREEN->MAP*
-See MAP->SCREEN"
-  (let ((tx (floor (- x (* -2 y) (floor *tile-width* 2) (* 2 *tile-height*)) *tile-width*))
-        (ty (floor (+ y (/ x -2) (floor *tile-width* 2) (floor *tile-height* 2)) *tile-height*)))
-    (values
-     (coerce (1+ (/ (- tx ty) 2)) 'double-float)
-     (coerce (+ tx ty) 'double-float))))
-
-(declaim
- (inline screen->map*)
- (ftype (function (fixnum fixnum) (values double-float double-float)) screen->map*))
-(defun screen->map* (x y)
-  "Converts screen pixel coordinates to exact map coordinates.
-
-See SCREEN->MAP
-See MAP->SCREEN"
-  (multiple-value-bind (int-map-x int-map-y) (screen->map x y)
-    (multiple-value-bind (int-x int-y) (map->screen int-map-x int-map-y)
-      (let ((diff-x (- x int-x))
-            (diff-y (- y int-y)))
-        (values
-         (+ int-map-x (/ diff-x (coerce *tile-width* 'double-float)))
-         (+ int-map-y (/ diff-y (* 2 (coerce *tile-height* 'double-float)))))))))
-
 (defun load-tiles (tiled-map)
   (let ((tilesets (tiled-map-tilesets tiled-map)))
     (if-let (last-tileset
@@ -166,6 +96,10 @@ See MAP->SCREEN"
                       (error "~s: wrong tileset size ~dx~d (expected to be even)"
                              (tiled-tileset-name tileset)
                              tile-width tile-height))
+                    (unless (= tile-width (* 2 tile-height))
+                      (error "~s: wrong tileset size ~dx~d (expected aspect ratio 2:1)"
+                             (tiled-tileset-name tileset)
+                             tile-width tile-height))
                     (setf *tile-width* tile-width)
                     (setf *tile-height* tile-height))
                   (unless (and (= *tile-width* tile-width)
@@ -221,17 +155,25 @@ See MAP->SCREEN"
           ;; TODO : restart for rounding coordinates
           (error "Only integer map coordinates allowed for map chunks"))))))
 
+;; TODO : test on kenney assets (different size)!
+
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))
     (multiple-value-bind (start-x start-y)
-        (multiple-value-call #'screen->map (viewport->absolute 0 0))
+        (multiple-value-call #'screen->isometric* (viewport->absolute 0 0))
       (multiple-value-bind (end-x end-y)
-          (multiple-value-call #'screen->map (viewport->absolute display-width display-height))
+          (multiple-value-call #'screen->isometric* (viewport->absolute display-width display-height))
+        (setf start-x (/ start-x 2)
+              end-x (/ end-x 2)
+              start-y (* start-y 2)
+              end-y (* end-y 2))
         (with-map-chunks
-            (with-coordinate entity (chunk-x chunk-y)
+            (with-coordinate entity (chunk-ortho-x chunk-ortho-y)
+              (multiple-value-bind (chunk-x chunk-y)
+                  (orthogonal->isometric chunk-ortho-x chunk-ortho-y)
               (multiple-value-bind (chunk-viewport-x chunk-viewport-y)
                   (multiple-value-call #'absolute->viewport
-                    (map->screen chunk-x chunk-y))
+                    (isometric->screen chunk-x chunk-y))
                 (when (range-visible-p
                        chunk-viewport-x chunk-viewport-y
                        (+ (* (tiled-map-width tiled-map) *tile-width*) (truncate *tile-width* 2))
@@ -241,10 +183,10 @@ See MAP->SCREEN"
                     :with from-col := (max 0 (ceiling (- start-x chunk-x 2)))
                     :with from-row := (max 0 (ceiling (- start-y chunk-y 2)))
                     :for layer :across (tiled-map-layers tiled-map)
-                    :for to-col := (min (ceiling (- end-x chunk-x -1))
-                                       (1- (tiled-layer-width layer)))
-                    :for to-row := (min (ceiling (- end-y chunk-y -1))
-                                       (1- (tiled-layer-height layer)))
+                    :for to-col := (min (ceiling (- end-x chunk-x))
+                                        (1- (tiled-layer-width layer)))
+                    :for to-row := (min (ceiling (- end-y chunk-y))
+                                        (1- (tiled-layer-height layer)))
                     :do (loop
                          :with layer-order := (tiled-layer-order layer)
                          :with ground-layer-p := (ground-layer-p layer)
@@ -254,7 +196,7 @@ See MAP->SCREEN"
                                    :do (let ((tile-index (aref data row col)))
                                          (unless (zerop tile-index)
                                            (multiple-value-bind (tile-x tile-y)
-                                               (map->screen
+                                               (isometric->screen*
                                                 (coerce col 'double-float)
                                                 (coerce row 'double-float))
                                              ;; TODO : translucent if obscures player!
@@ -262,7 +204,7 @@ See MAP->SCREEN"
                                                (add-sprite-index-to-batch
                                                 (map-tileset-sprite-batch tileset)
                                                 (coerce
-                                                 (+ tile-y chunk-viewport-y
+                                                 (+ (/ tile-y 2) chunk-viewport-y
                                                     (tile-property tiles-properties tile-index 'z 0)
                                                     (* display-width
                                                        (- layer-order
@@ -270,21 +212,25 @@ See MAP->SCREEN"
                                                              (if ground-layer-p 2 1)))))
                                                  'double-float)
                                                 (- tile-index (map-tileset-first-id tileset))
-                                                (+ tile-x chunk-viewport-x)
-                                                (+ tile-y chunk-viewport-y))))))))
+                                                (+ (floor tile-x 0.5d0)
+                                                   chunk-viewport-x)
+                                                (+ (floor tile-y 2d0)
+                                                   chunk-viewport-y))))))))
                     :finally
                        (when debug-grid
                          (loop :for row :from from-row :upto to-row
                                :do (loop :for col :from from-col :upto to-col
                                          :do (multiple-value-bind (tile-x tile-y)
-                                                 (map->screen
+                                                 (isometric->screen*
                                                   (coerce col 'double-float)
                                                   (coerce row 'double-float))
                                                (add-debug-tile-rhomb
                                                 debug-entity
-                                                (+ tile-x chunk-viewport-x)
-                                                (+ tile-y chunk-viewport-y)
-                                                debug-grid nil))))))))))))))
+                                                (+ (floor tile-x 0.5d0)
+                                                   chunk-viewport-x)
+                                                (+ (floor tile-y 2d0)
+                                                   chunk-viewport-y)
+                                                debug-grid nil)))))))))))))))
 
 (defhandler map-system quit (event)
   (setf *tile-width* 0)

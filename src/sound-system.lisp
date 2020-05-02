@@ -29,9 +29,11 @@
            sample-instance
            (/ 1f0 (exp (* distance-factor
                           (euclidean-distance x y camera-x camera-y)))))
-          (al:set-sample-instance-pan
-           sample-instance
-           (clamp (* pan-factor (- x camera-x)) -1f0 1f0)))))))
+          (let ((iso-x (nth-value 0 (isometric->orthogonal x y)))
+                (iso-camera-x (nth-value 0 (isometric->orthogonal camera-x camera-y))))
+            (al:set-sample-instance-pan
+             sample-instance
+             (clamp (* pan-factor (- iso-x iso-camera-x)) -1f0 1f0))))))))
 
 (defmethod make-prefab-component ((system sound-system) entity prefab parameters)
   (with-sound entity ()

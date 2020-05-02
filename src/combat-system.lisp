@@ -8,13 +8,13 @@
 
 (defcomponent combat combat
   (target -1 :type fixnum)
-  (attack-range 1.5d0 :type double-float)
+  (attack-range 2d0 :type double-float)
   (min-damage 1d0 :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
   (max-damage nil :type double-float))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
   (declare (ignore system entity parameters))
-  (destructuring-bind (&key (attack-range 1.5d0) (min-damage 1d0) max-damage) parameters
+  (destructuring-bind (&key (attack-range 2d0) (min-damage 1d0) max-damage) parameters
     (with-combat entity (target entity-attack-range entity-min-damage entity-max-damage)
       (setf entity-attack-range attack-range
             entity-min-damage min-damage
