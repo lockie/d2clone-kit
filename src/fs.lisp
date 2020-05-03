@@ -62,7 +62,6 @@ DIRECTORY and FILE bound."
                "../"))
           "assets"))
   (mount data-dir)
-  (mount (physfs-get-base-dir))
   (dolist (dir (uiop/configuration:xdg-data-dirs))
     (mount
      (merge-pathnames
