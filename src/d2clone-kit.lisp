@@ -46,9 +46,9 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (al:flip-display))))))
 
 ;; TODO : put this to UI subsystem?..
-(defvar *small-ui-font*)
-(defvar *medium-ui-font*)
-(defvar *large-ui-font*)
+(defvar *small-ui-font* nil)
+(defvar *medium-ui-font* nil)
+(defvar *large-ui-font* nil)
 
 (defunl start-engine (game-name initializers &rest config)
   "Initializes and starts engine to run the game named by GAME-NAME.
@@ -152,9 +152,12 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
           (unregister-all-systems)
           (al:destroy-display display)
           (al:destroy-event-queue event-queue)
-          (al:destroy-font *large-ui-font*)
-          (al:destroy-font *medium-ui-font*)
-          (al:destroy-font *small-ui-font*)
+          (when *large-ui-font*
+            (al:destroy-font *large-ui-font*))
+          (when *medium-ui-font*
+            (al:destroy-font *medium-ui-font*))
+          (when *small-ui-font*
+            (al:destroy-font *small-ui-font*))
           (setf *small-ui-font* (cffi:null-pointer)
                 *medium-ui-font* (cffi:null-pointer)
                 *large-ui-font* (cffi:null-pointer))
