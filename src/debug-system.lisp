@@ -114,5 +114,6 @@
 
 (defhandler debug-system quit (event)
   (with-slots (font) system
-    (al:destroy-font font)
+    (when font
+      (al:destroy-font font))
     (setf font nil)))
