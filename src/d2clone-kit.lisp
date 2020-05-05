@@ -84,10 +84,9 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
       (error "Initializing default audio mixer failed"))
 
     (doplist (key val *config-options*)
-      (apply #'(setf config)
-             (cons val
-                   (mapcar #'make-keyword
-                           (uiop:split-string (string key) :separator '(#\-))))))
+      (apply #'(setf config) val
+             (mapcar #'make-keyword
+                     (uiop:split-string (string key) :separator '(#\-)))))
 
     (with-system-config-options
         ((display-windowed display-multisampling display-width display-height))
