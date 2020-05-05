@@ -175,7 +175,7 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
         *initializers* initializers
         *config-options* config)
   (float-features:with-float-traps-masked
-      (:invalid :inexact :overflow :underflow)
+      (:divide-by-zero :invalid :inexact :overflow :underflow)
     (al:run-main 0 (cffi:null-pointer) (cffi:callback run-engine))))
 
 (defun demo ()
