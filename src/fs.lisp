@@ -2,6 +2,7 @@
 
 (cffi:define-foreign-library libphysfs
   (:windows nil)
+  (:darwin (:or "libphysfs.3.0.2.dylib" "libphysfs.dylib"))
   (:unix (:or "libphysfs.so.3.0.2" "libphysfs.so.1"))
   (t (:default "libphysfs")))
 (cffi:use-foreign-library libphysfs)

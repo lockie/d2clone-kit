@@ -50,11 +50,13 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defvar *medium-ui-font* nil)
 (defvar *large-ui-font* nil)
 
-(defunl start-engine (game-name initializers &rest config)
-  "Initializes and starts engine to run the game named by GAME-NAME.
-INITIALIZERS is list of FUNCALL'able entity initializers which are called just before entering
-game loop with no parameters. CONFIG plist is used to override variables read from config file."
-  (let* ((dir-name (sanitize-filename game-name))
+(defvar *game-name*)
+(defvar *initializers*)
+(defvar *config-options*)
+
+(cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
+  (declare (ignore argc argv))
+  (let* ((dir-name (sanitize-filename *game-name*))
          (data-dir
            (merge-pathnames
             (make-pathname :directory `(:relative ,dir-name))
@@ -66,106 +68,115 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
     (init-fs dir-name data-dir)
     (init-config))
 
-  (float-features:with-float-traps-masked
-      (:invalid :inexact :overflow :underflow)
-    (unless (al:init-primitives-addon)
-      (error "Initializing primitives addon failed"))
-    (unless (al:init-image-addon)
-      (error "Initializing image addon failed"))
-    (al:init-font-addon)
-    (unless (al:init-ttf-addon)
-      (error "Initializing TTF addon failed"))
-    (unless (al:install-audio)
-      (error "Intializing audio addon failed"))
-    (unless (al:init-acodec-addon)
-      (error "Initializing audio codec addon failed"))
-    (unless (al:restore-default-mixer)
-      (error "Initializing default audio mixer failed"))
+  (unless (al:init-primitives-addon)
+    (error "Initializing primitives addon failed"))
+  (unless (al:init-image-addon)
+    (error "Initializing image addon failed"))
+  (al:init-font-addon)
+  (unless (al:init-ttf-addon)
+    (error "Initializing TTF addon failed"))
+  (unless (al:install-audio)
+    (error "Intializing audio addon failed"))
+  (unless (al:init-acodec-addon)
+    (error "Initializing audio codec addon failed"))
+  (unless (al:restore-default-mixer)
+    (error "Initializing default audio mixer failed"))
 
-    (doplist (key val config)
-             (apply #'(setf config)
-                    (cons val
-                          (mapcar #'make-keyword
-                                  (uiop:split-string (string key) :separator '(#\-))))))
+  (doplist (key val *config-options*)
+    (apply #'(setf config)
+           (cons val
+                 (mapcar #'make-keyword
+                         (uiop:split-string (string key) :separator '(#\-))))))
 
-    (with-system-config-options
-        ((display-windowed display-multisampling display-width display-height))
-      (al:set-new-display-flags
-       (if display-windowed
-           '(:windowed)
-           '(:fullscreen)))
-      (unless (zerop display-multisampling)
-        (al:set-new-display-option :sample-buffers 1 :require)
-        (al:set-new-display-option :samples display-multisampling :require))
+  (with-system-config-options
+      ((display-windowed display-multisampling display-width display-height))
+    (al:set-new-display-flags
+     (if display-windowed
+         '(:windowed)
+         '(:fullscreen)))
+    (unless (zerop display-multisampling)
+      (al:set-new-display-option :sample-buffers 1 :require)
+      (al:set-new-display-option :samples display-multisampling :require))
 
-      (with-system-config-options ((display-font))
-        (if (length= 0 display-font)
-            (progn
-              (log-warn "No font specified in config, loading builtin font")
+    (with-system-config-options ((display-font))
+      (if (length= 0 display-font)
+          (progn
+            (log-warn "No font specified in config, loading builtin font")
+            (setf *small-ui-font* (al:create-builtin-font)
+                  *medium-ui-font* (al:create-builtin-font)
+                  *large-ui-font* (al:create-builtin-font)))
+          (let ((font-name (format nil "fonts/~a" display-font)))
+            (setf *small-ui-font* (al:load-ttf-font font-name -8 0)
+                  *medium-ui-font* (al:load-ttf-font font-name -12 0)
+                  *large-ui-font* (al:load-ttf-font font-name -20 0))
+            (when (or (cffi:null-pointer-p *small-ui-font*)
+                      (cffi:null-pointer-p *medium-ui-font*)
+                      (cffi:null-pointer-p *large-ui-font*))
+              (log-warn "Loading ~a failed, falling back to builtin font" font-name)
               (setf *small-ui-font* (al:create-builtin-font)
                     *medium-ui-font* (al:create-builtin-font)
-                    *large-ui-font* (al:create-builtin-font)))
-            (let ((font-name (format nil "fonts/~a" display-font)))
-              (setf *small-ui-font* (al:load-ttf-font font-name -8 0)
-                    *medium-ui-font* (al:load-ttf-font font-name -12 0)
-                    *large-ui-font* (al:load-ttf-font font-name -20 0))
-              (when (or (cffi:null-pointer-p *small-ui-font*)
-                        (cffi:null-pointer-p *medium-ui-font*)
-                        (cffi:null-pointer-p *large-ui-font*))
-                (log-warn "Loading ~a failed, falling back to builtin font" font-name)
-                (setf *small-ui-font* (al:create-builtin-font)
-                      *medium-ui-font* (al:create-builtin-font)
-                      *large-ui-font* (al:create-builtin-font))))))
+                    *large-ui-font* (al:create-builtin-font))))))
 
-      (let ((display (al:create-display display-width display-height))
-            (event-queue (al:create-event-queue)))
-        (when (cffi:null-pointer-p display)
-          (error "Initializing display failed"))
-        (al:inhibit-screensaver t)
-        (al:set-window-title display game-name)
-        (al:register-event-source event-queue (al:get-display-event-source display))
-        (al:install-keyboard)
-        (al:register-event-source event-queue (al:get-keyboard-event-source))
-        (al:install-mouse)
-        (al:register-event-source event-queue (al:get-mouse-event-source))
+    (let ((display (al:create-display display-width display-height))
+          (event-queue (al:create-event-queue)))
+      (when (cffi:null-pointer-p display)
+        (error "Initializing display failed"))
+      (al:inhibit-screensaver t)
+      (al:set-window-title display *game-name*)
+      (al:register-event-source event-queue (al:get-display-event-source display))
+      (al:install-keyboard)
+      (al:register-event-source event-queue (al:get-keyboard-event-source))
+      (al:install-mouse)
+      (al:register-event-source event-queue (al:get-mouse-event-source))
 
-        (al:set-new-bitmap-flags '(:video-bitmap))
+      (al:set-new-bitmap-flags '(:video-bitmap))
 
-        (setf *random-state* (make-random-state t))
+      (setf *random-state* (make-random-state t))
 
-        (unwind-protect
-             (progn
-               (make-instance 'debug-system)
-               (make-instance 'sprite-batch-system)
-               (make-instance 'collision-system)
-               (make-instance 'combat-system)
-               (make-instance 'item-system)
-               (make-instance 'sound-system)
-               (log-info "Initializing entities")
-               (dolist (initializer initializers)
-                 (funcall initializer))
-               (setf (camera-target) (player-entity))
-               (game-loop event-queue))
-          (log-info "Shutting engine down")
-          (issue quit)
-          (al:inhibit-screensaver nil)
-          (unregister-all-systems)
-          (al:destroy-display display)
-          (al:destroy-event-queue event-queue)
-          (when *large-ui-font*
-            (al:destroy-font *large-ui-font*))
-          (when *medium-ui-font*
-            (al:destroy-font *medium-ui-font*))
-          (when *small-ui-font*
-            (al:destroy-font *small-ui-font*))
-          (setf *small-ui-font* (cffi:null-pointer)
-                *medium-ui-font* (cffi:null-pointer)
-                *large-ui-font* (cffi:null-pointer))
-          (al:stop-samples)
-          (close-config)
-          (close-fs)
-          (al:uninstall-system))))))
+      (unwind-protect
+           (progn
+             (make-instance 'debug-system)
+             (make-instance 'sprite-batch-system)
+             (make-instance 'collision-system)
+             (make-instance 'combat-system)
+             (make-instance 'item-system)
+             (make-instance 'sound-system)
+             (log-info "Initializing entities")
+             (dolist (initializer *initializers*)
+               (funcall initializer))
+             (setf (camera-target) (player-entity))
+             (game-loop event-queue))
+        (log-info "Shutting engine down")
+        (issue quit)
+        (al:inhibit-screensaver nil)
+        (unregister-all-systems)
+        (al:destroy-display display)
+        (al:destroy-event-queue event-queue)
+        (when *large-ui-font*
+          (al:destroy-font *large-ui-font*))
+        (when *medium-ui-font*
+          (al:destroy-font *medium-ui-font*))
+        (when *small-ui-font*
+          (al:destroy-font *small-ui-font*))
+        (setf *small-ui-font* (cffi:null-pointer)
+              *medium-ui-font* (cffi:null-pointer)
+              *large-ui-font* (cffi:null-pointer))
+        (al:stop-samples)
+        (close-config)
+        (close-fs)
+        (al:uninstall-system))))
+  0)
 
+(defunl start-engine (game-name initializers &rest config)
+  "Initializes and starts engine to run the game named by GAME-NAME.
+INITIALIZERS is list of FUNCALL'able entity initializers which are called just before entering
+game loop with no parameters. CONFIG plist is used to override variables read from config file."
+  (setf *game-name* game-name
+        *initializers* initializers
+        *config-options* config)
+  (float-features:with-float-traps-masked
+      (:invalid :inexact :overflow :underflow)
+    (al:run-main 0 (cffi:null-pointer) (cffi:callback run-engine))))
 
 (defun demo ()
   "Runs built-in engine demo."
