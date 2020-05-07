@@ -2,7 +2,7 @@
 
 (cffi:define-foreign-library libphysfs
   (:windows nil)
-  (:darwin (:or "libphysfs.3.0.2.dylib" "libphysfs.dylib"))
+  (:darwin (:or "libphysfs.3.0.2.dylib" "libphysfs.1.dylib"))
   (:unix (:or "libphysfs.so.3.0.2" "libphysfs.so.1"))
   (t (:default "libphysfs")))
 (cffi:use-foreign-library libphysfs)
@@ -61,7 +61,7 @@ DIRECTORY and FILE bound."
            (if (uiop:argv0)
                (merge-pathnames "../" (directory-namestring (uiop:argv0)))
                "../"))
-          "assets"))
+          "Resources"))
   (mount data-dir)
   (dolist (dir (uiop/configuration:xdg-data-dirs))
     (mount
