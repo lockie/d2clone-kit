@@ -52,4 +52,4 @@ flycheck_*.el
 
 allegro.log
 docs/
-assets/
+Resources/
