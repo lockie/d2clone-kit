@@ -34,7 +34,8 @@ The following format features are unsupported yet:
   (debug-entity -1 :type fixnum))
 
 (defprefab sprite "ase"
-  (ase-file nil :type ase-file)
+  (width 0 :type fixnum)
+  (height 0 :type fixnum)
   (layers nil :type hash-table)  ;; layer name (keyword) -> al_bitmap
   (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum)  ;; count of directions
@@ -198,7 +199,8 @@ The following format features are unsupported yet:
                   :size (length layer-names) :test 'eq :init-format :keychain
                   :initial-contents layer-names :init-data layer-bitmaps)))
     (make-sprite-prefab
-     :ase-file ase-file
+     :width (ase-file-width ase-file)
+     :height (ase-file-height ase-file)
      :layers layers
      :stances stances
      :directions directions
@@ -208,8 +210,8 @@ The following format features are unsupported yet:
 (defmethod make-prefab-component ((system sprite-system) entity prefab parameters)
   (with-system-config-options ((debug-sprite))
     (with-sprite entity ()
-      (setf width (ase-file-width (sprite-prefab-ase-file prefab)))
-      (setf height (ase-file-height (sprite-prefab-ase-file prefab)))
+      (setf width (sprite-prefab-width prefab))
+      (setf height (sprite-prefab-height prefab))
       (setf stances (sprite-prefab-stances prefab))
       (setf directions (sprite-prefab-directions prefab))
       (setf frame-durations (sprite-prefab-frame-durations prefab))
