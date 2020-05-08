@@ -180,7 +180,6 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
 
 (defun demo ()
   "Runs built-in engine demo."
-  ;; TODO : separate thread?
   (start-engine
    "demo"
    (mapcar
