@@ -5,12 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- MacOS support.
+
 ### Changed
 - Removed ubiquitous mana system component.
+- Refactored coordinates system. Now orthogonal coordinates are stored and used everywhere, and isometric ones are calculated on the fly when needed.
 
 ### Fixed
 - Fixed compilation on CCL.
 - Assets are now loaded using path relative to executable, not to current working directory.
+- Minor performance improvements in asset loading.
+- Fixed bug causing FLOATING-POINT-INVALID-OPERATION on some systems.
 
 
 ## [0.1.0] - 2020-04-20
