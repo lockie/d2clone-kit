@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Minor performance improvements in asset loading.
 - Fixed bug causing FLOATING-POINT-INVALID-OPERATION on some systems.
 - Greatly improved memory usage by avoiding storing parsed ase files.
+- Fixed bug causing log messages with % symbol to be output incorrectly.
 
 
 ## [0.1.0] - 2020-04-20
