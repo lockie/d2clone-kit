@@ -35,7 +35,9 @@
       ((do-trace (level function-name message)
          (when (trace-prefix
                 "d2clone-kit" level (file-namestring (or (uiop:argv0) "")) 0 function-name)
-           (trace-suffix (concatenate 'string message (string #\newline))))))
+           (trace-suffix (concatenate 'string
+                                      (cl-ppcre:regex-replace-all "%" message "%%")
+                                      (string #\newline))))))
     (let ((full-message (apply #'format (list* nil message args))))
       (cond
         ((string= *last-message* full-message)
