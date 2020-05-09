@@ -17,6 +17,7 @@
                :make-hash
                :parse-float
                :qbase64
+               :trivial-features
                :trivial-garbage
                :trivial-gray-streams
                :uiop
