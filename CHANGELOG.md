@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Greatly improved memory usage by avoiding storing parsed ase files.
 - Fixed bug causing log messages with % symbol to be output incorrectly.
 - Fixed bug causing log messages longer than approx. 2kbytes to be truncated.
+- Fixed bug causing character shadow to be drawn over the weapon.
 
 
 ## [0.1.0] - 2020-04-20

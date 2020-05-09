@@ -19,6 +19,7 @@ The following format features are unsupported yet:
 (defcomponent sprite sprite
   (width 0 :type fixnum)
   (height 0 :type fixnum)
+  (layer-names nil :type list)  ;; layer names to keep the order of layers
   (layer-batches nil :type hash-table)  ;; layer name (keyword) -> sprite batch entity
   (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum) ;; count of directions
@@ -36,6 +37,7 @@ The following format features are unsupported yet:
 (defprefab sprite "ase"
   (width 0 :type fixnum)
   (height 0 :type fixnum)
+  (layer-names nil :type list)  ;; layer names to keep the order of layers
   (layers nil :type hash-table)  ;; layer name (keyword) -> al_bitmap
   (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
   (directions 0 :type fixnum)  ;; count of directions
@@ -201,6 +203,7 @@ The following format features are unsupported yet:
     (make-sprite-prefab
      :width (ase-file-width ase-file)
      :height (ase-file-height ase-file)
+     :layer-names (coerce layer-names 'list)
      :layers layers
      :stances stances
      :directions directions
@@ -216,8 +219,8 @@ The following format features are unsupported yet:
       (setf directions (sprite-prefab-directions prefab))
       (setf frame-durations (sprite-prefab-frame-durations prefab))
       (setf frame-data (sprite-prefab-frame-data prefab))
-      (let* ((layers (sprite-prefab-layers prefab))
-             (layer-names (loop :for l :being :the :hash-key :of layers collect l)))
+      (let* ((layers (sprite-prefab-layers prefab)))
+        (setf layer-names (sprite-prefab-layer-names prefab))
         (setf layer-batches (make-hash
                              :test 'eq
                              :initial-contents layers
@@ -332,7 +335,10 @@ The following format features are unsupported yet:
                   :when toggled :do
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
-                     (coerce (- y (truncate *tile-height* 2)) 'double-float)
+                     (+ y (truncate *tile-height* -2)
+                        (coerce
+                         (/ (position layer layer-names) (length layer-names))
+                         'double-float))
                      (* frame width)
                      (* (sprite-direction directions angle) height)
                      x0 y0))
