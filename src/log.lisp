@@ -91,7 +91,7 @@ used to identify this profiling run among others.
 Otherwise, just executes BODY."
   (let ((on-variable (symbolicate on)))
     `(if ,on-variable
-         #-(or sbcl windows)
+         #+(or (not sbcl) windows)
          (progn
            (log-warn "Profiling is not supported in ~a on ~a"
                      (lisp-implementation-type)
