@@ -14,7 +14,7 @@
   (sample (cffi:null-pointer) :type cffi:foreign-pointer))
 
 (defmethod make-prefab ((system sound-system) prefab-name)
-  (make-sound-prefab :sample (al:load-sample (prefab-path system prefab-name))))
+  (make-sound-prefab :sample (ensure-loaded #'al:load-sample (prefab-path system prefab-name))))
 
 (declaim
  (inline set-sound-position)
