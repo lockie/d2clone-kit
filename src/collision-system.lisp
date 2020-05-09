@@ -79,7 +79,6 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
       (or
        (sparse-matrix-ref collision-map point)
        (if character
-           ;; TODO : looks like there's a bug with character collision map now
            (let ((entity (sparse-matrix-ref characters-collision-map point)))
              (if entity (not (= character entity)) nil))
            nil)))))

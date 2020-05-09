@@ -33,7 +33,6 @@
   (sprites nil :type (vector sprite-batch-element)))
 
 (defmethod make-component ((system sprite-batch-system) entity &rest parameters)
-  ;; TODO : check bitmap is not null everywhere! (i.e. file exists)
   (destructuring-bind (&key bitmap sprite-width sprite-height) parameters
     (unless (find :video-bitmap (al:get-bitmap-flags bitmap))
       (log-warn "Bitmap ~a is not video bitmap, it makes no sense to batch it" bitmap))
