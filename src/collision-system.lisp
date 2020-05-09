@@ -48,14 +48,14 @@ boolean property *collides* to *true* in Tiled tileset."))
       (setf characters-collision-map (make-sparse-matrix)))
     (with-coordinate entity ()
       ;; TODO : consider character size (#21)
-      (setf (sparse-matrix-ref characters-collision-map (cons (truncate x) (truncate y))) entity))))
+      (setf (sparse-matrix-ref characters-collision-map (cons (round x) (round y))) entity))))
 
 (defhandler collision-system character-moved (event entity old-x old-y new-x new-y)
   ;; TODO : consider character size (#21)
-  (let ((old-int-x (truncate old-x))
-        (old-int-y (truncate old-y))
-        (new-int-x (truncate new-x))
-        (new-int-y (truncate new-y)))
+  (let ((old-int-x (round old-x))
+        (old-int-y (round old-y))
+        (new-int-x (round new-x))
+        (new-int-y (round new-y)))
     (unless (and (= old-int-x new-int-x) (= old-int-y new-int-y))
       (with-slots (characters-collision-map) system
         (sparse-matrix-remove characters-collision-map (cons old-int-x old-int-y))
@@ -64,7 +64,7 @@ boolean property *collides* to *true* in Tiled tileset."))
 (defhandler collision-system entity-died (event entity)
   (with-coordinate entity ()
     (with-slots (characters-collision-map) system
-      (sparse-matrix-remove characters-collision-map (cons (truncate x) (truncate y))))))
+      (sparse-matrix-remove characters-collision-map (cons (round x) (round y))))))
 
 (defmethod character-at ((system collision-system) x y)
   "Returns character entity at ingeter map coordinates X, Y or NIL if there's no character there."

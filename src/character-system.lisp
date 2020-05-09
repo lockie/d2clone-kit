@@ -247,7 +247,8 @@ at point TARGET-X, TARGET-Y."
                         (direction-y (* delta (sin angle))))
                     (cond
                       ((collidesp (round (+ x direction-x))
-                                  (round (+ y direction-y)))
+                                  (round (+ y direction-y))
+                                  :character entity)
                        (stop-entity entity)
                        (switch-stance entity :idle))
                       (t
