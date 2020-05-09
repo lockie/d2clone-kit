@@ -79,6 +79,16 @@ DIRECTORY and FILE bound."
   (when (zerop (physfs-deinit))
     (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
 
+(defun ensure-loaded (load-fn file-name &rest rest)
+  "Calls LOAD-FN (which could be #'AL:LOAD-BITMAP, #'AL:LOAD-SAMPLE or similar) with the
+FILE-NAME argument and REST arguments, if any.
+If the result of calling of LOAD-FN is null pointer, then the error is raised."
+  ;; TODO : restarts to get desired filename
+  (let ((file (apply load-fn file-name rest)))
+    (if (cffi:null-pointer-p file)
+        (error "failed to open '~a'" file-name)
+        file)))
+
 (declaim (inline sanitize-filename) (ftype (function (string) string) sanitize-filename))
 (defun sanitize-filename (filename)
   (values (cl-ppcre:regex-replace-all

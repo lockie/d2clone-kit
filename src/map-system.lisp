@@ -55,7 +55,8 @@ conversion maths are badly fucked up."))
                        (tile-count (tiled-tileset-tile-count tileset))
                        (columns (tiled-tileset-columns tileset))
                        (tileset-tiles-properties (tiled-tileset-tiles-properties tileset))
-                       (bitmap (al:load-bitmap
+                       (bitmap (ensure-loaded
+                                #'al:load-bitmap
                                 (format
                                  nil "maps/~a"
                                  (tiled-tileset-image-source tileset)))))

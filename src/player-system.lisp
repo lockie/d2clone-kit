@@ -19,9 +19,9 @@
   (declare (ignore parameters))
   (with-slots (entity orb orb-fill orb-flare orb-tmp) system
     (setf entity player-entity
-          orb (al:load-bitmap "images/orb.png")
-          orb-fill (al:load-bitmap "images/orb-fill.png")
-          orb-flare (al:load-bitmap "images/orb-flare.png")
+          orb (ensure-loaded #'al:load-bitmap "images/orb.png")
+          orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
+          orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
           orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
                                     (al:get-bitmap-height orb-fill))))
   (with-system-config-options ((debug-cursor))

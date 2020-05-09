@@ -80,6 +80,7 @@
     #:entity-died)
    ;; fs.lisp
    (:export
+    #:ensure-loaded
     #:character-stream
     #:binary-stream
     #:virtual-binary-stream
