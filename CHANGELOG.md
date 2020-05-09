@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing log messages longer than approx. 2kbytes to be truncated.
 - Fixed bug causing character shadow to be drawn over the weapon.
 - Fixed bug causing character to be able to move through other characters.
+- Fixed bug causing player character not being able to stop the initiated attack.
 
 
 ## [0.1.0] - 2020-04-20
