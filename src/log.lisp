@@ -35,7 +35,11 @@
       ((do-trace (level function-name message)
          (when (trace-prefix
                 "d2clone-kit" level (file-namestring (or (uiop:argv0) "")) 0 function-name)
-           (trace-suffix (format nil "%s~%") :string message))))
+           (loop :with finalized-message := (format nil "~a~%" message)
+                 :with length := (length finalized-message)
+                 :for i :of-type fixnum :from 0 to length by 1024
+                 :do (trace-suffix
+                      "%s" :string (subseq finalized-message i (min length (+ i 1024))))))))
     (let ((full-message (apply #'format (list* nil message args))))
       (cond
         ((string= *last-message* full-message)
