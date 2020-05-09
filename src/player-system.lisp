@@ -71,7 +71,9 @@
                                (not mouse-pressed)
                                (character-under-cursor new-x new-y)))
                 (attack player-entity (setf last-target target))
-                (set-character-target player-entity new-x new-y)))
+                (with-combat player-entity ()
+                  (setf target -1)
+                  (set-character-target player-entity new-x new-y))))
             (attack player-entity last-target))))))
 
 (defhandler player-system allegro-event (event event-type)
