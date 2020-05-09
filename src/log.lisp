@@ -93,7 +93,7 @@ Otherwise, just executes BODY."
     `(if ,on-variable
          #+(or (not sbcl) windows)
          (progn
-           (log-warn "Profiling is not supported in ~a on ~a"
+           (log-warn "Profiling is not supported with ~a on ~a"
                      (lisp-implementation-type)
                      (software-type))
            ,@body)
