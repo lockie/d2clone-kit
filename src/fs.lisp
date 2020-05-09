@@ -82,7 +82,8 @@ DIRECTORY and FILE bound."
 (defun ensure-loaded (load-fn file-name &rest rest)
   "Calls LOAD-FN (which could be #'AL:LOAD-BITMAP, #'AL:LOAD-SAMPLE or similar) with the
 FILE-NAME argument and REST arguments, if any.
-If the result of calling of LOAD-FN is null pointer, then the error is raised."
+If the result of calling of LOAD-FN is null pointer, then the error is raised.
+Otherwise, it is returned."
   ;; TODO : restarts to get desired filename
   (let ((file (apply load-fn file-name rest)))
     (if (cffi:null-pointer-p file)
