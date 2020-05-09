@@ -145,7 +145,10 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                (dolist (initializer *initializers*)
                  (funcall initializer))
                (setf (camera-target) (player-entity))
-               (game-loop event-queue))
+               (with-system-config-options ((debug-profiling))
+                 (with-profiling debug-profiling
+                   "game loop"
+                   (game-loop event-queue))))
           (log-info "Shutting engine down")
           (issue quit)
           (al:inhibit-screensaver nil)

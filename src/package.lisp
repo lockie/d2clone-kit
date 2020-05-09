@@ -1,5 +1,7 @@
 (in-package :cl-user)
 
+#+(and sbcl (not windows)) (require :sb-sprof)
+
 (defpackage :d2clone-kit
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
@@ -104,7 +106,8 @@
     #:log-info
     #:log-warn
     #:log-error
-    #:with-condition-reporter)
+    #:with-condition-reporter
+    #:with-profiling)
    ;; mana-system.lisp
    (:export
     #:mana-system)
