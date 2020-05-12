@@ -23,6 +23,7 @@
         (with-screen-coordinate entity (screen-x screen-y)
           (multiple-value-bind (x y)
               (absolute->viewport screen-x screen-y)
+            (when (visiblep x y *tile-width*)
               (render
                renderer
                9000d0
@@ -36,7 +37,7 @@
                        (al:draw-filled-rectangle x y (+ x width) (+ y 20)
                                                  (al:map-rgba 10 10 10 160))
                        (al:draw-text *large-ui-font*
-                                     (al:map-rgba 255 255 255 0) x y 0 text)))))))))))
+                                     (al:map-rgba 255 255 255 0) x y 0 text))))))))))))
 
 (eval-when (:compile-toplevel)
   (defconstant +item-neighbours+ '((1 . 1)
