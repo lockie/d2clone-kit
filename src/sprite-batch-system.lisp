@@ -96,24 +96,23 @@ See ADD-SPRITE-TO-BATCH"
       (setf (fill-pointer sprites) 0)))
 
 (defmethod system-draw ((system sprite-batch-system) renderer)
-  (let ((elements (make-priority-queue #'sprite-batch-element-order)))
+  (let ((elements (make-array 0)))
     (with-sprite-batches
-        (priority-queue-push-many elements sprites))
+        (setf elements (concatenate 'vector elements sprites)))
+    (sort elements #'sprite-batch-element-less-p)
     (render
      renderer
      100d0
      #'(lambda ()
          (al:hold-bitmap-drawing t)
-         (priority-queue-traverse
-          elements
-          #'(lambda (element)
-              (al:draw-bitmap-region
-               (sprite-batch-element-bitmap element)
-               (sprite-batch-element-image-x element)
-               (sprite-batch-element-image-y element)
-               (sprite-batch-element-width element)
-               (sprite-batch-element-height element)
-               (sprite-batch-element-screen-x element)
-               (sprite-batch-element-screen-y element)
-               0)))
+         (loop :for element :across elements :do
+           (al:draw-bitmap-region
+            (sprite-batch-element-bitmap element)
+            (sprite-batch-element-image-x element)
+            (sprite-batch-element-image-y element)
+            (sprite-batch-element-width element)
+            (sprite-batch-element-height element)
+            (sprite-batch-element-screen-x element)
+            (sprite-batch-element-screen-y element)
+            0))
          (al:hold-bitmap-drawing nil)))))
