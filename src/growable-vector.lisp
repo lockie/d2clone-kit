@@ -74,6 +74,24 @@ greater than current allocated size)."
 ;;         value))
 
 (declaim
+ (inline growable-vector-add)
+ (ftype (function (growable-vector vector)) growable-vector-add))
+(defun growable-vector-add (growable-vector vector)
+  (let ((growable-vector-length (growable-vector-length growable-vector))
+        (vector-length (length vector)))
+    (growable-vector-grow
+     growable-vector
+     (max
+      (+ growable-vector-length vector-length)
+      (the array-index
+           (round (* growable-vector-length +array-growth-factor+)))))
+    (replace
+     (%growable-vector-vector growable-vector)
+     vector
+     :start1 growable-vector-length)
+    (incf (%growable-vector-size growable-vector) vector-length)))
+
+(declaim
  (inline growable-vector-length)
  (ftype (function (growable-vector) array-length) growable-vector-length))
 (defun growable-vector-length (growable-vector)
