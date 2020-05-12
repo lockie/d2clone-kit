@@ -79,6 +79,7 @@ DIRECTORY and FILE bound."
   (when (zerop (physfs-deinit))
     (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
 
+(declaim (inline ensure-loaded))
 (defun ensure-loaded (load-fn file-name &rest rest)
   "Calls LOAD-FN (which could be #'AL:LOAD-BITMAP, #'AL:LOAD-SAMPLE or similar) with the
 FILE-NAME argument and REST arguments, if any.
