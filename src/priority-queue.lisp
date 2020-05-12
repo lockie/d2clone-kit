@@ -74,23 +74,25 @@ O(log N) complexity."
 
 A bit more performance-friendly than calling PRIORITY-QUEUE-PUSH many times
 (but complexity is still O(N log N))."
-  (let* ((array (priority-queue-array queue))
-         (old-length (length array)))
-    (setf (priority-queue-array queue)
-          (adjust-array array (+ old-length (length elements))))
-    (let ((array (priority-queue-array queue)))
-      (replace
-       array
-       elements
-       :start1 old-length)
-      ;; TODO : try optimizing assuming elements vector is sorted
-      (sort
-       array
-       #'(lambda (a b)
-           (declare (double-float a b))
-           (> a b))
-       :key (priority-queue-key queue))))
-  nil)
+  (unless (length= 0 elements)
+    ;; TODO : also optimize (length= 1 elements) case?..
+    (let* ((array (priority-queue-array queue))
+           (old-length (length array)))
+      (setf (priority-queue-array queue)
+            (adjust-array array (+ old-length (length elements))))
+      (let ((array (priority-queue-array queue)))
+        (replace
+         array
+         elements
+         :start1 old-length)
+        ;; TODO : try optimizing assuming elements vector is sorted
+        (sort
+         array
+         #'(lambda (a b)
+             (declare (double-float a b))
+             (> a b))
+         :key (priority-queue-key queue))))
+    nil))
 
 (declaim
  (inline priority-queue-traverse)

@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing character shadow to be drawn over the weapon.
 - Fixed bug causing character to be able to move through other characters.
 - Fixed bug causing player character not being able to stop the initiated attack.
+- Fixed item-related performance issue.
+- Fixed sprite batch related performace issue.
 
 
 ## [0.1.0] - 2020-04-20
