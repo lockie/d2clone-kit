@@ -90,10 +90,12 @@ See ADD-SPRITE-TO-BATCH"
         :height sprite-height))
      sprites)))
 
-(defmethod system-update ((system sprite-batch-system) dt)
-  ;; TODO : clear explicitly?..
-  (with-sprite-batches
-      (setf (fill-pointer sprites) 0)))
+(declaim
+ (inline clear-sprite-batch)
+ (ftype (function (fixnum)) clear-sprite-batch))
+(defun clear-sprite-batch (entity)
+  (with-sprite-batch entity ()
+    (setf (fill-pointer sprites) 0)))
 
 (defmethod system-draw ((system sprite-batch-system) renderer)
   (let ((elements (make-array 0)))
