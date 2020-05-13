@@ -324,6 +324,8 @@ The following format features are unsupported yet:
 (defmethod system-draw ((system sprite-system) renderer)
   (with-system-config-options ((debug-sprite))
     (with-sprites
+        (loop :for layer :being :the :hash-values :in layer-batches :do
+          (clear-sprite-batch layer))
         (with-screen-coordinate entity (sprite-x sprite-y)
           (multiple-value-bind (x y)
               (absolute->viewport sprite-x sprite-y)
