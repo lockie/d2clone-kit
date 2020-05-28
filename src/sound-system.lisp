@@ -21,19 +21,20 @@
  (ftype (function (fixnum)) set-sound-position))
 (defun set-sound-position (entity)
   ;; TODO : use al_set_sample_instance_channel_matrix for 5.1 sound?..
-  (with-sound entity ()
-    (with-coordinate entity ()
-      (with-camera (camera-x camera-y)
-        (with-slots (distance-factor pan-factor) (system-ref 'sound)
-          (al:set-sample-instance-gain
-           sample-instance
-           (/ 1f0 (exp (* distance-factor
-                          (euclidean-distance x y camera-x camera-y)))))
-          (let ((iso-x (nth-value 0 (isometric->orthogonal x y)))
-                (iso-camera-x (nth-value 0 (isometric->orthogonal camera-x camera-y))))
-            (al:set-sample-instance-pan
+  (when (has-component-p (system-ref 'coordinate) entity)
+    (with-sound entity ()
+      (with-coordinate entity ()
+        (with-camera (camera-x camera-y)
+          (with-slots (distance-factor pan-factor) (system-ref 'sound)
+            (al:set-sample-instance-gain
              sample-instance
-             (clamp (* pan-factor (- iso-x iso-camera-x)) -1f0 1f0))))))))
+             (/ 1f0 (exp (* distance-factor
+                            (euclidean-distance x y camera-x camera-y)))))
+            (let ((iso-x (nth-value 0 (isometric->orthogonal x y)))
+                  (iso-camera-x (nth-value 0 (isometric->orthogonal camera-x camera-y))))
+              (al:set-sample-instance-pan
+               sample-instance
+               (clamp (* pan-factor (- iso-x iso-camera-x)) -1f0 1f0)))))))))
 
 (defmethod make-prefab-component ((system sound-system) entity prefab parameters)
   (with-sound entity ()
