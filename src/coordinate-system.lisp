@@ -13,8 +13,8 @@
 ;;                                ,(/ most-positive-fixnum 2d0)))
 
 (defcomponent coordinate coordinate
-  (x 0d0 :type double-float)
-  (y 0d0 :type double-float))
+  (x nil :type double-float)
+  (y nil :type double-float))
 
 (defmethod make-component ((system coordinate-system) entity &rest parameters)
   (destructuring-bind (&key x y) parameters
