@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Removed ubiquitous mana system component.
 - Refactored coordinates system. Now orthogonal coordinates are stored and used everywhere, and isometric ones are calculated on the fly when needed.
+- Removed ubiquitous coordinates component.
 
 ### Fixed
 - Fixed compilation on CCL.
