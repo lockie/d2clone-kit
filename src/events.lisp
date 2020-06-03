@@ -23,6 +23,12 @@ Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
    :system-name (error "SYSTEM-NAME required"))
   (:documentation "Event class issued when a new component is created."))
 
+(defevent entity-deleted ()
+  ((entity :initarg :entity))
+  (:default-initargs
+   :entity (error "ENTITY required"))
+  (:documentation "Event class issued when an entity is about to be deleted."))
+
 (defevent sprite-stance-changed ()
   ((entity :initarg :entity)
    (stance :initarg :stance))

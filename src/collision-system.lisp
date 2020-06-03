@@ -11,8 +11,6 @@
 To make tile collide (e.g. be non-walkable by characters), set custom
 boolean property *collides* to *true* in Tiled tileset."))
 
-;; TODO : delete component event?..
-
 ;; TODO : optimize this by packing coordinates into single fixnum (31 bits ought to be enough for anyone)
 
 (defhandler collision-system component-created (event entity system-name)
@@ -39,7 +37,16 @@ boolean property *collides* to *true* in Tiled tileset."))
                                               collision-map
                                               (cons (+ (truncate ortho-x) start-x)
                                                     (+ (truncate ortho-y) start-y)))
-                                             t)))))))))))
+                                             entity)))))))))))
+
+(defhandler collision-system entity-deleted (event entity)
+  :filter '(has-component-p (system-ref (quote map)) entity)
+  (with-slots (collision-map) system
+    (sparse-matrix-traverse
+     collision-map
+     #'(lambda (position value)
+         (when (= value entity)
+           (sparse-matrix-remove collision-map position))))))
 
 (defhandler collision-system component-created (event entity system-name)
   :filter '(eq system-name 'character)
@@ -49,6 +56,12 @@ boolean property *collides* to *true* in Tiled tileset."))
     (with-coordinate entity ()
       ;; TODO : consider character size (#21)
       (setf (sparse-matrix-ref characters-collision-map (cons (round x) (round y))) entity))))
+
+(defhandler collision-system entity-deleted (event entity)
+  :filter '(has-component-p (system-ref (quote character)) entity)
+  (with-coordinate entity ()
+    (with-slots (characters-collision-map) system
+      (sparse-matrix-remove characters-collision-map (cons (round x) (round y))))))
 
 (defhandler collision-system character-moved (event entity old-x old-y new-x new-y)
   ;; TODO : consider character size (#21)
@@ -77,7 +90,7 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
   (with-slots (collision-map characters-collision-map) system
     (let ((point (cons x y)))
       (or
-       (sparse-matrix-ref collision-map point)
+       (not (null (sparse-matrix-ref collision-map point)))
        (if character
            (let ((entity (sparse-matrix-ref characters-collision-map point)))
              (if entity (not (= character entity)) nil))
@@ -89,14 +102,7 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
 (defun collidesp (x y &key (character nil))
   "Returns whether tile located at integer map coordinates X, Y does collide with other objects.
 CHARACTER, when non-NIL, specifies character entity to check for collisions with other characters."
-  (with-slots (collision-map characters-collision-map) (system-ref 'collision)
-    (let ((point (cons x y)))
-      (or
-       (sparse-matrix-ref collision-map point)
-       (if character
-           (let ((entity (sparse-matrix-ref characters-collision-map point)))
-             (if entity (not (= character entity)) nil))
-           nil)))))
+  (collides (system-ref 'collision) x y :character character))
 
 (defmethod system-draw ((system collision-system) renderer)
   (with-system-config-options ((debug-collisions))
