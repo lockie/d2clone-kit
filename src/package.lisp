@@ -176,7 +176,7 @@
     #:has-component-p
     #:make-entity
     #:delete-entity
-    #:make-entity-initializer
+    #:make-object
     #:defcomponent
     #:prefab
     #:prefab-path

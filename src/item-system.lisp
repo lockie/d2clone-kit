@@ -77,12 +77,6 @@
               (make-component (system-ref 'item) item-entity
                               :type item))))))))
 
-(eval-when (:compile-toplevel)
-  (defconstant +gulp-initializer+
-    (make-entity-initializer
-     '((:coordinate :x x :y y)
-       (:sound :prefab :gulp)))))
-
   ;; TODO : unhardcode
 (eval-when (:compile-toplevel)
   (defconstant +weapons+
@@ -97,9 +91,9 @@
     (if (eq type :health-potion)
         (let ((player-entity (player-entity)))
           (with-coordinate player-entity (player-x player-y)
-            (let ((x player-x) (y player-y))
-              (declare (special x y))
-              (funcall +gulp-initializer+)))
+            (make-object
+             `((:coordinate :x ,player-x :y ,player-y)
+               (:sound :prefab :gulp))))
           (with-hp player-entity ()
             (set-hp player-entity (+ current-hp 20d0)))
           (delete-entity item-entity))
