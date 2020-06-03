@@ -7,7 +7,7 @@
   (:documentation "Handles ordered sprite batches."))
 
 (defstruct sprite-batch-element
-  (bitmap (cffi:null-pointer) :type cffi:foreign-pointer)
+  (bitmap nil :type cffi:foreign-pointer)
   (order 0 :type double-float :read-only t)
   (image-x 0 :type fixnum :read-only t)
   (image-y 0 :type fixnum :read-only t)
