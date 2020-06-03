@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing player character not being able to stop the initiated attack.
 - Fixed item-related performance issue.
 - Greatly improved sprite batch performance.
+- Fixed bug causing item sprite batch to be still drawn when item was picked up.
 
 
 ## [0.1.0] - 2020-04-20
