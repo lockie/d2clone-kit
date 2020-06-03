@@ -358,3 +358,10 @@ The following format features are unsupported yet:
       (setf frame (first (gethash new-stance stances)))
       (setf time-counter 0d0)
       (issue sprite-stance-changed :entity entity :stance new-stance))))
+
+(defmethod delete-component :before ((system sprite-system) entity)
+  (with-sprite entity ()
+    (loop :for sprite-batch :being :the :hash-value :in layer-batches
+          :do (delete-entity sprite-batch))
+    (unless (minusp debug-entity)
+      (delete-entity debug-entity))))
