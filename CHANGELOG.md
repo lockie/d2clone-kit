@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MacOS support.
 - Ability to do function call profiling by merely setting config variable.
 - Helper function to do proper error checking on liballegro file loading.
+- Proper collision map clearing on map chunks deletion.
 
 ### Changed
 - Removed ubiquitous mana system component.

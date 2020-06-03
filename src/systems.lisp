@@ -115,6 +115,7 @@ See MAKE-PREFAB-COMPONENT"))
 
 (defun delete-entity (entity)
   "Deletes entity ENTITY."
+  (issue entity-deleted :entity entity)
   (loop :for system :being :the :hash-values :of *systems*
         :when (has-component-p system entity)
         :do (delete-component system entity))
