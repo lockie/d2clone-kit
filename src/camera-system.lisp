@@ -33,7 +33,7 @@
 (defmacro with-camera (bindings &body body)
   "Executes BODY with current camera position bound to two symbols in BIDNINGS list."
   (with-gensyms (camera-entity)
-    `(let ((,camera-entity (camera-entity)))
+    `(when-let (,camera-entity (camera-entity))
        (with-coordinate ,camera-entity ,bindings
          ,@body))))
 

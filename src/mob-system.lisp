@@ -17,7 +17,7 @@
             mob-vision-range vision-range))))
 
 (defmethod system-update ((system mob-system) dt)
-  (let ((player-entity (player-entity)))
+  (when-let (player-entity (player-entity))
     (multiple-value-bind (player-x player-y)
         (with-coordinate player-entity (x y)
           (values x y))

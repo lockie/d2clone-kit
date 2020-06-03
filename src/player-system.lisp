@@ -4,7 +4,7 @@
 (defclass player-system (system)
   ((name :initform 'player)
    (mouse-pressed :initform nil)
-   (entity :initform -1)
+   (entity :initform nil)
    (last-target :initform -1)
    (orb :initform nil)
    (orb-fill :initform nil)
@@ -17,6 +17,7 @@
 
 (defmethod make-component ((system player-system) player-entity &rest parameters)
   (declare (ignore parameters))
+  (setf (camera-target) player-entity)
   (with-slots (entity orb orb-fill orb-flare orb-tmp) system
     (setf entity player-entity
           orb (ensure-loaded #'al:load-bitmap "images/orb.png")
@@ -59,7 +60,7 @@
 
 (defun target-player (&optional (mouse-event nil))
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
-  (let ((player-entity (player-entity)))
+  (when-let (player-entity (player-entity))
     (unless (deadp player-entity)
       (with-slots (mouse-pressed last-target) (system-ref 'player)
         (if (minusp last-target)
@@ -99,104 +100,107 @@
         (target-player)))))
 
 (defmethod system-draw ((system player-system) renderer)
-  (with-system-config-options ((display-width display-height))
-    (with-slots (entity orb orb-fill orb-flare orb-tmp) system
-      (with-hp entity ()
-        (with-mana entity ()
-          (render
-           renderer
-           10000d0
-           #'(lambda ()
-               (let* ((fill-width (al:get-bitmap-width orb-fill))
-                      (fill-height (al:get-bitmap-height orb-fill))
-                      (orb-width (al:get-bitmap-width orb))
-                      (orb-height (al:get-bitmap-height orb))
-                      (fill-shift (+ fill-height (ceiling (- orb-height fill-height) 2))))
-                 (flet ((fill-orb (color)
-                          (al:set-target-bitmap orb-tmp)
-                          (al:draw-bitmap orb-fill 0 0 0)
-                          (al:set-blender
-                           (cffi:foreign-enum-value 'al::blend-operations :dest-minus-src)
-                           (cffi:foreign-enum-value 'al::blend-mode :one)
-                           (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha))
-                          (al:draw-filled-rectangle 0 0 fill-width fill-height color)
-                          (al:set-target-backbuffer (al:get-current-display))
-                          (al:set-blender
-                           (cffi:foreign-enum-value 'al::blend-operations :add)
-                           (cffi:foreign-enum-value 'al::blend-mode :one)
-                           (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha)))
-                        (draw-filling (fraction dx)
-                          (let ((shift (floor (* fill-shift (- 1d0 fraction)))))
-                            (al:draw-bitmap-region
-                             orb-tmp
-                             (floor (- fill-width orb-width) 2)
-                             (+ shift (floor (- fill-height orb-height) 2))
-                             orb-width orb-height
-                             dx (+ shift (- display-height orb-height))
-                             0))))
-                   (al:hold-bitmap-drawing t)
-                   (al:draw-bitmap orb 0 (- display-height orb-height) 0)
-                   (al:draw-bitmap orb (- display-width orb-width) (- display-height orb-height) 0)
-                   (al:hold-bitmap-drawing nil)
-                   ;; hp orb
-                   (fill-orb (al:map-rgba 30 255 255 30))
-                   (draw-filling (/ current-hp maximum-hp) 0)
-                   ;; mana orb
-                   (fill-orb (al:map-rgba 255 255 30 30))
-                   (draw-filling (/ current-mana maximum-mana) (- display-width orb-width))
-                   (al:hold-bitmap-drawing t)
-                   (al:draw-bitmap orb-flare
-                                   0 (- display-height orb-height) 0)
-                   (al:draw-bitmap orb-flare
-                                   (- display-width orb-width)
-                                   (- display-height orb-height) 0)
-                   (al:hold-bitmap-drawing nil))))))))
+  (block nil
+    (with-system-config-options ((display-width display-height))
+      (with-slots (entity orb orb-fill orb-flare orb-tmp) system
+        (unless entity (return))
+        (with-hp entity ()
+          (with-mana entity ()
+            (render
+             renderer
+             10000d0
+             #'(lambda ()
+                 (let* ((fill-width (al:get-bitmap-width orb-fill))
+                        (fill-height (al:get-bitmap-height orb-fill))
+                        (orb-width (al:get-bitmap-width orb))
+                        (orb-height (al:get-bitmap-height orb))
+                        (fill-shift (+ fill-height (ceiling (- orb-height fill-height) 2))))
+                   ;; TODO : draw those in hp-system and mana-system?..
+                   (flet ((fill-orb (color)
+                            (al:set-target-bitmap orb-tmp)
+                            (al:draw-bitmap orb-fill 0 0 0)
+                            (al:set-blender
+                             (cffi:foreign-enum-value 'al::blend-operations :dest-minus-src)
+                             (cffi:foreign-enum-value 'al::blend-mode :one)
+                             (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha))
+                            (al:draw-filled-rectangle 0 0 fill-width fill-height color)
+                            (al:set-target-backbuffer (al:get-current-display))
+                            (al:set-blender
+                             (cffi:foreign-enum-value 'al::blend-operations :add)
+                             (cffi:foreign-enum-value 'al::blend-mode :one)
+                             (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha)))
+                          (draw-filling (fraction dx)
+                            (let ((shift (floor (* fill-shift (- 1d0 fraction)))))
+                              (al:draw-bitmap-region
+                               orb-tmp
+                               (floor (- fill-width orb-width) 2)
+                               (+ shift (floor (- fill-height orb-height) 2))
+                               orb-width orb-height
+                               dx (+ shift (- display-height orb-height))
+                               0))))
+                     (al:hold-bitmap-drawing t)
+                     (al:draw-bitmap orb 0 (- display-height orb-height) 0)
+                     (al:draw-bitmap orb (- display-width orb-width) (- display-height orb-height) 0)
+                     (al:hold-bitmap-drawing nil)
+                     ;; hp orb
+                     (fill-orb (al:map-rgba 30 255 255 30))
+                     (draw-filling (/ current-hp maximum-hp) 0)
+                     ;; mana orb
+                     (fill-orb (al:map-rgba 255 255 30 30))
+                     (draw-filling (/ current-mana maximum-mana) (- display-width orb-width))
+                     (al:hold-bitmap-drawing t)
+                     (al:draw-bitmap orb-flare
+                                     0 (- display-height orb-height) 0)
+                     (al:draw-bitmap orb-flare
+                                     (- display-width orb-width)
+                                     (- display-height orb-height) 0)
+                     (al:hold-bitmap-drawing nil))))))))
 
-    (multiple-value-bind (cursor-map-x cursor-map-y)
-        (multiple-value-call #'screen->orthogonal*
-          (multiple-value-call #'viewport->absolute
-            (mouse-position)))
+      (multiple-value-bind (cursor-map-x cursor-map-y)
+          (multiple-value-call #'screen->orthogonal*
+            (multiple-value-call #'viewport->absolute
+              (mouse-position)))
 
-      (flet ((draw-mob-health-bar (entity)
-               (unless (= entity (player-entity))
-                 (render
-                  renderer
-                  10000d0
-                  (let ((entity entity))
-                    #'(lambda ()
-                        (with-mob entity ()
-                          (with-hp entity ()
-                            (let* ((text-width (al:get-text-width *large-ui-font* name))
-                                   (bar-width (truncate (* (+ text-width 40)
-                                                           (/ current-hp maximum-hp))))
-                                   (name-offset (truncate (- display-width text-width) 2)))
-                              (al:draw-filled-rectangle
-                               (- name-offset 20) 24
-                               (+ name-offset text-width 20) 52
-                               (al:map-rgba 0 0 0 220))
-                              (al:draw-filled-rectangle
-                               (- name-offset 20) 24
-                               (+ name-offset bar-width -20) 52
-                               (al:map-rgba 40 0 0 0))
-                              (al:draw-text
-                               *large-ui-font*
-                               (al:map-rgba 255 255 255 10)
-                               name-offset 26
-                               0 name))))))))))
-        (with-slots (mouse-pressed last-target) system
-          (if (minusp last-target)
-              (unless mouse-pressed
-                (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
-                  (draw-mob-health-bar target)))
-              (unless (deadp last-target)
-                (draw-mob-health-bar last-target)))))
+        (flet ((draw-mob-health-bar (entity)
+                 (unless (= entity (player-entity))
+                   (render
+                    renderer
+                    10000d0
+                    (let ((entity entity))
+                      #'(lambda ()
+                          (with-mob entity ()
+                            (with-hp entity ()
+                              (let* ((text-width (al:get-text-width *large-ui-font* name))
+                                     (bar-width (truncate (* (+ text-width 40)
+                                                             (/ current-hp maximum-hp))))
+                                     (name-offset (truncate (- display-width text-width) 2)))
+                                (al:draw-filled-rectangle
+                                 (- name-offset 20) 24
+                                 (+ name-offset text-width 20) 52
+                                 (al:map-rgba 0 0 0 220))
+                                (al:draw-filled-rectangle
+                                 (- name-offset 20) 24
+                                 (+ name-offset bar-width -20) 52
+                                 (al:map-rgba 40 0 0 0))
+                                (al:draw-text
+                                 *large-ui-font*
+                                 (al:map-rgba 255 255 255 10)
+                                 name-offset 26
+                                 0 name))))))))))
+          (with-slots (mouse-pressed last-target) system
+            (if (minusp last-target)
+                (unless mouse-pressed
+                  (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
+                    (draw-mob-health-bar target)))
+                (unless (deadp last-target)
+                  (draw-mob-health-bar last-target)))))
 
-      (with-system-config-options ((debug-cursor))
-        (when debug-cursor
-          (multiple-value-bind (x y)
-              (multiple-value-call #'absolute->viewport
-                (orthogonal->screen (coerce (truncate cursor-map-x) 'double-float)
-                                    (coerce (truncate cursor-map-y) 'double-float)))
-            (add-debug-rectangle
-             (slot-value system 'debug-entity)
-             x y *tile-width* *tile-height* debug-cursor)))))))
+        (with-system-config-options ((debug-cursor))
+          (when debug-cursor
+            (multiple-value-bind (x y)
+                (multiple-value-call #'absolute->viewport
+                  (orthogonal->screen (coerce (truncate cursor-map-x) 'double-float)
+                                      (coerce (truncate cursor-map-y) 'double-float)))
+              (add-debug-rectangle
+               (slot-value system 'debug-entity)
+               x y *tile-width* *tile-height* debug-cursor))))))))
