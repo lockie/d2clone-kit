@@ -51,7 +51,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defvar *large-ui-font* nil)
 
 (defvar *game-name*)
-(defvar *initializers*)
+(defvar *new-game-object-specs*)
 (defvar *config-options*)
 
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
@@ -141,10 +141,16 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                (make-instance 'combat-system)
                (make-instance 'item-system)
                (make-instance 'sound-system)
-               (log-info "Initializing entities")
-               (dolist (initializer *initializers*)
-                 (funcall initializer))
-               (setf (camera-target) (player-entity))
+               (make-instance 'camera-system)
+               (make-instance 'coordinate-system)
+               (make-instance 'player-system)
+               (make-instance 'sprite-system)
+               (make-instance 'character-system)
+               (make-instance 'hp-system)
+               (make-instance 'mana-system)
+               (make-instance 'combat-system)
+               (make-instance 'mob-system)
+               (make-instance 'map-system)
                (with-system-config-options ((debug-profiling))
                  (with-profiling debug-profiling
                    "game loop"
@@ -173,12 +179,12 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (al:uninstall-system)))))
   0)
 
-(defunl start-engine (game-name initializers &rest config)
+(defunl start-engine (game-name new-game-object-specs &rest config)
   "Initializes and starts engine to run the game named by GAME-NAME.
-INITIALIZERS is list of FUNCALL'able entity initializers which are called just before entering
-game loop with no parameters. CONFIG plist is used to override variables read from config file."
+NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when the new game is started.
+ CONFIG plist is used to override variables read from config file."
   (setf *game-name* game-name
-        *initializers* initializers
+        *new-game-object-specs* new-game-object-specs
         *config-options* config)
   (float-features:with-float-traps-masked
       (:divide-by-zero :invalid :inexact :overflow :underflow)
@@ -188,32 +194,30 @@ game loop with no parameters. CONFIG plist is used to override variables read fr
   "Runs built-in engine demo."
   (start-engine
    "demo"
-   (mapcar
-    #'make-entity-initializer
-    '(((:camera)
-       (:coordinate :x 0d0 :y 0d0))
-      ((:player)
-       (:coordinate :x 0d0 :y 0d0)
-       (:sprite :prefab :heroine :layers-initially-toggled '(:head :clothes))
-       (:character :target-x 0d0 :target-y 0d0)
-       (:hp :current 100d0 :maximum 100d0)
-       (:mana :current 100d0 :maximum 100d0)
-       (:combat :min-damage 1d0 :max-damage 2d0))
-      ((:mob :name "Spiderant")
-       (:coordinate :x 2d0 :y 2d0)
-       (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
-       (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
-       (:hp :current 15d0 :maximum 15d0)
-       (:combat :min-damage 1d0 :max-damage 10d0))
-      ;; ((:mob :name "Spiderant")
-      ;;  (:coordinate :x 4d0 :y 4d0)
-      ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
-      ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
-      ;;  (:hp :current 50d0 :maximum 50d0))
-      ;; ((:mob :name "Spiderant")
-      ;;  (:coordinate :x 3d0 :y 3d0)
-      ;;  (:sprite :prefab :spiderant :layers-initially-toggled '(:body))
-      ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
-      ;;  (:hp :current 50d0 :maximum 50d0))
-      ((:coordinate :x 0d0 :y 0d0)
-       (:map :prefab :map))))))
+   '(((:camera)
+      (:coordinate :x 0d0 :y 0d0))
+     ((:player)
+      (:coordinate :x 0d0 :y 0d0)
+      (:sprite :prefab :heroine :layers-initially-toggled (:head :clothes))
+      (:character :target-x 0d0 :target-y 0d0)
+      (:hp :current 100d0 :maximum 100d0)
+      (:mana :current 100d0 :maximum 100d0)
+      (:combat :min-damage 1d0 :max-damage 2d0))
+     ((:mob :name "Spiderant")
+      (:coordinate :x 2d0 :y 2d0)
+      (:sprite :prefab :spiderant :layers-initially-toggled (:body))
+      (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+      (:hp :current 15d0 :maximum 15d0)
+      (:combat :min-damage 1d0 :max-damage 10d0))
+     ;; ((:mob :name "Spiderant")
+     ;;  (:coordinate :x 4d0 :y 4d0)
+     ;;  (:sprite :prefab :spiderant :layers-initially-toggled (:body))
+     ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+     ;;  (:hp :current 50d0 :maximum 50d0))
+     ;; ((:mob :name "Spiderant")
+     ;;  (:coordinate :x 3d0 :y 3d0)
+     ;;  (:sprite :prefab :spiderant :layers-initially-toggled (:body))
+     ;;  (:character :target-x 1d0 :target-y 10d0 :speed 1d0)
+     ;;  (:hp :current 50d0 :maximum 50d0))
+     ((:coordinate :x 0d0 :y 0d0)
+      (:map :prefab :map)))))

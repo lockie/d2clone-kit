@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored coordinates system. Now orthogonal coordinates are stored and used everywhere, and isometric ones are calculated on the fly when needed.
 - Removed ubiquitous coordinates component.
 - Removed ubiquitous sprite batch system component.
+- Refactored new game object initialization to avoid runtime code generation.
 
 ### Fixed
 - Fixed compilation on CCL.

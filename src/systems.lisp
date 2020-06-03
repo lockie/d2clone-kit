@@ -120,31 +120,20 @@ See MAKE-PREFAB-COMPONENT"))
         :do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
 
-(defun make-entity-initializer (spec)
-  "Creates FUNCALL'able entity initializer following specification SPEC structured as follows:
-
+(defun make-object (spec)
+  "Creates a new game object following specification SPEC structured as follows:
 ```
 '((:system-name1 :component-parameter1 \"value1\" :component-parameter2 2.0)
   (:system-name2 :prefab :prefab-name)
   ;; ...
   )
-```
-Corresponding systems are created by initializer function on-demand."
-  (let ((component-clauses
-          (loop :for component :in spec
-                :for system := (ensure-symbol (car component) :d2clone-kit)
-                :for parameters := (cdr component)
-                :collect `(let ((system (system-ref ',system)))
-                            (unless system
-                               (setf system (make-instance
-                                             ',(format-symbol :d2clone-kit "~a-SYSTEM" system))))
-                            (make-component system entity ,@parameters)))))
-    (compile
-     nil
-     `(lambda ()
-        (let ((entity (make-entity)))
-          ,@component-clauses
-          entity)))))
+```"
+  (loop :with entity := (make-entity)
+        :for component :in spec
+        :for system := (system-ref (ensure-symbol (car component) :d2clone-kit))
+        :for parameters := (cdr component)
+        :do (apply #'make-component system entity parameters)
+        :finally (return entity)))
 
 (defmacro defcomponent (system name &rest slots)
   "Defines component structure with name NAME and slots SLOTS within system SYSTEM."
