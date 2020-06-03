@@ -102,19 +102,20 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
   (with-system-config-options ((debug-collisions))
     (when debug-collisions
       (with-slots (debug-entity collision-map) system
-        (unless debug-entity
-          (setf debug-entity (make-entity))
-          (make-component (system-ref 'debug) debug-entity :order 2000d0))
-        (sparse-matrix-traverse
-         collision-map
-         #'(lambda (position value)
-             (declare (ignore value))
-             (multiple-value-bind (x y)
-                 (multiple-value-call #'absolute->viewport
-                   (orthogonal->screen
-                    (coerce (car position) 'double-float)
-                    (coerce (cdr position) 'double-float)))
-               (add-debug-tile-rhomb debug-entity x y debug-collisions t))))))))
+        (when collision-map
+          (unless debug-entity
+            (setf debug-entity (make-entity))
+            (make-component (system-ref 'debug) debug-entity :order 2000d0))
+          (sparse-matrix-traverse
+           collision-map
+           #'(lambda (position value)
+               (declare (ignore value))
+               (multiple-value-bind (x y)
+                   (multiple-value-call #'absolute->viewport
+                     (orthogonal->screen
+                      (coerce (car position) 'double-float)
+                      (coerce (cdr position) 'double-float)))
+                 (add-debug-tile-rhomb debug-entity x y debug-collisions t)))))))))
 
 (defhandler collision-system quit (event)
   (with-slots (collision-map characters-collision-map) system
