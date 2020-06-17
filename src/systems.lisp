@@ -292,3 +292,4 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
          (clrhash ,storage-name))
        (defstruct ,struct-name
          ,@ro-slots))))
+;; TODO : also define empty make-component in this macro
