@@ -8,6 +8,7 @@ Diablo 2 is arguably one of the best action RPG created ever. This is humble att
 * Powerful events subsystem (courtesy of [Shinmera's deeds library](https://github.com/Shinmera/deeds)).
 * 2D renderer with functional interface.
 * Sprite batching subsystem.
+* Simple DSL for creating GUI windows by [Nuklear library](https://gitlab.com/lockie/cl-liballegro-nuklear).
 * Naïve implementation of A* pathfinding algorithm.
 * Powerful debugging facilities, including visual debugging.
 * Loading assets from zip files.

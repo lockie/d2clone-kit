@@ -23,9 +23,14 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (sleep 0.016)
         ;; TODO : restart to continue loop
         (loop :do
-          (unless (loop :while (al:get-next-event event-queue event)
-                        :always (handle-event event))
-            (loop-finish))
+          (nk:with-input (ui-context)
+            (unless (loop :while (al:get-next-event event-queue event)
+                          :always
+                          (or
+                           (and (ui-on-p)
+                                (positive-fixnum-p (the fixnum (nk:allegro-handle-event event))))
+                           (handle-event event)))
+              (loop-finish)))
           (let ((current-tick (al:get-time)))
             (when (> (- current-tick last-repl-update) repl-update-interval)
               (livesupport:update-repl-link)
@@ -43,12 +48,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
             (setf last-tick current-tick))
           (when vsync
             (setf vsync (al:wait-for-vsync)))
+          (nk:allegro-render)
           (al:flip-display))))))
-
-;; TODO : put this to UI subsystem?..
-(defvar *small-ui-font* nil)
-(defvar *medium-ui-font* nil)
-(defvar *large-ui-font* nil)
 
 (defvar *game-name*)
 (defvar *new-game-object-specs*)
@@ -71,7 +72,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 
 (declaim (inline game-started-p) (ftype (function () boolean) game-started-p))
 (defun game-started-p ()
-  "Returns whether the game session is currently running."
+  "Returns boolean indicating whether the game session is currently running."
   ;; HACK
   (not (null (slot-value (system-ref 'player) 'entity))))
 
@@ -119,25 +120,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (al:set-new-display-option :sample-buffers 1 :require)
         (al:set-new-display-option :samples display-multisampling :require))
 
-      (with-system-config-options ((display-font))
-        (if (length= 0 display-font)
-            (progn
-              (log-warn "No font specified in config, loading builtin font")
-              (setf *small-ui-font* (al:create-builtin-font)
-                    *medium-ui-font* (al:create-builtin-font)
-                    *large-ui-font* (al:create-builtin-font)))
-            (let ((font-name (format nil "fonts/~a" display-font)))
-              (setf *small-ui-font* (al:load-ttf-font font-name -8 0)
-                    *medium-ui-font* (al:load-ttf-font font-name -12 0)
-                    *large-ui-font* (al:load-ttf-font font-name -20 0))
-              (when (or (cffi:null-pointer-p *small-ui-font*)
-                        (cffi:null-pointer-p *medium-ui-font*)
-                        (cffi:null-pointer-p *large-ui-font*))
-                (log-warn "Loading ~a failed, falling back to builtin font" font-name)
-                (setf *small-ui-font* (al:create-builtin-font)
-                      *medium-ui-font* (al:create-builtin-font)
-                      *large-ui-font* (al:create-builtin-font))))))
-
       (let ((display (al:create-display display-width display-height))
             (event-queue (al:create-event-queue))
             (*event-source* (cffi:foreign-alloc '(:struct al::event-source))))
@@ -165,6 +147,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                (make-instance 'combat-system)
                (make-instance 'item-system)
                (make-instance 'sound-system)
+               (make-instance 'ui-system)
+
                (make-instance 'camera-system)
                (make-instance 'coordinate-system)
                (make-instance 'player-system)
@@ -186,15 +170,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (al:destroy-user-event-source *event-source*)
           (cffi:foreign-free *event-source*)
           (al:destroy-event-queue event-queue)
-          (when *large-ui-font*
-            (al:destroy-font *large-ui-font*))
-          (when *medium-ui-font*
-            (al:destroy-font *medium-ui-font*))
-          (when *small-ui-font*
-            (al:destroy-font *small-ui-font*))
-          (setf *small-ui-font* (cffi:null-pointer)
-                *medium-ui-font* (cffi:null-pointer)
-                *large-ui-font* (cffi:null-pointer))
           (al:destroy-display display)
           (al:stop-samples)
           (al:shutdown-ttf-addon)

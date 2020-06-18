@@ -170,7 +170,7 @@
                       #'(lambda ()
                           (with-mob entity ()
                             (with-hp entity ()
-                              (let* ((text-width (al:get-text-width *large-ui-font* name))
+                              (let* ((text-width (al:get-text-width (ui-font-large) name))
                                      (bar-width (truncate (* (+ text-width 40)
                                                              (/ current-hp maximum-hp))))
                                      (name-offset (truncate (- display-width text-width) 2)))
@@ -183,7 +183,7 @@
                                  (+ name-offset bar-width -20) 52
                                  (al:map-rgba 40 0 0 0))
                                 (al:draw-text
-                                 *large-ui-font*
+                                 (ui-font-large)
                                  (al:map-rgba 255 255 255 10)
                                  name-offset 26
                                  0 name))))))))))

@@ -10,6 +10,7 @@
                :cl-csv
                :cl-inflector
                :cl-liballegro
+               :cl-liballegro-nuklear
                :cl-ppcre
                :deeds
                :float-features
@@ -52,6 +53,7 @@
                (:file "item-system")
                (:file "mob-system")
                (:file "player-system")
+               (:file "ui-system")
                (:file "renderer")
                (:file "d2clone-kit"))
   :around-compile (lambda (next)
