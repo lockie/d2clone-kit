@@ -57,6 +57,8 @@
    (:export
     #:handle-event
     #:game-loop
+    #:new-game
+    #:game-started-p
     #:start-engine
     #:demo)
    ;; debug-system.lisp
@@ -76,6 +78,7 @@
    (:export
     #:allegro-event
     #:quit
+    #:exit
     #:component-created
     #:character-moved
     #:entity-died)
