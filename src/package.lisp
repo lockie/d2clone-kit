@@ -168,6 +168,7 @@
    ;; systems.lisp
    (:export
     #:system
+    #:system-initialize
     #:system-update
     #:system-draw
     #:system-ref
