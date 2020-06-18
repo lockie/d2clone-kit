@@ -15,6 +15,17 @@
 
 Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
 
+(declaim (inline exit))
+(defun exit ()
+  "Issues liballegro's :DISPLAY-CLOSE event."
+  (cffi:with-foreign-object (event '(:struct al:any-event))
+    (cffi:with-foreign-slots ((al::type al::source al::timestamp)
+                              event (:struct al:any-event))
+      (setf al::type :display-close
+            al::source (cffi:null-pointer)
+            al::timestamp (al:get-time)))
+    (al:emit-user-event *event-source* event (cffi:null-pointer))))
+
 (defevent component-created ()
   ((entity :initarg :entity)
    (system-name :initarg :system-name))

@@ -54,6 +54,27 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defvar *new-game-object-specs*)
 (defvar *config-options*)
 
+(defvar *event-source*)
+
+(defun new-game ()
+  "Starts new game."
+  (log-info "Starting new game")
+  (dotimes (entity *entities-count*)
+    (unless (find entity *deleted-entities*)
+      ;; TODO : add parent <-> child relationship to ECS
+      ;;  and then make all new game objects to be children of same entity to be deleted here
+      (unless (or (has-component-p (system-ref 'sprite-batch) entity)
+                  (has-component-p (system-ref 'debug) entity))
+        (delete-entity entity))))
+  (dolist (spec *new-game-object-specs*)
+    (make-object spec)))
+
+(declaim (inline game-started-p) (ftype (function () boolean) game-started-p))
+(defun game-started-p ()
+  "Returns whether the game session is currently running."
+  ;; HACK
+  (not (null (slot-value (system-ref 'player) 'entity))))
+
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))
   (with-condition-reporter
@@ -118,7 +139,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                       *large-ui-font* (al:create-builtin-font))))))
 
       (let ((display (al:create-display display-width display-height))
-            (event-queue (al:create-event-queue)))
+            (event-queue (al:create-event-queue))
+            (*event-source* (cffi:foreign-alloc '(:struct al::event-source))))
         (when (cffi:null-pointer-p display)
           (error "Initializing display failed"))
         (al:inhibit-screensaver t)
@@ -128,6 +150,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (al:register-event-source event-queue (al:get-keyboard-event-source))
         (al:install-mouse)
         (al:register-event-source event-queue (al:get-mouse-event-source))
+        (al:init-user-event-source *event-source*)
+        (al:register-event-source event-queue *event-source*)
 
         (al:set-new-bitmap-flags '(:video-bitmap))
 
@@ -159,7 +183,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (issue quit)
           (al:inhibit-screensaver nil)
           (unregister-all-systems)
-          (al:destroy-display display)
+          (al:destroy-user-event-source *event-source*)
+          (cffi:foreign-free *event-source*)
           (al:destroy-event-queue event-queue)
           (when *large-ui-font*
             (al:destroy-font *large-ui-font*))
@@ -170,6 +195,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (setf *small-ui-font* (cffi:null-pointer)
                 *medium-ui-font* (cffi:null-pointer)
                 *large-ui-font* (cffi:null-pointer))
+          (al:destroy-display display)
           (al:stop-samples)
           (al:shutdown-ttf-addon)
           (al:shutdown-font-addon)
