@@ -15,7 +15,13 @@
 
 ;; TODO : defsystem macro with global parameter = system instance?
 
-(defgeneric system-unload (system))
+(defgeneric system-initialize (system)
+  (:documentation "Performs early SYSTEM initialization. Note: this happens **before** the system's components initialization."))
+
+(defmethod system-initialize ((system system))
+  (declare (ignore system)))
+
+;; TODO : replace quit event handlers with some sort of system-finalize method?..
 
 (defgeneric system-update (system dt)
   (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
@@ -34,6 +40,7 @@ See RENDER"))
 (defvar *systems* (make-hash-table :test #'eq))
 
 (defmethod initialize-instance :after ((system system) &key)
+  (system-initialize system)
   (with-slots (name components) system
     (if-let (existing-sys (gethash name *systems*))
       (progn
