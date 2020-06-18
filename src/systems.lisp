@@ -168,6 +168,9 @@ See MAKE-PREFAB-COMPONENT"))
                                                   (adjust-array ,acc new-size
                                                                 :initial-element ,d))))
                                      array-accessors slot-defaults))
+         (initialization-assignments
+           (mapcan #'(lambda (a d) (copy-list `((aref (,@a components) entity) ,d)))
+                   array-accessors slot-defaults))
          (getter-decls (mapcan
                         #'(lambda (s a type)
                             `((declaim
@@ -232,12 +235,12 @@ See MAKE-PREFAB-COMPONENT"))
                    array-accessors))))
        (defmethod make-component :before ((system ,system-name) entity &rest parameters)
          (declare (ignore parameters))
-         (when (has-component-p system entity)
-           (delete-component system entity)))
+         (with-slots (components) system
+           (setf ,@initialization-assignments)))
        (defmethod make-prefab-component :before ((system ,system-name) entity prefab parameters)
          (declare (ignore parameters))
-         (when (has-component-p system entity)
-           (delete-component system entity)))
+         (with-slots (components) system
+           (setf ,@initialization-assignments)))
        ,@getter-decls ,@setter-decls)))
 
 (defgeneric prefab (system prefab-name)
