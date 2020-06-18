@@ -96,6 +96,21 @@ Otherwise, it is returned."
   (values (cl-ppcre:regex-replace-all
            "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename "")))
 
+(declaim (ftype (function (string) list) read-file-into-list))
+(defun read-file-into-list (pathname)
+  "Reads text file specified by PATHNAME into a list line-by-line.
+Lines are expected to be shorter than 4k chars."
+  (cffi:with-foreign-object (buffer :char 4096)
+    (loop
+      :with file := (al:fopen (namestring pathname) "r")
+        :initially (when (cffi:null-pointer-p file) (return nil))
+      :for line := (al:fgets file buffer 4096)
+      :until (cffi:null-pointer-p line)
+      :collecting
+      (flet ((trim (str) (subseq str 0 (1- (length str)))))
+        (trim (cffi:foreign-string-to-lisp line)))
+      :finally (al:fclose file))))
+
 (defclass character-stream (trivial-gray-streams:fundamental-character-input-stream)
   ((path :initarg :path :initform (error "missing path"))
    (al-file))

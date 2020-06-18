@@ -85,6 +85,7 @@
    ;; fs.lisp
    (:export
     #:ensure-loaded
+    #:read-file-into-list
     #:character-stream
     #:binary-stream
     #:virtual-binary-stream
