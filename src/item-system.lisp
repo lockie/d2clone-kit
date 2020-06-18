@@ -33,10 +33,10 @@
                  #'(lambda ()
                      ;; TODO : prevent text overlap
                      (let* ((text (string-capitalize (substitute #\Space #\- (string type))))
-                            (width (al:get-text-width *large-ui-font* text)))
+                            (width (al:get-text-width (ui-font-large) text)))
                        (al:draw-filled-rectangle x y (+ x width) (+ y 20)
                                                  (al:map-rgba 10 10 10 160))
-                       (al:draw-text *large-ui-font*
+                       (al:draw-text (ui-font-large)
                                      (al:map-rgba 255 255 255 0) x y 0 text))))))))))))
 
 (eval-when (:compile-toplevel)

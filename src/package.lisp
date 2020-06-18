@@ -189,4 +189,14 @@
     #:make-prefab
     #:preload-prefabs
     #:make-prefab-component
-    #:defprefab))
+    #:defprefab)
+   ;; ui-system.lisp
+   (:export
+    #:ui-system
+    #:ui-font-small
+    #:ui-font-medium
+    #:ui-font-large
+    #:ui-context
+    #:toggle-ui
+    #:ui-on-p
+    #:make-button-press-sound))
