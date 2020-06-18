@@ -148,6 +148,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                (make-instance 'item-system)
                (make-instance 'sound-system)
                (make-instance 'ui-system)
+               (make-instance 'credits-system)
+               (make-instance 'menu-system)
 
                (make-instance 'camera-system)
                (make-instance 'coordinate-system)

@@ -54,6 +54,8 @@
                (:file "mob-system")
                (:file "player-system")
                (:file "ui-system")
+               (:file "menu-system")
+               (:file "credits-system")
                (:file "renderer")
                (:file "d2clone-kit"))
   :around-compile (lambda (next)
