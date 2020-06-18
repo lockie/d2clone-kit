@@ -53,6 +53,10 @@
     #:orthogonal->screen
     #:screen->orthogonal*
     #:with-screen-coordinate)
+   ;; credits-system.lisp
+   (:export
+    #:credits-system
+    #:credits-screen)
    ;; d2clone-kit.lisp
    (:export
     #:handle-event
@@ -122,6 +126,11 @@
     #:map-system
     #:ground-layer-p
     #:tile-property)
+   ;; menu-system.lisp
+   (:export
+    #:menu-system
+    #:main-menu)
+   ;; mob-system.lisp
    (:export
     #:mob-system)
    ;; player-system.lisp
