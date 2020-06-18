@@ -5,6 +5,9 @@
 (defmethod staple:page-type ((system (eql (asdf:find-system :d2clone-kit))))
   'my-page)
 
+(defmethod staple:packages ((system (eql (asdf:find-system :d2clone-kit))))
+  (mapcar #'find-package '(:d2clone-kit)))
+
 (defmethod staple:format-documentation ((docstring string) (page my-page))
   (flet ((replace-see (string start end mstart mend rstart rend)
            (declare (ignore start end))

@@ -8,7 +8,7 @@
    (deeds::queue-thread :initform nil))
   (:documentation "Event loop class.
 
-To avoid overhead of managing the foreign pointers to allegro events, we use
+To avoid overhead of managing the foreign pointers to liballegro events, we use
 simple synchronous single-threaded event loop for now."))
 
 (defmethod deeds:running ((event-delivery event-loop))
