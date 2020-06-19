@@ -134,10 +134,6 @@ conversion maths are badly fucked up."))
         (setf debug-entity (make-entity))
         (make-component (system-ref 'debug) debug-entity)))))
 
-(defmethod make-component ((system map-system) entity &rest parameters)
-  (declare (ignore system entity parameters))
-  nil)
-
 (declaim (inline ground-layer-p))
 (defun ground-layer-p (layer)
   "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground\" property)."

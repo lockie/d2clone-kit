@@ -253,10 +253,6 @@ The following format features are unsupported yet:
         (setf debug-entity (make-entity))
         (make-component (system-ref 'debug) debug-entity :order 1010d0)))))
 
-(defmethod make-component ((system sprite-system) entity &rest parameters)
-  (declare (ignore system entity parameters))
-  nil)
-
 (declaim
  (inline stance-interruptible-p)
  (ftype (function (fixnum) boolean)))

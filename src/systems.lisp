@@ -297,9 +297,11 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
          (enumerate-directory ,(format nil "~(~as~)" system)
            (when (uiop:string-suffix-p file ,(concatenate 'string "." extension))
              (make-prefab system (make-keyword (string-upcase (pathname-name file)))))))
+       (defmethod make-component ((system ,system-name) entity &rest parameters)
+         (declare (ignore system entity parameters))
+         nil)
        (defhandler ,system-name quit (event)
          :after '(:end)
          (clrhash ,storage-name))
        (defstruct ,struct-name
          ,@ro-slots))))
-;; TODO : also define empty make-component in this macro

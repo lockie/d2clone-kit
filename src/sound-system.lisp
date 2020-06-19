@@ -56,10 +56,6 @@
     (set-sound-position entity)
     (al:set-sample-instance-playing sample-instance t)))
 
-(defmethod make-component ((system sound-system) entity &rest parameters)
-  (declare (ignore system entity parameters))
-  nil)
-
 (defmethod delete-component :before ((system sound-system) entity)
   (with-sound entity ()
     (al:stop-sample-instance sample-instance)))
