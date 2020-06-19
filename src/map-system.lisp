@@ -248,6 +248,6 @@ conversion maths are badly fucked up."))
                                                          chunk-viewport-y)
                                                       debug-grid nil))))))))))))))))))
 
-(defhandler map-system quit (event)
+(defmethod system-finalize ((system map-system))
   (setf *tile-width* 0)
   (setf *tile-height* 0))

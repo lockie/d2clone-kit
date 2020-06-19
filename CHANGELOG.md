@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Obsolete console-system stub.
+- QUIT event in favour of plain SYSTEM-FINALIZE method.
 
 ### Fixed
 - Fixed compilation on CCL.

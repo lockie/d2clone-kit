@@ -166,9 +166,10 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                    "game loop"
                    (game-loop event-queue))))
           (log-info "Shutting engine down")
-          (issue quit)
-          (al:inhibit-screensaver nil)
+          (with-systems system
+            (system-finalize system))
           (unregister-all-systems)
+          (al:inhibit-screensaver nil)
           (al:destroy-user-event-source *event-source*)
           (cffi:foreign-free *event-source*)
           (al:destroy-event-queue event-queue)

@@ -112,7 +112,7 @@
                    (text text))
                #'(lambda () (al:draw-text font color 0 (* i 10) 0 text)))))))
 
-(defhandler debug-system quit (event)
+(defmethod system-finalize ((system debug-system))
   (with-slots (font) system
     (when font
       (al:destroy-font font))

@@ -115,7 +115,7 @@ undesired side effects like processing the same event by different windows."
         (when on
           (apply function nuklear-context entity (hash-table-plist parameters))))))
 
-(defhandler ui-system quit (event)
+(defmethod system-finalize ((system ui-system))
   (with-slots (ui-font-small ui-font-medium ui-font-large
                nuklear-font nuklear-context) system
     (nk:allegro-font-del nuklear-font)

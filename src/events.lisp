@@ -9,12 +9,6 @@
    :event (error "EVENT required"))
   (:documentation "Event class representing low-level liballegro event."))
 
-(defevent quit ()
-  ()
-  (:documentation "Quit event class.
-
-Do not handle liballegro's :DISPLAY-CLOSE event, handle this instead."))
-
 (declaim (inline exit))
 (defun exit ()
   "Issues liballegro's :DISPLAY-CLOSE event."

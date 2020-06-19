@@ -14,7 +14,7 @@
   (with-slots (ui-entity) system
     (setf ui-entity (make-object '((:ui :prefab :credits))))))
 
-(defhandler credits-system quit (event)
+(defmethod system-finalize ((system credits-system))
   (with-slots (ui-entity) system
     (with-ui ui-entity ()
       (when-let (font (gethash :font parameters))
