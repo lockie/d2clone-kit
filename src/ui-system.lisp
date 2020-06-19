@@ -93,10 +93,6 @@ undesired side effects like processing the same event by different windows."
       (setf ui-function (ui-prefab-function prefab))
       (setf ui-parameters (ui-prefab-parameters prefab)))))
 
-(defmethod make-component ((system ui-system) entity &rest parameters)
-  (declare (ignore system entity parameters))
-  nil)
-
 (defmethod system-initialize ((system ui-system))
   (with-slots (ui-font-small ui-font-medium ui-font-large
                nuklear-font nuklear-context) system

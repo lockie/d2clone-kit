@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed ubiquitous coordinates component.
 - Removed ubiquitous sprite batch system component.
 - Refactored new game object initialization to avoid runtime code generation.
+- DEFPREFAB macro now also defines necessary empty make-component method.
 
 ### Removed
 - Obsolete console-system stub.
