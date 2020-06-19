@@ -21,7 +21,11 @@
 (defmethod system-initialize ((system system))
   (declare (ignore system)))
 
-;; TODO : replace quit event handlers with some sort of system-finalize method?..
+(defgeneric system-finalize (system)
+  (:documentation "Performs SYSTEM finalization."))
+
+(defmethod system-finalize ((system system))
+  (declare (ignore system)))
 
 (defgeneric system-update (system dt)
   (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
@@ -300,8 +304,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
        (defmethod make-component ((system ,system-name) entity &rest parameters)
          (declare (ignore system entity parameters))
          nil)
-       (defhandler ,system-name quit (event)
-         :after '(:end)
+       (defmethod system-finalize :after ((system ,system-name))
          (clrhash ,storage-name))
        (defstruct ,struct-name
          ,@ro-slots))))

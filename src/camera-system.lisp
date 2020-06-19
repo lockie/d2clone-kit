@@ -7,7 +7,7 @@
    (target :initform nil))
   (:documentation "Handles camera entity."))
 
-(defhandler camera-system quit (event)
+(defmethod system-finalize ((system camera-system))
   (setf (slot-value system 'entity) -1))
 
 (defmethod make-component ((system camera-system) entity &rest parameters)

@@ -123,7 +123,7 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
                       (coerce (cdr position) 'double-float)))
                  (add-debug-tile-rhomb debug-entity x y debug-collisions t)))))))))
 
-(defhandler collision-system quit (event)
+(defmethod system-finalize ((system collision-system))
   (with-slots (collision-map characters-collision-map) system
     (setf collision-map nil
           characters-collision-map nil)))
