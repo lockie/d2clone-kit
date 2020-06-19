@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ability to do function call profiling by merely setting config variable.
 - Helper function to do proper error checking on liballegro file loading.
 - Proper collision map clearing on map chunks deletion.
+- System initialization method.
+- Game session control functions (NEW-GAME, GAME-STARTED-P, EXIT).
+- READ-FILE-INTO-LIST helper to be used in credits screen.
+- GUI system DSL based on Nuklear library.
+- Main menu.
+- Credits screen.
 
 ### Changed
 - Removed ubiquitous mana system component.
@@ -17,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed ubiquitous coordinates component.
 - Removed ubiquitous sprite batch system component.
 - Refactored new game object initialization to avoid runtime code generation.
+
+### Removed
+- Obsolete console-system stub.
 
 ### Fixed
 - Fixed compilation on CCL.
@@ -32,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed item-related performance issue.
 - Greatly improved sprite batch performance.
 - Fixed bug causing item sprite batch to be still drawn when item was picked up.
+- Fixed bug causing sprites to glitch when all objects were recreated.
 
 
 ## [0.1.0] - 2020-04-20
