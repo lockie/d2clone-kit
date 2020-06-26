@@ -12,12 +12,25 @@
 
 (declaim (inline system-name system-components system-order))
 
+(setf (documentation #'system-name 'function)
+      "Symbol that denotes the system."
+      (documentation #'system-components 'function)
+      "Storage for system components."
+      (documentation #'system-order 'function)
+      "Fixnum representing system's update order.")
+
 (declaim (type hash-table *systems*))
 (global-vars:define-global-var *systems* (make-hash-table :test 'eq))
 (declaim (type list *system-initializers*))
 (global-vars:define-global-var *system-initializers* nil)
 
 (defmacro defsystem (name slots (&key documentation (order 0)))
+  "Defines an ECS system structure named NAME with SLOTS and docstring DOCUMENTATION,
+along with global system instance variable.
+ORDER is fixnum specifying the order for system initialization and WITH-SYTEMS macro.
+
+See INITIALIZE-SYSTEMS
+See WITH-SYSTEMS"
   (let* ((system-name (symbolicate name '-system))
          (printer-name (symbolicate system-name '-print))
          (variable-name (symbolicate '* system-name '*))
@@ -58,6 +71,9 @@
                     #'(lambda (s1 s2) (> (car s1) (car s2))))))))
 
 (defun initialize-systems ()
+  "Initializes defined ECS systems in specified order.
+
+See DEFSYSTEM"
   (dolist (system (mapcar
                    #'(lambda (initializer)
                        (let ((system (funcall (cdr initializer))))
@@ -67,6 +83,9 @@
 
 (defmacro with-system-slots ((slots system-type &optional (system-instance nil)
                               &key (read-only t)) &body body)
+  "Executes BODY with bindings for slots of a system specified by SYSTEM-TYPE.
+If SYSTEM-INSTANCE is NIL (the default), global system instance of type SYSTEM-TYPE is used.
+If READ-ONLY is T (the default), slots are not SETF-able."
   (with-gensyms (system)
     (let* ((instance (if system-instance system-instance (symbolicate '* system-type '*)))
            (accessors (mapcar #'(lambda (s) (symbolicate system-type '- s)) slots))
