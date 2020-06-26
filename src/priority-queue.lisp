@@ -23,7 +23,7 @@ Note: keys are expected to be DOUBLE-FLOATs."
       0
       (flet
           ((mid (first last)
-             (declare (fixnum first last))
+             (declare (type fixnum first last))
              (the array-index (+ first (truncate (- last first) 2)))))
         (declare (inline mid))
         (do* ((l 0)
@@ -89,7 +89,7 @@ A bit more performance-friendly than calling PRIORITY-QUEUE-PUSH many times
         (sort
          array
          #'(lambda (a b)
-             (declare (double-float a b))
+             (declare (type double-float a b))
              (> a b))
          :key (priority-queue-key queue))))
     nil))
