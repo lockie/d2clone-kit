@@ -1,11 +1,10 @@
 (in-package :d2clone-kit)
 
 
-(defclass collision-system (system)
-  ((name :initform 'collision)
-   (collision-map :initform nil)
-   (characters-collision-map :initform nil)
-   (debug-entity :initform nil))
+(defsystem collision
+  ((map (make-sparse-matrix) :type sparse-matrix)
+   (characters-map (make-sparse-matrix) :type sparse-matrix)
+   (debug-entity -1 :type fixnum))
   (:documentation "Handles object collisions.
 
 To make tile collide (e.g. be non-walkable by characters), set custom
@@ -15,53 +14,47 @@ boolean property *collides* to *true* in Tiled tileset."))
 
 (defhandler collision-system component-created (event entity system-name)
   :filter '(eq system-name 'map)
-  (with-slots (collision-map) system
-    (unless collision-map
-      (setf collision-map (make-sparse-matrix)))
-    (with-coordinate entity ()
-      (let ((start-x (truncate x))
-            (start-y (truncate y)))
-        (with-map-chunk entity ()
-          (loop :for layer :across (tiled-map-layers tiled-map)
-                :do (loop :with data := (tiled-layer-data layer)
-                          :for y :from 0 :below (tiled-layer-height layer)
-                          :do (loop :for x :from 0 :below (tiled-layer-width layer)
-                                    :for tile := (aref data y x)
-                                    :do (when (tile-property tiles-properties tile 'collides)
-                                          (multiple-value-bind (ortho-x ortho-y)
-                                              (isometric->orthogonal*
-                                               (coerce x 'double-float)
-                                               (coerce y 'double-float))
-                                            (setf
-                                             (sparse-matrix-ref
-                                              collision-map
-                                              (cons (+ (truncate ortho-x) start-x)
-                                                    (+ (truncate ortho-y) start-y)))
-                                             entity)))))))))))
+  (with-coordinate entity ()
+    (let ((start-x (truncate x))
+          (start-y (truncate y)))
+      (with-map-chunk entity ()
+        (loop :for layer :across (tiled-map-layers tiled-map)
+              :do (loop :with data := (tiled-layer-data layer)
+                        :for y :from 0 :below (tiled-layer-height layer)
+                        :do (loop :for x :from 0 :below (tiled-layer-width layer)
+                                  :for tile := (aref data y x)
+                                  :do (when (tile-property tiles-properties tile 'collides)
+                                        (multiple-value-bind (ortho-x ortho-y)
+                                            (isometric->orthogonal*
+                                             (coerce x 'double-float)
+                                             (coerce y 'double-float))
+                                          (setf
+                                           (sparse-matrix-ref
+                                            (collision-system-map system)
+                                            (cons (+ (truncate ortho-x) start-x)
+                                                  (+ (truncate ortho-y) start-y)))
+                                           entity))))))))))
 
 (defhandler collision-system entity-deleted (event entity)
-  :filter '(has-component-p (system-ref (quote map)) entity)
-  (with-slots (collision-map) system
+  :filter '(has-component-p (gethash :map *systems*) entity) ;; HACK: *map-system* does not work here
+  (with-system-slots ((map) collision-system system)
     (sparse-matrix-traverse
-     collision-map
+     map
      #'(lambda (position value)
          (when (= value entity)
-           (sparse-matrix-remove collision-map position))))))
+           (sparse-matrix-remove map position))))))
 
 (defhandler collision-system component-created (event entity system-name)
   :filter '(eq system-name 'character)
-  (with-slots (characters-collision-map) system
-    (unless characters-collision-map
-      (setf characters-collision-map (make-sparse-matrix)))
-    (with-coordinate entity ()
-      ;; TODO : consider character size (#21)
-      (setf (sparse-matrix-ref characters-collision-map (cons (round x) (round y))) entity))))
+  (with-coordinate entity ()
+    ;; TODO : consider character size (#21)
+    (setf (sparse-matrix-ref (collision-system-characters-map system) (cons (round x) (round y)))
+          entity)))
 
 (defhandler collision-system entity-deleted (event entity)
-  :filter '(has-component-p (system-ref (quote character)) entity)
+  :filter '(has-component-p (gethash :character *systems*) entity) ;; HACK
   (with-coordinate entity ()
-    (with-slots (characters-collision-map) system
-      (sparse-matrix-remove characters-collision-map (cons (round x) (round y))))))
+    (sparse-matrix-remove (collision-system-characters-map system) (cons (round x) (round y)))))
 
 (defhandler collision-system character-moved (event entity old-x old-y new-x new-y)
   ;; TODO : consider character size (#21)
@@ -70,31 +63,19 @@ boolean property *collides* to *true* in Tiled tileset."))
         (new-int-x (round new-x))
         (new-int-y (round new-y)))
     (unless (and (= old-int-x new-int-x) (= old-int-y new-int-y))
-      (with-slots (characters-collision-map) system
-        (sparse-matrix-remove characters-collision-map (cons old-int-x old-int-y))
-        (setf (sparse-matrix-ref characters-collision-map (cons new-int-x new-int-y)) entity)))))
+      (with-system-slots ((characters-map) collision-system system)
+        (sparse-matrix-remove characters-map (cons old-int-x old-int-y))
+        (setf (sparse-matrix-ref characters-map (cons new-int-x new-int-y))
+              entity)))))
 
 (defhandler collision-system entity-died (event entity)
   (with-coordinate entity ()
-    (with-slots (characters-collision-map) system
-      (sparse-matrix-remove characters-collision-map (cons (round x) (round y))))))
+    (sparse-matrix-remove (collision-system-characters-map system) (cons (round x) (round y)))))
 
-(defmethod character-at ((system collision-system) x y)
+(declaim (inline character-at) (ftype (function (fixnum fixnum) fixnum) character-at))
+(defun character-at (x y)
   "Returns character entity at ingeter map coordinates X, Y or NIL if there's no character there."
-  (sparse-matrix-ref (slot-value system 'characters-collision-map) (cons x y)))
-
-(defmethod collides ((system collision-system) x y &key (character nil))
-  "Returns whether tile located at integer map coordinates X, Y does collide with other objects
-using collision system SYSTEM.
-CHARACTER, when non-NIL, specifies character entity to check for collisions with other characters."
-  (with-slots (collision-map characters-collision-map) system
-    (let ((point (cons x y)))
-      (or
-       (not (null (sparse-matrix-ref collision-map point)))
-       (if character
-           (let ((entity (sparse-matrix-ref characters-collision-map point)))
-             (if entity (not (= character entity)) nil))
-           nil)))))
+  (sparse-matrix-ref (collision-system-characters-map *collision-system*) (cons x y)))
 
 (declaim
  (inline collidesp)
@@ -102,28 +83,37 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
 (defun collidesp (x y &key (character nil))
   "Returns whether tile located at integer map coordinates X, Y does collide with other objects.
 CHARACTER, when non-NIL, specifies character entity to check for collisions with other characters."
-  (collides (system-ref 'collision) x y :character character))
+  (with-system-slots ((map characters-map) collision-system)
+    (let ((point (cons x y)))
+      (or
+       (not (null (sparse-matrix-ref map point)))
+       (if character
+           (let ((entity (sparse-matrix-ref characters-map point)))
+             (if entity (not (= character (the fixnum entity))) nil))
+           nil)))))
+
+(defmethod system-initialize ((system collision-system))
+  (with-system-config-options ((debug-collisions))
+    (when debug-collisions
+      (setf (collision-system-debug-entity system)
+            (make-object '((:debug :order 2000d0)))))))
+
+(defmethod system-finalize ((system collision-system))
+  (with-system-slots ((map characters-map) collision-system system)
+    (sparse-matrix-clear map)
+    (sparse-matrix-clear characters-map)))
 
 (defmethod system-draw ((system collision-system) renderer)
   (with-system-config-options ((debug-collisions))
     (when debug-collisions
-      (with-slots (debug-entity collision-map) system
-        (when collision-map
-          (unless debug-entity
-            (setf debug-entity (make-entity))
-            (make-component (system-ref 'debug) debug-entity :order 2000d0))
-          (sparse-matrix-traverse
-           collision-map
-           #'(lambda (position value)
-               (declare (ignore value))
-               (multiple-value-bind (x y)
-                   (multiple-value-call #'absolute->viewport
-                     (orthogonal->screen
-                      (coerce (car position) 'double-float)
-                      (coerce (cdr position) 'double-float)))
-                 (add-debug-tile-rhomb debug-entity x y debug-collisions t)))))))))
-
-(defmethod system-finalize ((system collision-system))
-  (with-slots (collision-map characters-collision-map) system
-    (setf collision-map nil
-          characters-collision-map nil)))
+      (with-system-slots ((debug-entity map) collision-system system)
+        (sparse-matrix-traverse
+         map
+         #'(lambda (position value)
+             (declare (ignore value))
+             (multiple-value-bind (x y)
+                 (multiple-value-call #'absolute->viewport
+                   (orthogonal->screen
+                    (coerce (car position) 'double-float)
+                    (coerce (cdr position) 'double-float)))
+               (add-debug-tile-rhomb debug-entity x y debug-collisions t))))))))

@@ -1,12 +1,12 @@
 (in-package :d2clone-kit)
 
-(defclass debug-system (system)
-  ((name :initform 'debug)
-   (order :initform 10)
-   (font :initform nil)
-   (texts :initform (make-hash-table :test 'eq))
-   (text-designators :initform nil))
-  (:documentation "Handles drawing of various debug information."))
+
+(defsystem debug
+  ((font (al:create-builtin-font) :type cffi:foreign-pointer)
+   (texts (make-hash-table :test 'eq) :type hash-table)
+   (text-designators nil :type list))
+  (:documentation "Handles drawing of various debug information."
+   :order 10))
 
 (defcomponent debug debug-buffer
   (render-order 0d0 :type double-float)
@@ -71,8 +71,7 @@
 (declaim (ftype (function (keyword string &rest t)) add-debug-text))
 (defun add-debug-text (designator text &rest args)
   "Adds debug text TEXT using FORMAT-like arguments ARGS to display on top left corner of the screen. To identify same text line each frame, set keyword DESIGNATOR to same value."
-  (with-slots (texts text-designators)
-      (system-ref 'debug)
+  (with-system-slots ((texts text-designators) debug-system nil :read-only nil)
     (pushnew designator text-designators)
     (setf (gethash designator texts) (apply #'format nil text args))))
 
@@ -81,6 +80,9 @@
     (with-debug-buffer entity ()
       (setf render-order order)
       (setf points (make-growable-vector :initial-element 0d0 :initial-allocated-size size)))))
+
+(defmethod system-finalize ((system debug-system))
+  (al:destroy-font (debug-system-font system)))
 
 (defmethod system-update ((system debug-system) dt)
   (with-debug-buffers
@@ -96,9 +98,7 @@
                  (ptr (growable-vector-freeze points :element-type 'single-float))
                (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
                              (ceiling (growable-vector-length points) 9) 0))))))
-  (with-slots (font texts text-designators) system
-    (unless font
-      (setf font (al:create-builtin-font)))
+  (with-system-slots ((font texts text-designators) debug-system system)
     (loop
       :with color := (al:map-rgb 255 255 255)
       :for designator :in (reverse text-designators)
@@ -111,9 +111,3 @@
              (let ((i i)
                    (text text))
                #'(lambda () (al:draw-text font color 0 (* i 10) 0 text)))))))
-
-(defmethod system-finalize ((system debug-system))
-  (with-slots (font) system
-    (when font
-      (al:destroy-font font))
-    (setf font nil)))

@@ -1,8 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defclass coordinate-system (system)
-  ((name :initform 'coordinate))
+(defsystem coordinate
+  ()
   (:documentation "Stores orthogonal world coordinates."))
 
 ;; TODO : разобраться с типами

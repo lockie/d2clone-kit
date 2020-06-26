@@ -64,8 +64,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
     (unless (find entity *deleted-entities*)
       ;; TODO : add parent <-> child relationship to ECS
       ;;  and then make all new game objects to be children of same entity to be deleted here
-      (unless (or (has-component-p (system-ref 'sprite-batch) entity)
-                  (has-component-p (system-ref 'debug) entity))
+      (unless (or (has-component-p *sprite-batch-system* entity)
+                  (has-component-p *debug-system* entity))
         (delete-entity entity))))
   (dolist (spec *new-game-object-specs*)
     (make-object spec)))
@@ -74,7 +74,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defun game-started-p ()
   "Returns boolean indicating whether the game session is currently running."
   ;; HACK
-  (not (null (slot-value (system-ref 'player) 'entity))))
+  (not (minusp (player-system-entity *player-system*))))
 
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))
@@ -141,26 +141,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 
         (unwind-protect
              (progn
-               (make-instance 'debug-system)
-               (make-instance 'sprite-batch-system)
-               (make-instance 'collision-system)
-               (make-instance 'combat-system)
-               (make-instance 'item-system)
-               (make-instance 'sound-system)
-               (make-instance 'ui-system)
-               (make-instance 'credits-system)
-               (make-instance 'menu-system)
-
-               (make-instance 'camera-system)
-               (make-instance 'coordinate-system)
-               (make-instance 'player-system)
-               (make-instance 'sprite-system)
-               (make-instance 'character-system)
-               (make-instance 'hp-system)
-               (make-instance 'mana-system)
-               (make-instance 'combat-system)
-               (make-instance 'mob-system)
-               (make-instance 'map-system)
+               (initialize-systems)
                (with-system-config-options ((debug-profiling))
                  (with-profiling debug-profiling
                    "game loop"

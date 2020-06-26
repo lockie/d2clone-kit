@@ -1,8 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defclass hp-system (system)
-  ((name :initform 'hp))
+(defsystem hp
+  ()
   (:documentation "Handles hit points."))
 
 (defcomponent hp hp

@@ -1,9 +1,9 @@
 (in-package :d2clone-kit)
 
-(defclass map-system (system)
-  ((name :initform 'map)
-   (last-camera-x :initform most-positive-double-float)
-   (last-camera-y :initform most-positive-double-float))
+
+(defsystem map
+  ((last-camera-x most-positive-double-float :type double-float)
+   (last-camera-y most-positive-double-float :type double-float))
   (:documentation "Handles map chunks in Tiled format.
 
 The following format features are unsupported yet:
@@ -65,16 +65,13 @@ conversion maths are badly fucked up."))
                                 (format
                                  nil "maps/~a"
                                  (tiled-tileset-image-source tileset)))))
-                (let* ((entity (make-entity))
+                (let* ((entity (make-object
+                                `((:sprite-batch :bitmap ,bitmap
+                                                 :sprite-width ,*tile-width*
+                                                 :sprite-height ,*tile-height*))))
                        (map-tileset (make-map-tileset
                                      :first-id first-id
                                      :sprite-batch entity)))
-                  (make-component
-                   (system-ref 'sprite-batch)
-                   entity
-                   :bitmap bitmap
-                   :sprite-width *tile-width*
-                   :sprite-height *tile-height*)
                   (push entity sprite-batches)
                   (loop
                     :for i :from first-id :below (+ first-id tile-count)
@@ -131,8 +128,7 @@ conversion maths are badly fucked up."))
       (setf tiles-properties (map-prefab-tiles-properties prefab))
       (setf sprite-batches (map-prefab-sprite-batches prefab))
       (when debug-grid
-        (setf debug-entity (make-entity))
-        (make-component (system-ref 'debug) debug-entity)))))
+        (setf debug-entity (make-object '((:debug))))))))
 
 (declaim (inline ground-layer-p))
 (defun ground-layer-p (layer)
@@ -150,6 +146,10 @@ conversion maths are badly fucked up."))
     (gethash property properties default)
     default))
 
+(defmethod system-finalize ((system map-system))
+  (setf *tile-width* 0)
+  (setf *tile-height* 0))
+
 (defmethod system-update ((system map-system) dt)
   (flet
       ((intp (n) (zerop (mod n 1))))
@@ -164,7 +164,7 @@ conversion maths are badly fucked up."))
 
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))
-    (with-slots (last-camera-x last-camera-y) system
+    (with-system-slots ((last-camera-x last-camera-y) map-system system :read-only nil)
       (with-camera (camera-x camera-y)
         (when (or debug-grid
                   (not (= camera-x last-camera-x))
@@ -247,7 +247,3 @@ conversion maths are badly fucked up."))
                                                       (+ (floor tile-y 2d0)
                                                          chunk-viewport-y)
                                                       debug-grid nil))))))))))))))))))
-
-(defmethod system-finalize ((system map-system))
-  (setf *tile-width* 0)
-  (setf *tile-height* 0))

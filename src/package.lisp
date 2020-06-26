@@ -31,7 +31,6 @@
    (:export
     #:collision-system
     #:character-at
-    #:collides
     #:collidesp)
    ;; combat-system
    (:export
@@ -164,7 +163,8 @@
     #:make-sparse-matrix
     #:sparse-matrix-ref
     #:sparse-matrix-remove
-    #:sparse-matrix-traverse)
+    #:sparse-matrix-traverse
+    #:sparse-matrix-clear)
    ;; sprite-batch-system.lisp
    (:export
     #:sprite-batch-system
@@ -181,10 +181,17 @@
    ;; systems.lisp
    (:export
     #:system
+    #:system-name
+    #:system-components
+    #:system-order
+    #:defsystem
+    #:initialize-systems
+    #:with-system-slots
+    #:system-create
     #:system-initialize
+    #:system-finalize
     #:system-update
     #:system-draw
-    #:system-ref
     #:with-systems
     #:make-component
     #:delete-component

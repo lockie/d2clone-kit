@@ -1,34 +1,30 @@
 (in-package :d2clone-kit)
 
 
-(defclass camera-system (system)
-  ((name :initform 'camera)
-   (entity :initform nil)
-   (target :initform nil))
+(defsystem camera
+  ((entity nil :type (or fixnum null))
+   (target nil :type (or fixnum null)))
   (:documentation "Handles camera entity."))
-
-(defmethod system-finalize ((system camera-system))
-  (setf (slot-value system 'entity) -1))
 
 (defmethod make-component ((system camera-system) entity &rest parameters)
   (declare (ignore parameters))
-  (setf (slot-value system 'entity) entity)
+  (setf (camera-system-entity system) entity)
   nil)
 
 (declaim (inline camera-entity))
 (defun camera-entity ()
   "Returns current camera entity."
-  (slot-value (system-ref 'camera) 'entity))
+  (camera-system-entity *camera-system*))
 
 (declaim (inline camera-target))
 (defun camera-target ()
   "Returns current camera target, i.e. the entity camera tracks."
-  (slot-value (system-ref 'camera) 'target))
+  (camera-system-target *camera-system*))
 
 (declaim (inline (setf camera-target)))
 (defun (setf camera-target) (target)
   "Sets current camera target, i.e. the entity camera tracks. Set to NIL to stop camera tracking."
-  (setf (slot-value (system-ref 'camera) 'target) target))
+  (setf (camera-system-target *camera-system*) target))
 
 (defmacro with-camera (bindings &body body)
   "Executes BODY with current camera position bound to two symbols in BIDNINGS list."
@@ -91,7 +87,7 @@ See ABSOLUTE->VIEWPORT"
      (< y display-height))))
 
 (defmethod system-update ((system camera-system) dt)
-  (when-let (target (slot-value system 'target))
+  (when-let (target (camera-system-target system))
     (with-camera (camera-x camera-y)
       (with-coordinate target ()
         (setf camera-x x
