@@ -313,7 +313,7 @@ The following format features are unsupported yet:
      0 (truncate (rem (round (* angle directions) (* 2 pi)) directions)))))
 
 (defmethod system-draw ((system sprite-system) renderer)
-  (with-system-config-options ((debug-sprite))
+  (with-system-config-options ((debug-sprite display-height))
     (with-sprites
         (loop :for layer :being :the :hash-values :in layer-batches :do
           (clear-sprite-batch layer))
@@ -329,6 +329,11 @@ The following format features are unsupported yet:
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
                      (+ y (truncate *tile-height* -2)
+                        (if (and (has-component-p *hp-system* entity)
+                                 (deadp entity))
+                            (- (coerce (/ display-height *tile-height*)
+                                       'double-float))
+                            0)
                         (coerce
                          (/ (position layer layer-names) (length layer-names))
                          'double-float))
@@ -351,6 +356,7 @@ The following format features are unsupported yet:
       (issue sprite-stance-changed :entity entity :stance new-stance))))
 
 (defmethod delete-component :before ((system sprite-system) entity)
+  ;; TODO : use parent <-> child rel here
   (with-sprite entity ()
     (loop :for sprite-batch :being :the :hash-value :in layer-batches
           :do (delete-entity sprite-batch))
