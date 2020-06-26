@@ -36,8 +36,8 @@ conversion maths are badly fucked up."))
   (sprite-batches nil :type list))
 
 (declaim (type (integer 0 255) *tile-width* *tile-height*))
-(defparameter *tile-width* 0)
-(defparameter *tile-height* 0)
+(global-vars:define-global-var *tile-width* 0)
+(global-vars:define-global-var *tile-height* 0)
 
 (defun load-tiles (tiled-map)
   (let ((tilesets (tiled-map-tilesets tiled-map)))

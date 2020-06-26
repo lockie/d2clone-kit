@@ -1,7 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defvar *config*)
+(declaim (type cffi:foreign-pointer *config*))
+(global-vars:define-global-var *config* (cffi:null-pointer))
 
 (defun init-config ()
   (setf *config* (al:load-config-file "config.ini"))
@@ -32,7 +33,7 @@
 (defun close-config ()
   (save-config)
   (al:destroy-config *config*)
-  (setf *config* nil))
+  (setf *config* (cffi:null-pointer)))
 
 (defmacro defoptions (name &rest options)
   "Defines macro to access given group of options. E.g. when NAME is 'SYSTEM, it defines WITH-SYSTEM-CONFIG-OPTIONS macro. OPTIONS should be list of lists containing option's section name, option's name, and :TYPE and :DEFAULT properties.

@@ -47,8 +47,10 @@ DIRECTORY and FILE bound."
          (declare (string directory file) (ignorable directory file))
          ,@body
          1)
-       (setf *enumerate-directory-callback* #',callback-name)
-       (physfs-enumerate ,dir (cffi:callback enumerate-directory-trampoline) (cffi:null-pointer)))))
+       (let ((*enumerate-directory-callback* #',callback-name))
+         (physfs-enumerate ,dir
+                           (cffi:callback enumerate-directory-trampoline)
+                           (cffi:null-pointer))))))
 
 (defunl init-fs (game-name data-dir)
   (when (zerop (physfs-init (first (uiop/image:raw-command-line-arguments))))

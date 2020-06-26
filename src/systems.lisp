@@ -112,13 +112,14 @@ See RENDER"))
   (declare (ignore system) (ignore renderer)))
 
 (declaim (type (integer 0 #.array-dimension-limit) *entities-count*))
-(defvar *entities-count* 0)
+(global-vars:define-global-var *entities-count* 0)
 
 (declaim (type (integer 0 #.array-dimension-limit) *entities-allocated*))
-(defvar *entities-allocated* 144)
+(global-vars:define-global-var *entities-allocated* 144)
 
 (declaim (type (vector fixnum) *deleted-entities*))
-(defvar *deleted-entities* (make-array 0 :element-type 'fixnum :adjustable t :fill-pointer t))
+(global-vars:define-global-var *deleted-entities*
+    (make-array 0 :element-type 'fixnum :adjustable t :fill-pointer t))
 
 (defun unregister-all-systems ()
   (setf *entities-count* 0
@@ -341,7 +342,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
         (path-format (format nil "~(~as/~~(~~a~~).~a~)" system extension))
         (ro-slots (mapcar #'(lambda (s) (append s '(:read-only t))) slots)))
     `(progn
-       (defparameter ,storage-name (make-hash-table :test 'eq))
+       (global-vars:define-global-var ,storage-name (make-hash-table :test 'eq))
        (defmethod prefab ((system ,system-name) prefab-name)
          (values (gethash prefab-name ,storage-name)))
        (defmethod (setf prefab) (new-prefab (system ,system-name) prefab-name)
