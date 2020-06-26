@@ -27,8 +27,8 @@
 
 (declaim (string *last-message*)
          (fixnum *last-message-repetitions))
-(defparameter *last-message* "")
-(defparameter *last-message-repetitions* 0)
+(global-vars:define-global-var *last-message* "")
+(global-vars:define-global-var *last-message-repetitions* 0)
 
 (defun %trace (level message args)
   (flet

@@ -55,8 +55,6 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defvar *new-game-object-specs*)
 (defvar *config-options*)
 
-(defvar *event-source*)
-
 (defun new-game ()
   "Starts new game."
   (log-info "Starting new game")
@@ -121,8 +119,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (al:set-new-display-option :samples display-multisampling :require))
 
       (let ((display (al:create-display display-width display-height))
-            (event-queue (al:create-event-queue))
-            (*event-source* (cffi:foreign-alloc '(:struct al::event-source))))
+            (event-queue (al:create-event-queue)))
         (when (cffi:null-pointer-p display)
           (error "Initializing display failed"))
         (al:inhibit-screensaver t)
@@ -132,6 +129,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (al:register-event-source event-queue (al:get-keyboard-event-source))
         (al:install-mouse)
         (al:register-event-source event-queue (al:get-mouse-event-source))
+        (setf *event-source* (cffi:foreign-alloc '(:struct al::event-source)))
         (al:init-user-event-source *event-source*)
         (al:register-event-source event-queue *event-source*)
 
@@ -153,6 +151,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (al:inhibit-screensaver nil)
           (al:destroy-user-event-source *event-source*)
           (cffi:foreign-free *event-source*)
+          (setf *event-source* (cffi:null-pointer))
           (al:destroy-event-queue event-queue)
           (al:destroy-display display)
           (al:stop-samples)
@@ -168,12 +167,12 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
   "Initializes and starts engine to run the game named by GAME-NAME.
 NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when the new game is started.
  CONFIG plist is used to override variables read from config file."
-  (setf *game-name* game-name
-        *new-game-object-specs* new-game-object-specs
-        *config-options* config)
-  (float-features:with-float-traps-masked
-      (:divide-by-zero :invalid :inexact :overflow :underflow)
-    (al:run-main 0 (cffi:null-pointer) (cffi:callback run-engine))))
+  (let ((*game-name* game-name)
+        (*new-game-object-specs* new-game-object-specs)
+        (*config-options* config))
+    (float-features:with-float-traps-masked
+        (:divide-by-zero :invalid :inexact :overflow :underflow)
+      (al:run-main 0 (cffi:null-pointer) (cffi:callback run-engine)))))
 
 (defun demo ()
   "Runs built-in engine demo."

@@ -56,3 +56,6 @@ See DEEDS:DEFINE-HANDLER"
          (let ((system ,system-name))
            (declare (ignorable system))
            ,@body)))))
+
+(declaim (type *event-source* cffi:foreign-pointer))
+(global-vars:define-global-var *event-source* (cffi:null-pointer))
