@@ -24,10 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed ubiquitous sprite batch system component.
 - Refactored new game object initialization to avoid runtime code generation.
 - DEFPREFAB macro now also defines necessary empty make-component method.
+- ECS systems refactored to defstructs for performance reasons.
 
 ### Removed
 - Obsolete console-system stub.
 - QUIT event in favour of plain SYSTEM-FINALIZE method.
+- SYSTEM-REF replaced with global-vars for performance reasons.
 
 ### Fixed
 - Fixed compilation on CCL.
@@ -44,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Greatly improved sprite batch performance.
 - Fixed bug causing item sprite batch to be still drawn when item was picked up.
 - Fixed bug causing sprites to glitch when all objects were recreated.
+- Fixed bug causing the game to crash on exit when some fonts were not deleted.
 
 
 ## [0.1.0] - 2020-04-20
