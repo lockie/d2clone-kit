@@ -1,40 +1,39 @@
 (in-package :d2clone-kit)
 
 
-(defclass player-system (system)
-  ((name :initform 'player)
-   (mouse-pressed :initform nil)
-   (entity :initform nil)
-   (last-target :initform -1)
-   (orb :initform nil)
-   (orb-fill :initform nil)
-   (orb-flare :initform nil)
-   (orb-tmp :initform nil)
-   (debug-entity :initform -1))
-  (:documentation "Handles player character."))
+(defsystem player
+  ((mouse-pressed-p nil :type boolean)
+   (entity -1 :type fixnum)
+   (last-target -1 :type fixnum)
+   (orb (cffi:null-pointer) :type cffi:foreign-pointer)
+   (orb-fill (cffi:null-pointer) :type cffi:foreign-pointer)
+   (orb-flare (cffi:null-pointer) :type cffi:foreign-pointer)
+   (orb-tmp (cffi:null-pointer) :type cffi:foreign-pointer)
+   (debug-entity -1 :type fixnum))
+  (:documentation "Handles player character."
+   :order 1))
 
 (defcomponent player player)
 
 (defmethod make-component ((system player-system) player-entity &rest parameters)
   (declare (ignore parameters))
   (setf (camera-target) player-entity)
-  (with-slots (entity orb orb-fill orb-flare orb-tmp) system
-    (setf entity player-entity
-          orb (ensure-loaded #'al:load-bitmap "images/orb.png")
-          orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
-          orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
-          orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
-                                    (al:get-bitmap-height orb-fill))))
+  (with-system-slots ((entity orb orb-fill orb-flare orb-tmp) player-system system :read-only nil)
+      (setf entity player-entity
+            orb (ensure-loaded #'al:load-bitmap "images/orb.png")
+            orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
+            orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
+            orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
+                                      (al:get-bitmap-height orb-fill))))
   (with-system-config-options ((debug-cursor))
     (when debug-cursor
-      (let ((debug-entity (make-entity)))
-        (setf (slot-value system 'debug-entity) debug-entity)
-        (make-component (system-ref 'debug) debug-entity :order 2000d0)))))
+      (setf (player-system-debug-entity system) (make-object '((:debug :order 2000d0)))))))
 
 (declaim (inline player-entity))
 (defun player-entity ()
-  "Returns current player entity."
-  (slot-value (system-ref 'player) 'entity))
+  "Returns current player entity, or NIL, if there's still none."
+  (with-system-slots ((entity) player-system)
+    (if (minusp entity) nil entity)))
 
 (declaim
  (inline mouse-position)
@@ -62,48 +61,54 @@
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
   (when-let (player-entity (player-entity))
     (unless (deadp player-entity)
-      (with-slots (mouse-pressed last-target) (system-ref 'player)
-        (if (minusp last-target)
-            (multiple-value-bind (new-x new-y)
-                (multiple-value-call #'screen->orthogonal*
-                  (multiple-value-call #'viewport->absolute
-                    (mouse-position mouse-event)))
-              (if-let (target (and
-                               (not mouse-pressed)
-                               (character-under-cursor new-x new-y)))
-                (attack player-entity (setf last-target target))
-                (with-combat player-entity ()
-                  (setf target -1)
-                  (set-character-target player-entity new-x new-y))))
-            (attack player-entity last-target))))))
+      (with-system-slots ((mouse-pressed-p last-target) player-system nil :read-only nil)
+          (if (minusp last-target)
+              (multiple-value-bind (new-x new-y)
+                  (multiple-value-call #'screen->orthogonal*
+                    (multiple-value-call #'viewport->absolute
+                      (mouse-position mouse-event)))
+                (if-let (target (and
+                                 (not mouse-pressed-p)
+                                 (character-under-cursor new-x new-y)))
+                  (attack player-entity (setf last-target target))
+                  (with-combat player-entity ()
+                    (setf target -1)
+                    (set-character-target player-entity new-x new-y))))
+              (attack player-entity last-target))))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)
   (let ((allegro-event (slot-value event 'event)))
     (when (= 1 (cffi:foreign-slot-value allegro-event '(:struct al:mouse-event) 'al::button))
       (target-player allegro-event)
-      (setf (slot-value system 'mouse-pressed) t))))
+      (setf (player-system-mouse-pressed-p system) t))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-up)
   (let ((allegro-event (slot-value event 'event)))
     (when (= 1 (cffi:foreign-slot-value allegro-event '(:struct al:mouse-event) 'al::button))
-      (with-slots (mouse-pressed last-target) system
-        (setf mouse-pressed nil
-              last-target -1)))))
+      (setf (player-system-mouse-pressed-p system) nil
+            (player-system-last-target system) -1))))
+
+(defmethod system-finalize ((system player-system))
+  (with-system-slots ((orb orb-fill orb-flare orb-tmp) player-system system)
+    (al:destroy-bitmap orb)
+    (al:destroy-bitmap orb-fill)
+    (al:destroy-bitmap orb-flare)
+    (al:destroy-bitmap orb-tmp)))
 
 (defmethod system-update ((system player-system) dt)
-  (with-slots (mouse-pressed last-target) system
+  (with-system-slots ((mouse-pressed-p last-target) player-system system)
     (unless (and (not (minusp last-target))
                  (deadp last-target))
-      (when mouse-pressed
+      (when mouse-pressed-p
         (target-player)))))
 
 (defmethod system-draw ((system player-system) renderer)
   (block nil
     (with-system-config-options ((display-width display-height))
-      (with-slots (entity orb orb-fill orb-flare orb-tmp) system
-        (unless entity (return))
+      (with-system-slots ((entity orb orb-fill orb-flare orb-tmp) player-system system)
+        (when (minusp entity) (return))
         (with-hp entity ()
           (with-mana entity ()
             (render
@@ -187,9 +192,9 @@
                                  (al:map-rgba 255 255 255 10)
                                  name-offset 26
                                  0 name))))))))))
-          (with-slots (mouse-pressed last-target) system
+          (with-system-slots ((mouse-pressed-p last-target) player-system system)
             (if (minusp last-target)
-                (unless mouse-pressed
+                (unless mouse-pressed-p
                   (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
                     (draw-mob-health-bar target)))
                 (unless (deadp last-target)
@@ -202,5 +207,5 @@
                   (orthogonal->screen (coerce (truncate cursor-map-x) 'double-float)
                                       (coerce (truncate cursor-map-y) 'double-float)))
               (add-debug-rectangle
-               (slot-value system 'debug-entity)
+               (player-system-debug-entity system)
                x y *tile-width* *tile-height* debug-cursor))))))))

@@ -1,8 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defclass character-system (system)
-  ((name :initform 'character))
+(defsystem character
+  ()
   (:documentation "Handles sprites that are able to walk and collide with obstacles."))
 
 (defcomponent character character
@@ -21,8 +21,7 @@
       (setf path (make-array 0))
       (with-system-config-options ((debug-path))
         (when debug-path
-          (setf debug-entity (make-entity))
-          (make-component (system-ref 'debug) debug-entity :order 1050d0))))))
+          (setf debug-entity (make-object '((:debug :order 1050d0)))))))))
 
 (declaim
  (inline euclidean-distance)

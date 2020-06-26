@@ -1,10 +1,9 @@
 (in-package :d2clone-kit)
 
 
-(defclass sound-system (system)
-  ((name :initform 'sound)
-   (distance-factor :initform 0f0)
-   (pan-factor :initform 0f0))
+(defsystem sound
+  ((distance-factor 0f0 :type single-float)
+   (pan-factor 0f0 :type single-float))
   (:documentation "Handles sounds."))
 
 (defcomponent sound sound
@@ -21,11 +20,11 @@
  (ftype (function (fixnum)) set-sound-position))
 (defun set-sound-position (entity)
   ;; TODO : use al_set_sample_instance_channel_matrix for 5.1 sound?..
-  (when (has-component-p (system-ref 'coordinate) entity)
+  (when (has-component-p *coordinate-system* entity)
     (with-sound entity ()
       (with-coordinate entity ()
         (with-camera (camera-x camera-y)
-          (with-slots (distance-factor pan-factor) (system-ref 'sound)
+          (with-system-slots ((distance-factor pan-factor) sound-system)
             (al:set-sample-instance-gain
              sample-instance
              (/ 1f0 (exp (* distance-factor
@@ -41,7 +40,7 @@
     (setf sample-instance (al::create-sample-instance (sound-prefab-sample prefab)))
     (al:attach-sample-instance-to-mixer sample-instance (al:get-default-mixer))
     (al:set-sample-instance-playmode sample-instance :once)
-    (with-slots (distance-factor pan-factor) system
+    (with-system-slots ((distance-factor pan-factor) sound-system system :read-only nil)
       (when (zerop distance-factor)
         (with-system-config-options ((display-width display-height))
           (setf distance-factor

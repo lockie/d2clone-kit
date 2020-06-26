@@ -1,10 +1,10 @@
 (in-package :d2clone-kit)
 
 
-(defclass combat-system (system)
-  ((name :initform 'combat)
-   (order :initform 1))
-  (:documentation "Handles close combat."))
+(defsystem combat
+  ()
+  (:documentation "Handles close combat."
+   :order 1))
 
 (defcomponent combat combat
   (target -1 :type fixnum)

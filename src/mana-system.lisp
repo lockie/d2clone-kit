@@ -1,8 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defclass mana-system (system)
-  ((name :initform 'mana))
+(defsystem mana
+  ()
   (:documentation "Handles mana points."))
 
 (defcomponent mana mana

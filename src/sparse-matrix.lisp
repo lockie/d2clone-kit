@@ -71,3 +71,12 @@ First argument to FN is subscript, second is the element itself."
     (loop :for subscript :being :the :hash-key
             :using (hash-value index) of (sparse-matrix-indices sparse-matrix)
           :do (funcall fn subscript (growable-vector-ref array index)))))
+
+(declaim
+ (inline sparse-matrix-clear)
+ (ftype (function (sparse-matrix)) sparse-matrix-clear))
+(defun sparse-matrix-clear (sparse-matrix)
+  "Removes all elements from SPARSE-MATRIX."
+  (clrhash (sparse-matrix-indices sparse-matrix))
+  (growable-vector-clear (sparse-matrix-array sparse-matrix))
+  (adjust-array (sparse-matrix-deleted-indices sparse-matrix) 0 :fill-pointer 0))

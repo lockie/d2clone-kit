@@ -14,6 +14,7 @@
                :cl-ppcre
                :deeds
                :float-features
+               :global-vars
                :livesupport
                :make-hash
                :parse-float

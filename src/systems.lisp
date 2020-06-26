@@ -1,22 +1,92 @@
 (in-package :d2clone-kit)
 
-(defclass system ()
-  ((name
-    :type symbol
-    :reader name
-    :documentation "Symbol that denotes system.")
-   components
-   (order
-    :type fixnum
-    :initform 0
-    :reader order
-    :documentation "Fixnum representing system's update order."))
-  (:documentation "Base class for all ECS systems."))
 
-;; TODO : defsystem macro with global parameter = system instance?
+(defstruct (system
+            (:constructor nil)
+            (:copier nil)
+            (:predicate nil))
+  "Base structure for all ECS systems."
+  (name nil :type symbol)
+  (components nil)
+  (order 0 :type fixnum))
+
+(declaim (inline system-name system-components system-order))
+
+(declaim (type hash-table *systems*))
+(global-vars:define-global-var *systems* (make-hash-table :test 'eq))
+(declaim (type list *system-initializers*))
+(global-vars:define-global-var *system-initializers* nil)
+
+(defmacro defsystem (name slots (&key documentation (order 0)))
+  (let* ((system-name (symbolicate name '-system))
+         (printer-name (symbolicate system-name '-print))
+         (variable-name (symbolicate '* system-name '*))
+         (ctor-name (symbolicate 'make- system-name))
+         (slot-docs (mapcar
+                     #'(lambda (slot)
+                         (when-let (doc (getf slot :documentation))
+                           `(setf (documentation
+                                    #',(symbolicate system-name '- (car slot))
+                                    'function)
+                                   ,doc)))
+                     slots))
+         (slot-names (mapcar #'(lambda (s) (symbolicate system-name '- (car s))) slots))
+         (slot-descriptions (mapcar
+                             #'(lambda (slot) (remove-from-plist slot :documentation))
+                             slots)))
+    `(progn
+       (defun ,printer-name (object stream)
+         (print-unreadable-object (object stream :type t :identity t)))
+       (defstruct (,system-name
+                   (:include system (order ,order) (name ',name))
+                   (:constructor ,(symbolicate '%make- system-name))
+                   (:print-object ,printer-name)
+                   (:copier nil)
+                   (:predicate nil))
+         ,documentation
+         ,@slot-descriptions)
+       (declaim (inline ,@slot-names))
+       ,@slot-docs
+       (global-vars:define-global-var ,variable-name nil)
+       (declaim (type ,system-name ,variable-name))
+       (defun ,ctor-name ()
+         (let ((system (,(symbolicate '%make- system-name))))
+           (system-create system)
+           (setf ,variable-name system)))
+       (setf *system-initializers*
+             (merge 'list (list (cons ,order #',ctor-name)) *system-initializers*
+                    #'(lambda (s1 s2) (> (car s1) (car s2))))))))
+
+(defun initialize-systems ()
+  (dolist (system (mapcar
+                   #'(lambda (initializer)
+                       (let ((system (funcall (cdr initializer))))
+                         (setf (gethash (make-keyword (system-name system)) *systems*) system)))
+                   *system-initializers*))
+    (system-initialize system)))
+
+(defmacro with-system-slots ((slots system-type &optional (system-instance nil)
+                              &key (read-only t)) &body body)
+  (with-gensyms (system)
+    (let* ((instance (if system-instance system-instance (symbolicate '* system-type '*)))
+           (accessors (mapcar #'(lambda (s) (symbolicate system-type '- s)) slots))
+           (accessor-calls (mapcar #'(lambda (a) (list a system)) accessors))
+           (let-clauses (mapcar #'list slots accessor-calls)))
+      (dolist (a accessors)
+        (unless (find-symbol (string a))
+          (error "No such slot ~s in ~s" a system-type)))
+      `(let ((,system ,instance))
+         (,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
+          ,@body)))))
+
+(defgeneric system-create (system)
+  (:documentation "Low-level method to properly initialize SYSTEM. Not meant to be redefined."))
+
+(defmethod system-create ((system system))
+  (declare (ignore system)))
 
 (defgeneric system-initialize (system)
-  (:documentation "Performs early SYSTEM initialization. Note: this happens **before** the system's components initialization."))
+  (:documentation "Performs early SYSTEM initialization."))
 
 (defmethod system-initialize ((system system))
   (declare (ignore system)))
@@ -30,28 +100,16 @@
 (defgeneric system-update (system dt)
   (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
 
+(defmethod system-update ((system system) dt)
+  (declare (ignore system) (ignore dt)))
+
 (defgeneric system-draw (system renderer)
   (:documentation "Renders system SYSTEM using functional renderer RENDERER.
 
 See RENDER"))
 
-(defmethod system-update ((system system) dt)
-  (declare (ignore system) (ignore dt)))
-
 (defmethod system-draw ((system system) renderer)
   (declare (ignore system) (ignore renderer)))
-
-(defvar *systems* (make-hash-table :test #'eq))
-
-(defmethod initialize-instance :after ((system system) &key)
-  (system-initialize system)
-  (with-slots (name components) system
-    (if-let (existing-sys (gethash name *systems*))
-      (progn
-        (log-warn "System ~a was already registered" name)
-        (setf components (slot-value existing-sys 'components)))
-      (setf components nil))
-    (setf (gethash name *systems*) system)))
 
 (declaim (type (integer 0 #.array-dimension-limit) *entities-count*))
 (defvar *entities-count* 0)
@@ -68,17 +126,10 @@ See RENDER"))
   (clrhash *systems*)
   (setf (fill-pointer *deleted-entities*) 0))
 
-(declaim (inline system-ref))
-(defun system-ref (name)
-  "Returns system instance by its name symbol NAME."
-  (values (gethash name *systems*)))
-
 (defmacro with-systems (var &body body)
   "Executes BODY in loop for each system, binding system instance to variable VAR."
-  (with-gensyms (systems)
-    `(let ((,systems (sort (hash-table-values *systems*)
-                           (lambda (s1 s2) (< (order s1) (order s2))))))
-       (dolist (,var ,systems) ,@body))))
+  `(loop :for ,var :being :the :hash-value :of *systems*
+         :do ,@body))
 
 (defgeneric make-component (system entity &rest parameters)
   (:documentation "Creates new component using PARAMETERS within system SYSTEM for entity ENTITY.
@@ -127,7 +178,7 @@ See MAKE-PREFAB-COMPONENT"))
 (defun delete-entity (entity)
   "Deletes entity ENTITY."
   (issue entity-deleted :entity entity)
-  (loop :for system :being :the :hash-values :of *systems*
+  (loop :for system :being :the :hash-value :of *systems*
         :when (has-component-p system entity)
         :do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
@@ -142,8 +193,10 @@ See MAKE-PREFAB-COMPONENT"))
 ```"
   (loop :with entity := (make-entity)
         :for component :in spec
-        :for system := (system-ref (ensure-symbol (car component) :d2clone-kit))
+        :for system := (gethash (car component) *systems*)
         :for parameters := (cdr component)
+        :unless system
+          :do (error "No such system: ~s" (car component))
         :do (apply #'make-component system entity parameters)
         :finally (return entity)))
 
@@ -152,6 +205,7 @@ See MAKE-PREFAB-COMPONENT"))
   ;; TODO : rewrite components storage using sparse array index based on growable vector to
   ;;  remove unnecessary NIL checks and increase cache friendliness
   (let* ((system-name (symbolicate system '-system))
+         (system-instance (symbolicate '* system-name '*))
          (plural-name (string-upcase (plural-of name)))
          (slot-names (mapcar #'car slots))
          (slot-defaults (mapcar #'cadr slots))
@@ -204,7 +258,7 @@ See MAKE-PREFAB-COMPONENT"))
                                          (if bindings bindings ',slot-names)
                                          (mapcar #'(lambda (a) `(,@a ,components ,entity))
                                                  ',slot-accessors))))
-             `(let ((,components (slot-value (gethash ',',system *systems*) 'components)))
+             `(let ((,components (system-components ,',system-instance)))
                 (symbol-macrolet (,@component-exps) ,@body)))))
        (defmacro ,(symbolicate 'with- plural-name) (&rest body)
          (with-gensyms (components)
@@ -215,35 +269,33 @@ See MAKE-PREFAB-COMPONENT"))
                  (component-exps (mapcar #'(lambda (s type a)
                                              `(,s (the ,type (elt ,`(,@a ,components) entity))))
                                          ',slot-names ',slot-types ',array-accessors)))
-             `(let ((,components (slot-value (gethash ',',system *systems*) 'components)))
+             `(let ((,components (system-components ,',system-instance)))
                 (loop :for entity :from 0 :below *entities-count*
                       ,@loop-clauses
                       :when (and ,@slot-names)
                         :do (symbol-macrolet (,@component-exps) ,@body))))))
-       (defmethod initialize-instance :after ((system ,system-name) &key)
-         (with-slots (components) system
-           (unless components
-             (setf components (,(symbolicate 'make- name)))))
+       (defmethod system-create ((system ,system-name))
+         (setf (system-components system) (,(symbolicate 'make- name)))
          (preload-prefabs system))
        (defmethod system-adjust-components ((system ,system-name) new-size)
          (declare (type (integer 0 ,array-dimension-limit) new-size))
-         (with-slots (components) system
+         (let ((components (system-components system)))
            ,@adjust-assignments))
        (defmethod delete-component ((system ,system-name) entity)
-         (with-slots (components) system
+         (let ((components (system-components system)))
            (setf ,@delete-exprs)))
        (defmethod has-component-p ((system ,system-name) entity)
-         (with-slots (components) system
+         (let ((components (system-components system)))
            (and ,@(mapcar
                    #'(lambda (a) `(aref (,@a components) entity))
                    array-accessors))))
        (defmethod make-component :before ((system ,system-name) entity &rest parameters)
          (declare (ignore parameters))
-         (with-slots (components) system
+         (let ((components (system-components system)))
            (setf ,@initialization-assignments)))
        (defmethod make-prefab-component :before ((system ,system-name) entity prefab parameters)
          (declare (ignore parameters))
-         (with-slots (components) system
+         (let ((components (system-components system)))
            (setf ,@initialization-assignments)))
        ,@getter-decls ,@setter-decls)))
 
@@ -279,7 +331,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
                                  (make-prefab system prefab))
                                rest-parameters)
         (call-next-method))
-    (issue component-created :entity entity :system-name (name system))))
+    (issue component-created :entity entity :system-name (system-name system))))
 
 (defmacro defprefab (system extension &rest slots)
   "Defines prefab structure with slots SLOTS and file name extension EXTENSION within system SYSTEM."

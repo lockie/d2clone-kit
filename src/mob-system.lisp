@@ -1,10 +1,9 @@
 (in-package :d2clone-kit)
 
 
-(defclass mob-system (system)
-  ((name :initform 'mob))
+(defsystem mob
+  ()
   (:documentation "Handles mobs."))
-
 
 (defcomponent mob mob
   (name nil :type string)

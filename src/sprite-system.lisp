@@ -1,8 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defclass sprite-system (system)
-  ((name :initform 'sprite))
+(defsystem sprite
+  ()
   (:documentation "Handles movable sprites in Aseprite format.
 
 The following format features are unsupported yet:
@@ -224,17 +224,13 @@ The following format features are unsupported yet:
         (setf layer-batches (make-hash
                              :test 'eq
                              :initial-contents layers
-                             :init-data (lambda (k v)
-                                          (let ((width width)
-                                                (height height)
-                                                (entity (make-entity)))
-                                            (make-component
-                                             (system-ref 'sprite-batch)
-                                             entity
-                                             :bitmap v
-                                             :sprite-width width
-                                             :sprite-height height)
-                                            (values k entity)))))
+                             :init-data #'(lambda (k v)
+                                            (values
+                                             k
+                                             (make-object `((:sprite-batch
+                                                             :bitmap ,v
+                                                             :sprite-width ,width
+                                                             :sprite-height ,height)))))))
         (setf layers-toggled (make-hash
                               :test 'eq
                               :init-format :keys
@@ -250,8 +246,7 @@ The following format features are unsupported yet:
             angle 0d0
             time-counter 0d0)
       (when debug-sprite
-        (setf debug-entity (make-entity))
-        (make-component (system-ref 'debug) debug-entity :order 1010d0)))))
+        (setf debug-entity (make-object '((:debug :order 1010d0))))))))
 
 (declaim
  (inline stance-interruptible-p)

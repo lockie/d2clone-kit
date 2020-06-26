@@ -1,8 +1,8 @@
 (in-package :d2clone-kit)
 
 
-(defclass item-system (system)
-  ((name :initform 'item))
+(defsystem item
+  ()
   (:documentation "Handles items."))
 
 (defcomponent item item
@@ -12,32 +12,31 @@
   (destructuring-bind (&key type) parameters
     (with-item entity (item-type)
       (setf item-type type))
-    (make-component (system-ref 'sprite) entity
+    (make-component *sprite-system* entity
                     :prefab :loot
                     :layers-initially-toggled (list type))))
 
 (defmethod system-draw ((system item-system) renderer)
-  (let ((coordinate-system (system-ref 'coordinate)))
-    (with-items
-      (when (has-component-p coordinate-system entity)
-        (with-screen-coordinate entity (screen-x screen-y)
-          (multiple-value-bind (x y)
-              (absolute->viewport screen-x screen-y)
-            (when (visiblep x y *tile-width*)
-              (render
-               renderer
-               9000d0
-               (let ((type type)
-                     (x x)
-                     (y y))
-                 #'(lambda ()
-                     ;; TODO : prevent text overlap
-                     (let* ((text (string-capitalize (substitute #\Space #\- (string type))))
-                            (width (al:get-text-width (ui-font-large) text)))
-                       (al:draw-filled-rectangle x y (+ x width) (+ y 20)
-                                                 (al:map-rgba 10 10 10 160))
-                       (al:draw-text (ui-font-large)
-                                     (al:map-rgba 255 255 255 0) x y 0 text))))))))))))
+  (with-items
+    (when (has-component-p *coordinate-system* entity)
+      (with-screen-coordinate entity (screen-x screen-y)
+        (multiple-value-bind (x y)
+            (absolute->viewport screen-x screen-y)
+          (when (visiblep x y *tile-width*)
+            (render
+             renderer
+             9000d0
+             (let ((type type)
+                   (x x)
+                   (y y))
+               #'(lambda ()
+                   ;; TODO : prevent text overlap
+                   (let* ((text (string-capitalize (substitute #\Space #\- (string type))))
+                          (width (al:get-text-width (ui-font-large) text)))
+                     (al:draw-filled-rectangle x y (+ x width) (+ y 20)
+                                               (al:map-rgba 10 10 10 160))
+                     (al:draw-text (ui-font-large)
+                                   (al:map-rgba 255 255 255 0) x y 0 text)))))))))))
 
 (eval-when (:compile-toplevel)
   (defconstant +item-neighbours+ '((1 . 1)
@@ -70,12 +69,9 @@
                                       (collidesp (car p) (cdr p)))
                             p))
                       positions))
-            (let ((item-entity (make-entity)))
-              (make-component (system-ref 'coordinate) item-entity
-                              :x (- (coerce (car position) 'double-float) 0.49d0)
-                              :y (- (coerce (cdr position) 'double-float) 0.49d0))
-              (make-component (system-ref 'item) item-entity
-                              :type item))))))))
+            (make-object `((:coordinate :x ,(- (coerce (car position) 'double-float) 0.49d0)
+                                        :y ,(- (coerce (cdr position) 'double-float) 0.49d0))
+                           (:item :type ,item)))))))))
 
   ;; TODO : unhardcode
 (eval-when (:compile-toplevel)
@@ -113,15 +109,14 @@
 
 (defhandler item-system character-moved (event entity new-x new-y)
   :filter '(= entity (player-entity))
-  (let ((coordinate-system (system-ref 'coordinate)))
-    (with-coordinate (player-entity) (player-x player-y)
-      (with-items
-          (when (has-component-p coordinate-system entity)
-            (with-coordinate entity ()
-              (when (and (approx-equal x player-x 0.49d0)
-                         (approx-equal y player-y 0.49d0))
-                (pickup-item entity)
-                (return))))))))
+  (with-coordinate (player-entity) (player-x player-y)
+    (with-items
+        (when (has-component-p *coordinate-system* entity)
+          (with-coordinate entity ()
+            (when (and (approx-equal x player-x 0.49d0)
+                       (approx-equal y player-y 0.49d0))
+              (pickup-item entity)
+              (return)))))))
 
 (eval-when (:compile-toplevel)
   ;; https://stackoverflow.com/a/29361029/1336774

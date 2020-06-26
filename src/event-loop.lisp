@@ -48,11 +48,11 @@ See DEEDS:DEFINE-HANDLER"
             (format-symbol *package* "~a-~a-HANDLER~:[~;-~]~:*~{~a~^-~}"
                            system event (remove 'quote (flatten options))))
           (system-name
-            (format-symbol *package* "~{~a~^-~}"
+            (format-symbol *package* "*~{~a~^-~}-SYSTEM*"
                            (butlast (uiop:split-string (string system) :separator '(#\-))))))
       `(deeds:define-handler (,handler-name ,event) ,args
          ,@options
          :class 'deeds:locally-blocking-handler
-         (let ((system (system-ref ',system-name)))
+         (let ((system ,system-name))
            (declare (ignorable system))
            ,@body)))))
