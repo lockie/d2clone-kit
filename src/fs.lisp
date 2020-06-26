@@ -30,7 +30,7 @@
     (when (zerop (physfs-mount path-string (cffi:null-pointer) (if append 1 0)))
       (log-warn "...failed: ~a" (physfs-get-last-error)))))
 
-(declaim ((function (string string)) *enumerate-directory-callback*))
+(declaim (type (function (string string)) *enumerate-directory-callback*))
 (defvar *enumerate-directory-callback*)
 
 (cffi:defcallback enumerate-directory-trampoline :int
@@ -44,7 +44,7 @@ DIRECTORY and FILE bound."
   (let ((callback-name (gensym "ENUMERATE-DIRECTORY-CALLBACK")))
     `(progn
        (defun ,callback-name (directory file)
-         (declare (string directory file) (ignorable directory file))
+         (declare (type string directory file) (ignorable directory file))
          ,@body
          1)
        (let ((*enumerate-directory-callback* #',callback-name))
@@ -169,7 +169,7 @@ Lines are expected to be shorter than 4k chars."
           char))))
 
 (defmethod trivial-gray-streams:stream-read-sequence ((stream binary-stream) sequence start end &key &allow-other-keys)
-  (declare (non-negative-fixnum start end))
+  (declare (type non-negative-fixnum start end))
   (with-slots (path al-file) stream
     (cffi:with-pointer-to-vector-data (buffer sequence)
       (let ((pointer (cffi:inc-pointer buffer start)))
@@ -185,14 +185,14 @@ Lines are expected to be shorter than 4k chars."
 
 (defmethod trivial-gray-streams:stream-read-byte ((stream virtual-binary-stream))
   (with-slots (buffer position) stream
-    (declare ((simple-array (unsigned-byte 8)) buffer)
-             (non-negative-fixnum position))
+    (declare (type (simple-array (unsigned-byte 8)) buffer)
+             (type non-negative-fixnum position))
     (elt buffer (prog1 position (incf position)))))
 
 (defmethod trivial-gray-streams:stream-read-sequence ((stream virtual-binary-stream) sequence start end &key &allow-other-keys)
   (with-slots (buffer position) stream
-    (declare ((simple-array (unsigned-byte 8)) sequence buffer)
-             (non-negative-fixnum position start end))
+    (declare (type (simple-array (unsigned-byte 8)) sequence buffer)
+             (type non-negative-fixnum position start end))
     (replace sequence buffer :start1 start :end1 end :start2 position)
     (let ((copied (min (- end start) (- (length buffer) position))))
       (+ start (incf position copied)))))

@@ -270,7 +270,7 @@ The following format features are unsupported yet:
       (issue sprite-stance-changed :entity entity :stance new-stance))))
 
 (defmethod system-update ((system sprite-system) dt)
-  (declare (double-float dt))
+  (declare (type double-float dt))
   (with-sprites
     (incf time-counter dt)
     (let ((time-delta (the double-float (elt frame-durations frame))))
@@ -303,7 +303,7 @@ The following format features are unsupported yet:
  (ftype (function (fixnum double-float) unsigned-byte) sprite-direction))
 (defun sprite-direction (directions angle)
   "Calculates sprite direction from angle value ANGLE assuming total sprite direction count DIRECTIONS. East direction is 0 degree angle; counted clockwise."
-  ;; (declare (angle angle))
+  ;; (declare (type angle angle))
   (let ((angle (+ angle +isometric-angle+)))
     (when (minusp angle)
       (incf angle (* 2 pi)))
