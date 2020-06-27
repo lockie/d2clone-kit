@@ -36,6 +36,12 @@
    (:export
     #:combat-system
     #:attack)
+   ;; components.lisp
+   (:export
+    #:make-component
+    #:delete-component
+    #:has-component-p
+    #:defcomponent)
    ;; config.lisp
    (:export
     #:defoptions
@@ -71,6 +77,12 @@
     #:add-debug-rectangle
     #:add-debug-tile-rhomb
     #:add-debug-text)
+   ;; entities.lisp
+   (:export
+    #:make-entity
+    #:delete-entity
+    #:+invalid-entity+
+    #:entity-valid-p)
    ;; event-loop.lisp
    (:export
     #:event-loop
@@ -138,6 +150,14 @@
     #:player-entity
     #:mouse-position
     #:target-player)
+   ;; prefabs.lisp
+   (:export
+    #:prefab
+    #:prefab-path
+    #:make-prefab
+    #:preload-prefabs
+    #:make-prefab-component
+    #:defprefab)
    ;; priority-queue.lisp
    (:export
     #:priority-queue
@@ -193,21 +213,7 @@
     #:system-update
     #:system-draw
     #:with-systems
-    #:make-component
-    #:delete-component
-    #:has-component-p
-    #:make-entity
-    #:delete-entity
-    #:+invalid-entity+
-    #:entity-valid-p
-    #:make-object
-    #:defcomponent
-    #:prefab
-    #:prefab-path
-    #:make-prefab
-    #:preload-prefabs
-    #:make-prefab-component
-    #:defprefab)
+    #:make-object)
    ;; ui-system.lisp
    (:export
     #:ui-system
