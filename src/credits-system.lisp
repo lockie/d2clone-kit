@@ -2,7 +2,7 @@
 
 
 (defsystem credits
-  ((ui-entity -1 :type fixnum))
+  ((ui-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles credits screen."
    :order 2))
 

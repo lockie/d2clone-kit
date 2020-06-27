@@ -2,8 +2,8 @@
 
 
 (defsystem camera
-  ((entity nil :type (or fixnum null))
-   (target nil :type (or fixnum null)))
+  ((entity +invalid-entity+ :type fixnum)
+   (target +invalid-entity+ :type fixnum))
   (:documentation "Handles camera entity."))
 
 (defmethod make-component ((system camera-system) entity &rest parameters)
@@ -29,9 +29,10 @@
 (defmacro with-camera (bindings &body body)
   "Executes BODY with current camera position bound to two symbols in BIDNINGS list."
   (with-gensyms (camera-entity)
-    `(when-let (,camera-entity (camera-entity))
-       (with-coordinate ,camera-entity ,bindings
-         ,@body))))
+    `(let ((,camera-entity (camera-entity)))
+       (when (entity-valid-p ,camera-entity)
+         (with-coordinate ,camera-entity ,bindings
+           ,@body)))))
 
 (declaim
  (inline absolute->viewport)
@@ -87,8 +88,9 @@ See ABSOLUTE->VIEWPORT"
      (< y display-height))))
 
 (defmethod system-update ((system camera-system) dt)
-  (when-let (target (camera-system-target system))
-    (with-camera (camera-x camera-y)
-      (with-coordinate target ()
-        (setf camera-x x
-              camera-y y)))))
+  (let ((target (camera-system-target system)))
+    (when (entity-valid-p target)
+      (with-camera (camera-x camera-y)
+        (with-coordinate target ()
+          (setf camera-x x
+                camera-y y))))))

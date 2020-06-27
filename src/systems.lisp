@@ -203,6 +203,13 @@ See MAKE-PREFAB-COMPONENT"))
         :do (delete-component system entity))
   (vector-push-extend entity *deleted-entities*))
 
+(defconstant +invalid-entity+ -1 "The invalid entity.")
+
+(declaim (inline entity-valid-p) (ftype (function (fixnum) boolean) entity-valid-p))
+(defun entity-valid-p (entity)
+  "Return T if entity is valid."
+  (not (minusp entity)))
+
 (defun make-object (spec)
   "Creates a new game object following specification SPEC structured as follows:
 ```

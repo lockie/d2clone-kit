@@ -2,7 +2,7 @@
 
 
 (defsystem menu
-  ((ui-entity nil))
+  ((ui-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles main menu."
    :order 1))
 

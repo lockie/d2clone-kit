@@ -27,7 +27,7 @@ conversion maths are badly fucked up."))
   (tiles nil :type simple-vector)  ;; tiles: tile id -> map-tileset
   (tiles-properties nil :type (vector (or hash-table null)))
   (sprite-batches nil :type list)
-  (debug-entity -1 :type fixnum))
+  (debug-entity +invalid-entity+ :type fixnum))
 
 (defprefab map "tmx"
   (tiled-map nil :type tiled-map)

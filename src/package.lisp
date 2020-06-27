@@ -198,6 +198,8 @@
     #:has-component-p
     #:make-entity
     #:delete-entity
+    #:+invalid-entity+
+    #:entity-valid-p
     #:make-object
     #:defcomponent
     #:prefab
