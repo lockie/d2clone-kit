@@ -72,7 +72,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defun game-started-p ()
   "Returns boolean indicating whether the game session is currently running."
   ;; HACK
-  (not (minusp (player-system-entity *player-system*))))
+  (entity-valid-p (player-system-entity *player-system*)))
 
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))

@@ -4,7 +4,7 @@
 (defsystem collision
   ((map (make-sparse-matrix) :type sparse-matrix)
    (characters-map (make-sparse-matrix) :type sparse-matrix)
-   (debug-entity -1 :type fixnum))
+   (debug-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles object collisions.
 
 To make tile collide (e.g. be non-walkable by characters), set custom

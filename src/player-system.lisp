@@ -3,13 +3,13 @@
 
 (defsystem player
   ((mouse-pressed-p nil :type boolean)
-   (entity -1 :type fixnum)
-   (last-target -1 :type fixnum)
+   (entity +invalid-entity+  :type fixnum)
+   (last-target +invalid-entity+ :type fixnum)
    (orb (cffi:null-pointer) :type cffi:foreign-pointer)
    (orb-fill (cffi:null-pointer) :type cffi:foreign-pointer)
    (orb-flare (cffi:null-pointer) :type cffi:foreign-pointer)
    (orb-tmp (cffi:null-pointer) :type cffi:foreign-pointer)
-   (debug-entity -1 :type fixnum))
+   (debug-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles player character."
    :order 1))
 
@@ -31,9 +31,8 @@
 
 (declaim (inline player-entity))
 (defun player-entity ()
-  "Returns current player entity, or NIL, if there's still none."
-  (with-system-slots ((entity) player-system)
-    (if (minusp entity) nil entity)))
+  "Returns current player entity."
+  (player-system-entity *player-system*))
 
 (declaim
  (inline mouse-position)
@@ -59,22 +58,22 @@
 
 (defun target-player (&optional (mouse-event nil))
   "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
-  (when-let (player-entity (player-entity))
-    (unless (deadp player-entity)
+  (let ((player-entity (player-entity)))
+    (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
       (with-system-slots ((mouse-pressed-p last-target) player-system nil :read-only nil)
-          (if (minusp last-target)
-              (multiple-value-bind (new-x new-y)
-                  (multiple-value-call #'screen->orthogonal*
-                    (multiple-value-call #'viewport->absolute
-                      (mouse-position mouse-event)))
-                (if-let (target (and
-                                 (not mouse-pressed-p)
-                                 (character-under-cursor new-x new-y)))
-                  (attack player-entity (setf last-target target))
-                  (with-combat player-entity ()
-                    (setf target -1)
-                    (set-character-target player-entity new-x new-y))))
-              (attack player-entity last-target))))))
+        (if (entity-valid-p last-target)
+            (attack player-entity last-target)
+            (multiple-value-bind (new-x new-y)
+                (multiple-value-call #'screen->orthogonal*
+                  (multiple-value-call #'viewport->absolute
+                    (mouse-position mouse-event)))
+              (if-let (target (and
+                               (not mouse-pressed-p)
+                               (character-under-cursor new-x new-y)))
+                (attack player-entity (setf last-target target))
+                (with-combat player-entity ()
+                  (setf target -1)
+                  (set-character-target player-entity new-x new-y)))))))))
 
 (defhandler player-system allegro-event (event event-type)
   :filter '(eq event-type :mouse-button-down)
@@ -99,7 +98,7 @@
 
 (defmethod system-update ((system player-system) dt)
   (with-system-slots ((mouse-pressed-p last-target) player-system system)
-    (unless (and (not (minusp last-target))
+    (unless (and (entity-valid-p last-target)
                  (deadp last-target))
       (when mouse-pressed-p
         (target-player)))))
@@ -108,7 +107,7 @@
   (block nil
     (with-system-config-options ((display-width display-height))
       (with-system-slots ((entity orb orb-fill orb-flare orb-tmp) player-system system)
-        (when (minusp entity) (return))
+        (unless (entity-valid-p entity) (return))
         (with-hp entity ()
           (with-mana entity ()
             (render
@@ -193,12 +192,12 @@
                                  name-offset 26
                                  0 name))))))))))
           (with-system-slots ((mouse-pressed-p last-target) player-system system)
-            (if (minusp last-target)
+            (if (entity-valid-p last-target)
+                (unless (deadp last-target)
+                  (draw-mob-health-bar last-target))
                 (unless mouse-pressed-p
                   (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
-                    (draw-mob-health-bar target)))
-                (unless (deadp last-target)
-                  (draw-mob-health-bar last-target)))))
+                    (draw-mob-health-bar target))))))
 
         (with-system-config-options ((debug-cursor))
           (when debug-cursor

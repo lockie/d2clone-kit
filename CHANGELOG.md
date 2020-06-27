@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored new game object initialization to avoid runtime code generation.
 - DEFPREFAB macro now also defines necessary empty make-component method.
 - ECS systems refactored to defstructs for performance reasons.
+- Refactored invalid entity mechanics.
 
 ### Removed
 - Obsolete console-system stub.

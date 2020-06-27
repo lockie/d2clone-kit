@@ -10,7 +10,7 @@
   (target-x nil :type double-float)
   (target-y nil :type double-float)
   (path nil :type simple-vector)
-  (debug-entity -1 :type fixnum))
+  (debug-entity +invalid-entity+ :type fixnum))
 
 (defmethod make-component ((system character-system) entity &rest parameters)
   (destructuring-bind (&key (speed 2d0) target-x target-y) parameters

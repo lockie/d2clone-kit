@@ -32,7 +32,7 @@ The following format features are unsupported yet:
   (angle 0d0 :type angle)
   (time-counter 0d0 :type double-float)
   (layers-toggled nil :type hash-table)  ;; layer name (keyword) -> boolean
-  (debug-entity -1 :type fixnum))
+  (debug-entity +invalid-entity+ :type fixnum))
 
 (defprefab sprite "ase"
   (width 0 :type fixnum)
@@ -360,5 +360,5 @@ The following format features are unsupported yet:
   (with-sprite entity ()
     (loop :for sprite-batch :being :the :hash-value :in layer-batches
           :do (delete-entity sprite-batch))
-    (unless (minusp debug-entity)
+    (when (entity-valid-p debug-entity)
       (delete-entity debug-entity))))
