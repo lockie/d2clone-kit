@@ -16,6 +16,8 @@
         (make-object '((:ui :prefab :credits)))))
 
 (defmethod system-finalize ((system credits-system))
-  (with-ui (credits-system-ui-entity system) ()
-    (when-let (font (gethash :font parameters))
-      (nk:allegro-font-del font))))
+  (let ((entity (credits-system-ui-entity system)))
+    (when (entity-valid-p entity)
+      (with-ui entity ()
+        (when-let (font (gethash :font parameters))
+          (nk:allegro-font-del font))))))
