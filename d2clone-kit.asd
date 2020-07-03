@@ -62,7 +62,7 @@
                (:file "renderer")
                (:file "d2clone-kit"))
   :around-compile (lambda (next)
-                    (when (find :release *features*)
+                    (when (uiop:featurep :release)
                       (proclaim '(optimize
                                   (speed 3)
                                   (debug 0)
