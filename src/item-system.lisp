@@ -37,12 +37,12 @@
                      (al:draw-text (ui-font-large)
                                    (al:map-rgba 255 255 255 0) x y 0 text)))))))))))
 
-(eval-when (:compile-toplevel)
-  (defconstant +item-neighbours+ '((1 . 1)
-                                   (1 . 0)
-                                   (0 . 1)
-                                   (1 . -1)
-                                   (-1 . 1))))
+(define-constant +item-neighbours+ '((1 . 1)
+                                     (1 . 0)
+                                     (0 . 1)
+                                     (1 . -1)
+                                     (-1 . 1))
+  :test #'equal)
 
 (defun drop-item (owner-entity item)
   (flet ((entity-tile (entity)
@@ -73,12 +73,12 @@
                            (:item :type ,item)))))))))
 
   ;; TODO : unhardcode
-(eval-when (:compile-toplevel)
-  (defconstant +weapons+
+(define-constant +weapons+
     '(:dagger (2d0 . 3d0)
       :short-sword (4d0 . 7d0)
       :long-sword (8d0 . 12d0)
-      :great-sword (15d0 . 20d0))))
+      :great-sword (15d0 . 20d0))
+  :test #'equal)
 
 (defun pickup-item (item-entity)
   ;; TODO : unhardcode
@@ -117,7 +117,7 @@
               (pickup-item entity)
               (return)))))))
 
-(eval-when (:compile-toplevel)
+(eval-when (:compile-toplevel :load-toplevel)
   ;; https://stackoverflow.com/a/29361029/1336774
   (defun biased-generator (values weights)
     (multiple-value-bind (total values)
@@ -127,12 +127,13 @@
               :sum w :into total
               :finally (return (values total (coerce vs 'vector))))
       #'(lambda ()
-          (aref values (random total)))))
+          (aref values (random total))))))
 
-  (defconstant +item-generator+
+(define-constant +item-generator+
     ;; TODO : unhardcode
     (biased-generator '(nil :health-potion :dagger :short-sword :long-sword)
-                      '(5 10 5 2 1))))
+                      '(5 10 5 2 1))
+  :test (constantly t))
 
 (defhandler item-system entity-died (event entity)
   :filter '(not (= entity (player-entity)))

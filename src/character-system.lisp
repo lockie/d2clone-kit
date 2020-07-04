@@ -69,15 +69,15 @@
               (loop-finish))
         :finally (return list))))
 
-(eval-when (:compile-toplevel)
-  (defconstant +neighbours+ '((1  . 0)
-                              (1  . -1)
-                              (0  . -1)
-                              (-1 . -1)
-                              (-1 . 0)
-                              (-1 . 1)
-                              (0  . 1)
-                              (1  . 1))))
+(define-constant +neighbours+ '((1  . 0)
+                                (1  . -1)
+                                (0  . -1)
+                                (-1 . -1)
+                                (-1 . 0)
+                                (-1 . 1)
+                                (0  . 1)
+                                (1  . 1))
+  :test #'equal)
 
 ;; TODO : optimize
 ;; TODO : penalize turns?..
