@@ -22,9 +22,9 @@ conversion maths are badly fucked up."))
   (first-id 0 :type fixnum)
   (sprite-batch nil :type fixnum))
 
-(defcomponent map map-chunk
+(defcomponent (map map-chunk)
   (tiled-map nil :type tiled-map)
-  (tiles nil :type simple-vector)  ;; tiles: tile id -> map-tileset
+  (tiles nil :type simple-vector :documentation "tile id -> map-tileset")
   (tiles-properties nil :type (vector (or hash-table null)))
   (sprite-batches nil :type list)
   (debug-entity +invalid-entity+ :type fixnum))
@@ -122,13 +122,14 @@ conversion maths are badly fucked up."))
 
 (defmethod make-prefab-component ((system map-system) entity prefab parameters)
   (with-system-config-options ((debug-grid))
-    (with-map-chunk entity ()
-      (setf tiled-map (map-prefab-tiled-map prefab))
-      (setf tiles (map-prefab-tiles prefab))
-      (setf tiles-properties (map-prefab-tiles-properties prefab))
-      (setf sprite-batches (map-prefab-sprite-batches prefab))
-      (when debug-grid
-        (setf debug-entity (make-object '((:debug))))))))
+    (make-map-chunk entity
+                    :tiled-map (map-prefab-tiled-map prefab)
+                    :tiles (map-prefab-tiles prefab)
+                    :tiles-properties (map-prefab-tiles-properties prefab)
+                    :sprite-batches (map-prefab-sprite-batches prefab)
+                    :debug-entity (if debug-grid
+                                      (make-object '((:debug)))
+                                      +invalid-entity+))))
 
 (declaim (inline ground-layer-p))
 (defun ground-layer-p (layer)
@@ -158,7 +159,7 @@ conversion maths are badly fucked up."))
         (unless (and (intp x)
                      (intp y))
           ;; TODO : restart for rounding coordinates
-          (error "Only integer map coordinates allowed for map chunks"))))))
+          (error "Only integer map coordinates allowed for map chunks, got (~s, ~s)" x y))))))
 
 ;; TODO : test on kenney assets (different size)!
 

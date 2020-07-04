@@ -110,8 +110,12 @@
    (:export
     #:growable-vector
     #:make-growable-vector
+    #:growable-vector-grow
     #:growable-vector-ref
-    #:%growable-vector-ref
+    #:growable-vector-ref*
+    #:growable-vector-push
+    #:growable-vector-pop
+    #:growable-vector-add
     #:growable-vector-length
     #:growable-vector-clear
     #:growable-vector-freeze)
@@ -177,6 +181,17 @@
    ;; sound-system.lisp
    (:export
     #:sound-system)
+   ;; sparse-array.lisp
+   (:export
+    #:+invalid-index+
+    #:index-valid-p
+    #:sparse-array-index
+    #:make-sparse-array-index
+    #:sparse-array-index-grow
+    #:sparse-array-index-ref
+    #:sparse-array-index-push
+    #:sparse-array-index-delete
+    #:do-sparse-array)
    ;; sparse-matrix.lisp
    (:export
     #:sparse-matrix

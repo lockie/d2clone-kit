@@ -5,22 +5,19 @@
   ()
   (:documentation "Stores orthogonal world coordinates."))
 
-;; TODO : разобраться с типами
+;; TODO : deal with types
 ;; (deftype coordinate () `(integer ,(truncate most-negative-fixnum 256)
 ;;                                  ,(truncate most-positive-fixnum 256)))
 ;; (deftype float-coordinate () `(double-float
 ;;                                ,(/ most-negative-fixnum 2d0)
 ;;                                ,(/ most-positive-fixnum 2d0)))
 
-(defcomponent coordinate coordinate
+(defcomponent (coordinate)
   (x nil :type double-float)
   (y nil :type double-float))
 
 (defmethod make-component ((system coordinate-system) entity &rest parameters)
-  (destructuring-bind (&key x y) parameters
-    (with-coordinate entity (coord-x coord-y)
-      (setf coord-x x)
-      (setf coord-y y))))
+  (apply #'make-coordinate entity parameters))
 
 (declaim
  (inline orthogonal->isometric)

@@ -8,8 +8,8 @@
   (:documentation "Handles drawing of various debug information."
    :order 10))
 
-(defcomponent debug debug-buffer
-  (render-order 0d0 :type double-float)
+(defcomponent (debug debug-buffer)
+  (render-order nil :type double-float)
   (points nil :type growable-vector))
 
 (declaim
@@ -21,15 +21,15 @@
   (with-debug-buffer entity ()
     (let ((count (growable-vector-length points)))
       (growable-vector-grow points (+ count 9))
-      (setf (%growable-vector-ref points (+ count 0)) (float x))
-      (setf (%growable-vector-ref points (+ count 1)) (float y))
-      (setf (%growable-vector-ref points (+ count 2)) 0f0) ;; z
-      (setf (%growable-vector-ref points (+ count 3)) 0f0) ;; u
-      (setf (%growable-vector-ref points (+ count 4)) 0f0) ;; v
-      (setf (%growable-vector-ref points (+ count 5)) (float r))
-      (setf (%growable-vector-ref points (+ count 6)) (float g))
-      (setf (%growable-vector-ref points (+ count 7)) (float b))
-      (setf (%growable-vector-ref points (+ count 8)) (float (or a 0))))))
+      (setf (growable-vector-ref points (+ count 0)) (float x))
+      (setf (growable-vector-ref points (+ count 1)) (float y))
+      (setf (growable-vector-ref points (+ count 2)) 0f0) ;; z
+      (setf (growable-vector-ref points (+ count 3)) 0f0) ;; u
+      (setf (growable-vector-ref points (+ count 4)) 0f0) ;; v
+      (setf (growable-vector-ref points (+ count 5)) (float r))
+      (setf (growable-vector-ref points (+ count 6)) (float g))
+      (setf (growable-vector-ref points (+ count 7)) (float b))
+      (setf (growable-vector-ref points (+ count 8)) (float (or a 0))))))
 
 (declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list)) add-debug-rectangle))
 (defun add-debug-rectangle (entity x y w h color)
@@ -77,9 +77,10 @@
 
 (defmethod make-component ((system debug-system) entity &rest parameters)
   (destructuring-bind (&key (size 144) (order 1000d0)) parameters
-    (with-debug-buffer entity ()
-      (setf render-order order)
-      (setf points (make-growable-vector :initial-element 0d0 :initial-allocated-size size)))))
+    (make-debug-buffer
+     entity
+     :render-order order
+     :points (make-growable-vector :initial-element 0d0 :initial-allocated-size size))))
 
 (defmethod system-finalize ((system debug-system))
   (al:destroy-font (debug-system-font system)))

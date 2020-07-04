@@ -16,31 +16,31 @@ The following format features are unsupported yet:
   "Angle value in radians."
   `(double-float ,(- (* 2 pi)) ,(* 2 pi)))
 
-(defcomponent sprite sprite
-  (width 0 :type fixnum)
-  (height 0 :type fixnum)
-  (layer-names nil :type list)  ;; layer names to keep the order of layers
-  (layer-batches nil :type hash-table)  ;; layer name (keyword) -> sprite batch entity
-  (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
-  (directions 0 :type fixnum) ;; count of directions
+(defcomponent (sprite)
+  (width nil :type fixnum)
+  (height nil :type fixnum)
+  (layer-names nil :type list :documentation "layer names to keep the order of layers")
+  (layer-batches nil :type hash-table :documentation "layer name (keyword) -> sprite batch entity")
+  (stances nil :type hash-table :documentation "stance name (keyword) -> list of frame #s")
+  (directions nil :type fixnum :documentation "count of directions")
   (frame-durations nil :type (simple-array double-float))
   (frame-data nil :type (simple-array hash-table))
   (prefab-name nil :type keyword)
   ;; instance state
-  (stance nil :type keyword)
+  (stance :idle :type keyword)
   (frame 0 :type fixnum)
   (angle 0d0 :type angle)
   (time-counter 0d0 :type double-float)
-  (layers-toggled nil :type hash-table)  ;; layer name (keyword) -> boolean
+  (layers-toggled nil :type hash-table :documentation "layer name (keyword) -> boolean")
   (debug-entity +invalid-entity+ :type fixnum))
 
 (defprefab sprite "ase"
-  (width 0 :type fixnum)
-  (height 0 :type fixnum)
-  (layer-names nil :type list)  ;; layer names to keep the order of layers
+  (width nil :type fixnum)
+  (height nil :type fixnum)
+  (layer-names nil :type list)
   (layers nil :type hash-table)  ;; layer name (keyword) -> al_bitmap
-  (stances nil :type hash-table)  ;; stance name (keyword) -> list of frame #s
-  (directions 0 :type fixnum)  ;; count of directions
+  (stances nil :type hash-table)
+  (directions nil :type fixnum)
   (frame-durations nil :type (simple-array double-float))
   (frame-data nil :type (simple-array hash-table)))
 
@@ -50,7 +50,7 @@ The following format features are unsupported yet:
     (multiple-value-bind (old-value layer-exists)
         (gethash layer layers-toggled)
       (unless layer-exists
-        ;; TODO : рестарт с выбором существуюещего layer
+        ;; TODO : restart to choose existing layer
         (error "no such layer: ~a" layer))
       (let ((value (if on-supplied-p on (not old-value))))
         (setf (gethash layer layers-toggled) value)))))
@@ -112,7 +112,7 @@ The following format features are unsupported yet:
                   :when (and chunk (ase-layer-chunk-p chunk))
                     :do (let ((id (ase-layer-chunk-id chunk))
                               (layer-name (ase-layer-chunk-name chunk)))
-                          (setf (growable-vector-ref layer-names id)
+                          (setf (growable-vector-ref* layer-names id)
                                 (make-keyword (format-symbol nil "~:@(~a~)" layer-name)))))
         :finally (return (growable-vector-freeze layer-names))))
 
@@ -212,41 +212,43 @@ The following format features are unsupported yet:
 
 (defmethod make-prefab-component ((system sprite-system) entity prefab parameters)
   (with-system-config-options ((debug-sprite))
-    (with-sprite entity ()
-      (setf width (sprite-prefab-width prefab))
-      (setf height (sprite-prefab-height prefab))
-      (setf stances (sprite-prefab-stances prefab))
-      (setf directions (sprite-prefab-directions prefab))
-      (setf frame-durations (sprite-prefab-frame-durations prefab))
-      (setf frame-data (sprite-prefab-frame-data prefab))
-      (let* ((layers (sprite-prefab-layers prefab)))
-        (setf layer-names (sprite-prefab-layer-names prefab))
-        (setf layer-batches (make-hash
-                             :test 'eq
-                             :initial-contents layers
-                             :init-data #'(lambda (k v)
-                                            (values
-                                             k
-                                             (make-object `((:sprite-batch
-                                                             :bitmap ,v
-                                                             :sprite-width ,width
-                                                             :sprite-height ,height)))))))
-        (setf layers-toggled (make-hash
-                              :test 'eq
-                              :init-format :keys
-                              :initial-contents layer-names
-                              :init-default nil))
-        (destructuring-bind (&key (layers-initially-toggled '()) prefab) parameters
-          (dolist (layer layers-initially-toggled)
-            (setf (gethash layer layers-toggled) t))
-          (setf prefab-name prefab)))
-      (setf stance :idle)
-      (issue sprite-stance-changed :entity entity :stance :idle)
-      (setf frame 0
-            angle 0d0
-            time-counter 0d0)
-      (when debug-sprite
-        (setf debug-entity (make-object '((:debug :order 1010d0))))))))
+    (let ((width (sprite-prefab-width prefab))
+          (height (sprite-prefab-height prefab)))
+      (make-sprite
+       entity
+       :width width
+       :height height
+       :stances (sprite-prefab-stances prefab)
+       :directions (sprite-prefab-directions prefab)
+       :frame-durations (sprite-prefab-frame-durations prefab)
+       :frame-data (sprite-prefab-frame-data prefab)
+       :layer-names (sprite-prefab-layer-names prefab)
+       :layer-batches (make-hash
+                       :test 'eq
+                       :initial-contents (sprite-prefab-layers prefab)
+                       :init-data #'(lambda (k v)
+                                      (values
+                                       k
+                                       (make-object `((:sprite-batch
+                                                       :bitmap ,v
+                                                       :sprite-width ,width
+                                                       :sprite-height ,height))))))
+       :layers-toggled (let ((layers-toggled
+                               (make-hash
+                                :test 'eq
+                                :init-format :keys
+                                :initial-contents (sprite-prefab-layer-names prefab)
+                                :init-default nil)))
+                         (destructuring-bind
+                             (&key (layers-initially-toggled nil) &allow-other-keys) parameters
+                           (dolist (layer layers-initially-toggled)
+                             (setf (gethash layer layers-toggled) t)))
+                         layers-toggled)
+       :prefab-name (getf parameters :prefab)
+       :debug-entity (if debug-sprite
+                         (make-object '((:debug :order 1010d0)))
+                         +invalid-entity+))))
+  (issue sprite-stance-changed :entity entity :stance :idle))
 
 (declaim
  (inline stance-interruptible-p)

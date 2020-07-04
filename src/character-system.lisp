@@ -5,23 +5,24 @@
   ()
   (:documentation "Handles sprites that are able to walk and collide with obstacles."))
 
-(defcomponent character character
+(defcomponent (character)
   (speed nil :type double-float)
   (target-x nil :type double-float)
   (target-y nil :type double-float)
-  (path nil :type simple-vector)
+  (path (make-array 0) :type simple-vector)
   (debug-entity +invalid-entity+ :type fixnum))
 
 (defmethod make-component ((system character-system) entity &rest parameters)
-  (destructuring-bind (&key (speed 2d0) target-x target-y) parameters
-    (with-character entity (s x y path debug-entity)
-      (setf s speed)
-      (setf x target-x)
-      (setf y target-y)
-      (setf path (make-array 0))
+  (with-coordinate entity ()
+    (destructuring-bind (&key (speed 2d0) (target-x x) (target-y y)) parameters
       (with-system-config-options ((debug-path))
-        (when debug-path
-          (setf debug-entity (make-object '((:debug :order 1050d0)))))))))
+        (make-character entity
+                        :speed speed
+                        :target-x target-x
+                        :target-y target-y
+                        :debug-entity (if debug-path
+                                          (make-object '((:debug :order 1050d0)))
+                                          +invalid-entity+))))))
 
 (declaim
  (inline euclidean-distance)

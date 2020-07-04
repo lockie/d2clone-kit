@@ -40,16 +40,16 @@ To remove an element from sparse matrix, use SPARSE-MATRIX-REMOVE.
 
 See SPARSE-MATRIX-REMOVE"
   (if-let (index (gethash subscripts (sparse-matrix-indices sparse-matrix)))
-    (setf (%growable-vector-ref (sparse-matrix-array sparse-matrix) index) value)
+    (setf (growable-vector-ref (sparse-matrix-array sparse-matrix) index) value)
     (let ((array (sparse-matrix-array sparse-matrix)))
       (if (emptyp (sparse-matrix-deleted-indices sparse-matrix))
           (let ((index (growable-vector-length array)))
             (setf (gethash subscripts (sparse-matrix-indices sparse-matrix)) index
-                  (growable-vector-ref array index) value))
+                  (growable-vector-ref* array index) value))
           ;; TODO : test deletion!
           (let ((index (vector-pop (sparse-matrix-deleted-indices sparse-matrix))))
             (setf (gethash subscripts (sparse-matrix-indices sparse-matrix)) index
-                  (%growable-vector-ref array index) value))))))
+                  (growable-vector-ref array index) value))))))
 
 (declaim
  (inline sparse-matrix-remove)

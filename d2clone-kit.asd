@@ -37,6 +37,7 @@
                (:file "fs")
                (:file "tiled")
                (:file "aseprite")
+               (:file "sparse-array")
                (:file "systems")
                (:file "components")
                (:file "entities")

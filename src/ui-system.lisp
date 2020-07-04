@@ -9,8 +9,8 @@
    (nuklear-context (cffi:null-pointer) :type cffi:foreign-pointer))
   (:documentation "Handles UI windows."))
 
-(defcomponent ui ui
-  (on nil :type boolean) ;; XXX setting this to NIL kinda breaks ECS implementation
+(defcomponent (ui)
+  (on nil :type boolean)
   (function nil :type function)
   (parameters nil :type hash-table))
 
@@ -88,10 +88,10 @@ undesired side effects like processing the same event by different windows."
 
 (defmethod make-prefab-component ((system ui-system) entity prefab parameters)
   (destructuring-bind (&key (on nil) &allow-other-keys) parameters
-    (with-ui entity (ui-on ui-function ui-parameters)
-      (setf ui-on on)
-      (setf ui-function (ui-prefab-function prefab))
-      (setf ui-parameters (ui-prefab-parameters prefab)))))
+    (make-ui entity
+             :on on
+             :function (ui-prefab-function prefab)
+             :parameters (ui-prefab-parameters prefab))))
 
 (defmethod system-initialize ((system ui-system))
   (with-system-slots ((font-small font-medium font-large

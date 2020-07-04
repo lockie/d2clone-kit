@@ -8,7 +8,7 @@
             (:predicate nil))
   "A simple vector of dynamic size."
   (vector nil :type simple-vector)
-  (size nil :type array-length)
+  (size 0 :type array-length)
   (initial-element nil))
 
 (defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
@@ -19,7 +19,6 @@
 (1 by default) and initial element INITIAL-ELEMENT (NIL by default)."
   (%make-growable-vector
    :vector (make-array initial-allocated-size :initial-element initial-element)
-   :size 0
    :initial-element initial-element))
 
 (declaim
@@ -43,9 +42,9 @@
              :initial-element (%growable-vector-initial-element growable-vector))))))
 
 (declaim
- (inline (setf %growable-vector-ref))
- (ftype (function (t growable-vector array-index) t) (setf %growable-vector-ref)))
-(defun (setf %growable-vector-ref) (value growable-vector index)
+ (inline (setf growable-vector-ref))
+ (ftype (function (t growable-vector array-index) t) (setf growable-vector-ref)))
+(defun (setf growable-vector-ref) (value growable-vector index)
   "Access GROWABLE-VECTOR by INDEX with no bounds checking whatsoever."
   (setf (%growable-vector-size growable-vector)
         (max (%growable-vector-size growable-vector) (1+ index))
@@ -53,9 +52,9 @@
         value))
 
 (declaim
- (inline (setf growable-vector-ref))
- (ftype (function (t growable-vector array-index) t) (setf growable-vector-ref)))
-(defun (setf growable-vector-ref) (value growable-vector index)
+ (inline (setf growable-vector-ref*))
+ (ftype (function (t growable-vector array-index) t) (setf growable-vector-ref*)))
+(defun (setf growable-vector-ref*) (value growable-vector index)
   "Access GROWABLE-VECTOR by INDEX, growing if necessary (when index is
 greater than current allocated size)."
   (let* ((vector (%growable-vector-vector growable-vector))
@@ -64,19 +63,33 @@ greater than current allocated size)."
       (growable-vector-grow
        growable-vector
        (the array-index (round (* index +array-growth-factor+)))))
-    (setf (%growable-vector-ref growable-vector index) value)))
+    (setf (growable-vector-ref growable-vector index) value)))
 
-;; (declaim
-;;  (inline growable-vector-append)
-;;  (ftype (function (growable-vector t)) growable-vector-append))
-;; (defun growable-vector-append (growable-vector value)
-;;   (setf (growable-vector-ref growable-vector (1+ (growable-vector-size growable-vector)))
-;;         value))
+(declaim
+ (inline growable-vector-push)
+ (ftype (function (growable-vector t)) growable-vector-push))
+(defun growable-vector-push (growable-vector value)
+  "Appends VALUE to the end of GROWABLE-VECTOR."
+  (setf (growable-vector-ref* growable-vector (%growable-vector-size growable-vector)) value))
+
+(declaim
+ (inline growable-vector-pop)
+ (ftype (function (growable-vector &optional array-index)) growable-vector-pop))
+(defun growable-vector-pop (growable-vector &optional index)
+  "Removes and returns element with INDEX from GROWABLE-VECTOR.
+If INDEX is not given, removes and returns last element."
+  (let* ((idx (if index index (growable-vector-length growable-vector)))
+         (value (growable-vector-ref growable-vector idx))
+         (vector (%growable-vector-vector growable-vector)))
+    (replace vector vector :start1 idx :start2 (1+ idx))
+    (decf (%growable-vector-size growable-vector))
+    value))
 
 (declaim
  (inline growable-vector-add)
  (ftype (function (growable-vector vector)) growable-vector-add))
 (defun growable-vector-add (growable-vector vector)
+  "Appends contents of given VECTOR to the end of GROWABLE-VECTOR."
   (let ((growable-vector-length (growable-vector-length growable-vector))
         (vector-length (length vector)))
     (growable-vector-grow
