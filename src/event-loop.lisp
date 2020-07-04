@@ -57,5 +57,5 @@ See DEEDS:DEFINE-HANDLER"
            (declare (ignorable system))
            ,@body)))))
 
-(declaim (type *event-source* cffi:foreign-pointer))
+(declaim (type cffi:foreign-pointer *event-source* ))
 (global-vars:define-global-var *event-source* (cffi:null-pointer))
