@@ -5,13 +5,12 @@
   ()
   (:documentation "Handles items."))
 
-(defcomponent item item
+(defcomponent (item)
   (type nil :type keyword))
 
 (defmethod make-component ((system item-system) entity &rest parameters)
   (destructuring-bind (&key type) parameters
-    (with-item entity (item-type)
-      (setf item-type type))
+    (make-item entity :type type)
     (make-component *sprite-system* entity
                     :prefab :loot
                     :layers-initially-toggled (list type))))

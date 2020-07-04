@@ -6,20 +6,20 @@
   (:documentation "Handles close combat."
    :order 1))
 
-(defcomponent combat combat
+(defcomponent (combat)
   (target +invalid-entity+ :type fixnum)
-  (attack-range 2d0 :type double-float)
-  (min-damage 1d0 :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
+  (attack-range nil :type double-float)
+  (min-damage nil :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
   (max-damage nil :type double-float))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
-  (declare (ignore system entity parameters))
   (destructuring-bind (&key (attack-range 2d0) (min-damage 1d0) max-damage) parameters
-    (with-combat entity (target entity-attack-range entity-min-damage entity-max-damage)
-      (setf entity-attack-range attack-range
-            entity-min-damage min-damage
-            entity-max-damage max-damage))))
+    (make-combat entity
+                 :attack-range attack-range
+                 :min-damage min-damage
+                 :max-damage max-damage)))
 
+(declaim (ftype (function (fixnum fixnum)) attack))
 (defun attack (attacker-entity target-entity)
   "Initiates a close combat attack of TARGET-ENTITY by ATTACKER-ENTITY."
   (unless (= attacker-entity target-entity)  ;; prevent self-harm lol
@@ -58,7 +58,7 @@
                 ;; land the blow
                 (when (and (entity-valid-p target)  ;; zero-length path case
                            (eq stance :swing)
-                           (= frame (car (last (gethash :swing stances)))))
+                           (= frame (the fixnum (car (last (gethash :swing stances))))))
                   (when (<= (euclidean-distance target-x target-y current-x current-y)
                             attack-range)
                     (with-hp target (target-max-hp target-current-hp)

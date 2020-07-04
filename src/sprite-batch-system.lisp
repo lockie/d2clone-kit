@@ -7,7 +7,7 @@
    :order 10))
 
 (defstruct sprite-batch-element
-  (bitmap (cffi:null-pointer) :type cffi:foreign-pointer)
+  (bitmap (cffi:null-pointer) :type cffi:foreign-pointer :read-only t)
   (order 0 :type double-float :read-only t)
   (image-x 0 :type fixnum :read-only t)
   (image-y 0 :type fixnum :read-only t)
@@ -25,25 +25,24 @@
 (eval-when (:compile-toplevel)
   (defconstant +maximum-sprite-size+ 256))
 
-(defcomponent sprite-batch sprite-batch
-  (bitmap (cffi:null-pointer) :type cffi:foreign-pointer)
-  (sprite-width 0 :type (integer 0 #.+maximum-sprite-size+))
-  (sprite-height 0 :type (integer 0 #.+maximum-sprite-size+))
-  (columns 0 :type fixnum)
-  (sprites nil :type (vector sprite-batch-element)))
+(defcomponent (sprite-batch)
+  (bitmap nil :type cffi:foreign-pointer)
+  (sprite-width nil :type (integer 0 #.+maximum-sprite-size+))
+  (sprite-height nil :type (integer 0 #.+maximum-sprite-size+))
+  (columns nil :type fixnum)
+  ;; TODO : try optimizing using simple-vector
+  (sprites (make-array 0 :element-type 'sprite-batch-element :adjustable t :fill-pointer t)
+           :type (vector sprite-batch-element)))
 
 (defmethod make-component ((system sprite-batch-system) entity &rest parameters)
   (destructuring-bind (&key bitmap sprite-width sprite-height) parameters
     (unless (find :video-bitmap (al:get-bitmap-flags bitmap))
       (log-warn "Bitmap ~a is not video bitmap, it makes no sense to batch it" bitmap))
-    (with-sprite-batch entity (batch-bitmap sprite-w sprite-h columns sprites)
-      (setf batch-bitmap bitmap
-            sprite-w sprite-width
-            sprite-h sprite-height
-            columns (floor (al:get-bitmap-width bitmap) sprite-width)
-            ;; TODO : try optimizing using simple-vector
-            sprites (make-array
-                     0 :element-type 'sprite-batch-element :adjustable t :fill-pointer t)))))
+    (make-sprite-batch entity
+                       :bitmap bitmap
+                       :sprite-width sprite-width
+                       :sprite-height sprite-height
+                       :columns (floor (al:get-bitmap-width bitmap) sprite-width))))
 
 (declaim
  (inline add-sprite-to-batch)

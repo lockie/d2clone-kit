@@ -6,7 +6,7 @@
    (pan-factor 0f0 :type single-float))
   (:documentation "Handles sounds."))
 
-(defcomponent sound sound
+(defcomponent (sound)
   (sample-instance nil :type cffi:foreign-pointer))
 
 (defprefab sound "ogg"
@@ -36,8 +36,7 @@
                (clamp (* pan-factor (- iso-x iso-camera-x)) -1f0 1f0)))))))))
 
 (defmethod make-prefab-component ((system sound-system) entity prefab parameters)
-  (with-sound entity ()
-    (setf sample-instance (al::create-sample-instance (sound-prefab-sample prefab)))
+  (let ((sample-instance (al::create-sample-instance (sound-prefab-sample prefab))))
     (al:attach-sample-instance-to-mixer sample-instance (al:get-default-mixer))
     (al:set-sample-instance-playmode sample-instance :once)
     (with-system-slots ((distance-factor pan-factor) sound-system system :read-only nil)
@@ -52,6 +51,7 @@
                      (coerce (/ display-height 2 *tile-height*) 'double-float)))
                  'single-float))
           (setf pan-factor (/ 1f0 (/ display-width *tile-width* 2))))))
+    (make-sound entity :sample-instance sample-instance)
     (set-sound-position entity)
     (al:set-sample-instance-playing sample-instance t)))
 

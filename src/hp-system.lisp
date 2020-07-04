@@ -5,15 +5,13 @@
   ()
   (:documentation "Handles hit points."))
 
-(defcomponent hp hp
+(defcomponent (hp)
   (maximum-hp nil :type double-float)
   (current-hp nil :type double-float))
 
 (defmethod make-component ((system hp-system) entity &rest parameters)
   (destructuring-bind (&key current maximum) parameters
-    (with-hp entity ()
-      (setf current-hp current
-            maximum-hp maximum))))
+    (make-hp entity :current-hp current :maximum-hp maximum)))
 
 (declaim
  (inline set-hp)

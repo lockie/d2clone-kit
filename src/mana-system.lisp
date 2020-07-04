@@ -5,12 +5,10 @@
   ()
   (:documentation "Handles mana points."))
 
-(defcomponent mana mana
+(defcomponent (mana)
   (maximum-mana nil :type double-float)
   (current-mana nil :type double-float))
 
 (defmethod make-component ((system mana-system) entity &rest parameters)
   (destructuring-bind (&key current maximum) parameters
-    (with-mana entity ()
-      (setf current-mana current
-            maximum-mana maximum))))
+    (make-mana entity :current-mana current :maximum-mana maximum)))

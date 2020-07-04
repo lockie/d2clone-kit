@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DEFPREFAB macro now also defines necessary empty make-component method.
 - ECS systems refactored to defstructs for performance reasons.
 - Refactored invalid entity mechanics.
+- ECS components refactored to sparse SoA arrays for performance and memory consumption reasons.
 
 ### Removed
 - Obsolete console-system stub.

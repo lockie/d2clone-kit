@@ -13,13 +13,14 @@
   (:documentation "Handles player character."
    :order 1))
 
-(defcomponent player player)
+(defcomponent (player))
 
 (defmethod make-component ((system player-system) player-entity &rest parameters)
   (declare (ignore parameters))
   (setf (camera-target) player-entity)
   (with-system-slots ((entity orb orb-fill orb-flare orb-tmp) player-system system :read-only nil)
       (setf entity player-entity
+            ;; TODO put this in system-initialize
             orb (ensure-loaded #'al:load-bitmap "images/orb.png")
             orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
             orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")

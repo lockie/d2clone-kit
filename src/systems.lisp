@@ -7,13 +7,18 @@
             (:predicate nil))
   "Base structure for all ECS systems."
   (name nil :type symbol)
+  (components-index
+   (make-sparse-array-index :initial-allocated-size *entities-allocated*)
+   :type sparse-array-index)
   (components nil)
   (order 0 :type fixnum))
 
-(declaim (inline system-name system-components system-order))
+(declaim (inline system-name system-components-index system-components system-order))
 
 (setf (documentation #'system-name 'function)
       "Symbol that denotes the system."
+      (documentation #'system-components-index 'function)
+      "Sparse index for system's entity -> component relation."
       (documentation #'system-components 'function)
       "Storage for system components."
       (documentation #'system-order 'function)
