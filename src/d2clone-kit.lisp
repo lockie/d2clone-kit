@@ -66,6 +66,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                   (has-component-p *sprite-batch-system* entity)
                   (has-component-p *debug-system* entity))
         (delete-entity entity))))
+  (setf (player-system-last-target *player-system*) +invalid-entity+)
   (dolist (spec *new-game-object-specs*)
     (make-object spec)))
 
