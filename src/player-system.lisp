@@ -28,7 +28,8 @@
                                       (al:get-bitmap-height orb-fill))))
   (with-system-config-options ((debug-cursor))
     (when debug-cursor
-      (setf (player-system-debug-entity system) (make-object '((:debug :order 2000d0)))))))
+      (setf (player-system-debug-entity system)
+            (make-object '((:debug :order 2000d0)) player-entity)))))
 
 (declaim (inline player-entity))
 (defun player-entity ()

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GUI system DSL based on Nuklear library.
 - Main menu.
 - Credits screen.
+- Parent-child relationship in ECS entities.
 
 ### Changed
 - Removed ubiquitous mana system component.

@@ -232,7 +232,8 @@ The following format features are unsupported yet:
                                        (make-object `((:sprite-batch
                                                        :bitmap ,v
                                                        :sprite-width ,width
-                                                       :sprite-height ,height))))))
+                                                       :sprite-height ,height))
+                                                    entity))))
        :layers-toggled (let ((layers-toggled
                                (make-hash
                                 :test 'eq
@@ -246,7 +247,7 @@ The following format features are unsupported yet:
                          layers-toggled)
        :prefab-name (getf parameters :prefab)
        :debug-entity (if debug-sprite
-                         (make-object '((:debug :order 1010d0)))
+                         (make-object '((:debug :order 1010d0)) entity)
                          +invalid-entity+))))
   (issue sprite-stance-changed :entity entity :stance :idle))
 
@@ -356,11 +357,3 @@ The following format features are unsupported yet:
       (setf frame (first (gethash new-stance stances)))
       (setf time-counter 0d0)
       (issue sprite-stance-changed :entity entity :stance new-stance))))
-
-(defmethod delete-component :before ((system sprite-system) entity)
-  ;; TODO : use parent <-> child rel here
-  (with-sprite entity ()
-    (loop :for sprite-batch :being :the :hash-value :in layer-batches
-          :do (delete-entity sprite-batch))
-    (when (entity-valid-p debug-entity)
-      (delete-entity debug-entity))))

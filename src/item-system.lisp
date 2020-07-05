@@ -70,7 +70,8 @@
                       positions))
             (make-object `((:coordinate :x ,(- (coerce (car position) 'double-float) 0.49d0)
                                         :y ,(- (coerce (cdr position) 'double-float) 0.49d0))
-                           (:item :type ,item)))))))))
+                           (:item :type ,item))
+                         *session-entity*)))))))
 
   ;; TODO : unhardcode
 (define-constant +weapons+
@@ -91,6 +92,7 @@
                (:sound :prefab :gulp))))
           (with-hp player-entity ()
             (set-hp player-entity (+ current-hp 20d0)))
+          (delete-child *session-entity* item-entity)
           (delete-entity item-entity))
         (let ((player-entity (player-entity)))
           (with-sprite player-entity ()
@@ -104,6 +106,7 @@
                 (getf +weapons+ type)
               (setf min-damage weapon-min-dmg
                     max-damage weapon-max-dmg)))
+          (delete-child *session-entity* item-entity)
           (delete-entity item-entity)))))
 
 (defhandler item-system character-moved (event entity new-x new-y)
