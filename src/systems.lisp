@@ -135,19 +135,10 @@ See RENDER"))
 (defmethod system-draw ((system system) renderer)
   (declare (ignore system) (ignore renderer)))
 
-(declaim (type (integer 0 #.array-dimension-limit) *entities-count*))
-(global-vars:define-global-var *entities-count* 0)
-
-(declaim (type (integer 0 #.array-dimension-limit) *entities-allocated*))
-(global-vars:define-global-var *entities-allocated* 144)
-
-(declaim (type (vector fixnum) *deleted-entities*))
-(global-vars:define-global-var *deleted-entities*
-    (make-array 0 :element-type 'fixnum :adjustable t :fill-pointer t))
-
 (defun unregister-all-systems ()
   (setf *entities-count* 0
         *entities-allocated* 144)
+  (clrhash *entities-children*)
   (clrhash *systems*)
   (setf (fill-pointer *deleted-entities*) 0))
 
@@ -156,7 +147,7 @@ See RENDER"))
   `(loop :for ,var :being :the :hash-value :of *systems*
          :do ,@body))
 
-(defun make-object (spec)
+(defun make-object (spec &optional parent)
   "Creates a new game object following specification SPEC structured as follows:
 ```
 '((:system-name1 :component-parameter1 \"value1\" :component-parameter2 2.0)
@@ -164,7 +155,7 @@ See RENDER"))
   ;; ...
   )
 ```"
-  (loop :with entity := (make-entity)
+  (loop :with entity := (make-entity parent)
         :for component :in spec
         :for system := (gethash (car component) *systems*)
         :for parameters := (cdr component)

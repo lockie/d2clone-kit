@@ -80,6 +80,7 @@
    ;; entities.lisp
    (:export
     #:make-entity
+    #:delete-child
     #:delete-entity
     #:+invalid-entity+
     #:entity-valid-p)

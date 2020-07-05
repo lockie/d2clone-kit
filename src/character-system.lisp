@@ -21,7 +21,7 @@
                         :target-x target-x
                         :target-y target-y
                         :debug-entity (if debug-path
-                                          (make-object '((:debug :order 1050d0)))
+                                          (make-object '((:debug :order 1050d0)) entity)
                                           +invalid-entity+))))))
 
 (declaim

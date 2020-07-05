@@ -128,7 +128,7 @@ conversion maths are badly fucked up."))
                     :tiles-properties (map-prefab-tiles-properties prefab)
                     :sprite-batches (map-prefab-sprite-batches prefab)
                     :debug-entity (if debug-grid
-                                      (make-object '((:debug)))
+                                      (make-object '((:debug)) entity)
                                       +invalid-entity+))))
 
 (declaim (inline ground-layer-p))

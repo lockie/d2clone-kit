@@ -58,17 +58,12 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
 (defun new-game ()
   "Starts new game."
   (log-info "Starting new game")
-  (dotimes (entity *entities-count*)
-    (unless (find entity *deleted-entities*)
-      ;; TODO : add parent <-> child relationship to ECS
-      ;;  and then make all new game objects to be children of same entity to be deleted here
-      (unless (or (has-component-p *ui-system* entity)
-                  (has-component-p *sprite-batch-system* entity)
-                  (has-component-p *debug-system* entity))
-        (delete-entity entity))))
+  (when (entity-valid-p *session-entity*)
+    (delete-entity *session-entity*))
   (setf (player-system-last-target *player-system*) +invalid-entity+)
+  (setf *session-entity* (make-entity))
   (dolist (spec *new-game-object-specs*)
-    (make-object spec)))
+    (make-object spec *session-entity*)))
 
 (declaim (inline game-started-p) (ftype (function () boolean) game-started-p))
 (defun game-started-p ()
@@ -147,6 +142,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                    "game loop"
                    (game-loop event-queue))))
           (log-info "Shutting engine down")
+          (setf *session-entity* +invalid-entity+)
+          ;; TODO : remove all of the entities?..
           (with-systems system
             (system-finalize system))
           (unregister-all-systems)
