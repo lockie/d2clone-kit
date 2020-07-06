@@ -50,9 +50,9 @@ See DELETE-CHILD"
     (delete-entity child))
   (remhash entity *entities-children*)
   (issue entity-deleted :entity entity)
-  (loop :for system :being :the :hash-value :of *systems*
-        :when (has-component-p system entity)
-        :do (delete-component system entity))
+  (with-systems system
+    (when (has-component-p system entity)
+      (delete-component system entity)))
   (vector-push-extend entity *deleted-entities*))
 
 (defconstant +invalid-entity+ -1 "The invalid entity.")
