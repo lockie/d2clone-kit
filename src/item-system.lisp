@@ -89,7 +89,7 @@
           (with-coordinate player-entity (player-x player-y)
             (make-object
              `((:coordinate :x ,player-x :y ,player-y)
-               (:sound :prefab :gulp))))
+               (:sound :prefab :gulp)) player-entity))
           (with-hp player-entity ()
             (set-hp player-entity (+ current-hp 20d0)))
           (delete-child *session-entity* item-entity)

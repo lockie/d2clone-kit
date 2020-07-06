@@ -99,9 +99,9 @@ CHARACTER, when non-NIL, specifies character entity to check for collisions with
             (make-object '((:debug :order 2000d0)))))))
 
 (defmethod system-finalize ((system collision-system))
-  (with-system-slots ((map characters-map) collision-system system)
-    (sparse-matrix-clear map)
-    (sparse-matrix-clear characters-map)))
+  (with-system-slots ((debug-entity) collision-system system)
+    (when (entity-valid-p debug-entity)
+      (delete-entity debug-entity))))
 
 (defmethod system-draw ((system collision-system) renderer)
   (with-system-config-options ((debug-collisions))

@@ -15,6 +15,11 @@
   (setf (menu-system-ui-entity system)
         (make-object '((:ui :prefab :main-menu :on t)))))
 
+(defmethod system-finalize ((system menu-system))
+  (with-system-slots ((ui-entity) menu-system system)
+    (when (entity-valid-p ui-entity)
+      (delete-entity ui-entity))))
+
 (defhandler menu-system allegro-event (event event-type)
   :filter '(eq event-type :key-down)
   (let ((allegro-event (slot-value event 'event)))
