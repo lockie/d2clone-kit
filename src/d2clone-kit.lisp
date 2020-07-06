@@ -142,8 +142,9 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                    "game loop"
                    (game-loop event-queue))))
           (log-info "Shutting engine down")
+          (when (entity-valid-p *session-entity*)
+            (delete-entity *session-entity*))
           (setf *session-entity* +invalid-entity+)
-          ;; TODO : remove all of the entities?..
           (with-systems system
             (system-finalize system))
           (unregister-all-systems)

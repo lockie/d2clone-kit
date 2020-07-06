@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing sprites to glitch when all objects were recreated.
 - Fixed bug causing the game to crash on exit when some fonts were not deleted.
 - Fixed bug causing corpse sprites to be incorrectly rendered on top of other ones.
+- Fixed several memory leaks on exit.
 
 
 ## [0.1.0] - 2020-04-20

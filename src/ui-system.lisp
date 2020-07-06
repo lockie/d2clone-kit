@@ -122,3 +122,9 @@ undesired side effects like processing the same event by different windows."
     (with-uis
         (when on
           (apply function nuklear-context entity (hash-table-plist parameters))))))
+
+(defmethod delete-component :before ((system ui-system) entity)
+  (with-ui entity ()
+    (loop :for name :being :the :hash-key :using (hash-value value) :of parameters
+          :when (uiop:string-suffix-p name "FONT") :do (nk:allegro-font-del value)
+          :when (uiop:string-suffix-p name "IMAGE") :do (nk:allegro-del-image value))))

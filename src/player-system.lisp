@@ -15,21 +15,10 @@
 
 (defcomponent (player))
 
-(defmethod make-component ((system player-system) player-entity &rest parameters)
+(defmethod make-component ((system player-system) entity &rest parameters)
   (declare (ignore parameters))
-  (setf (camera-target) player-entity)
-  (with-system-slots ((entity orb orb-fill orb-flare orb-tmp) player-system system :read-only nil)
-      (setf entity player-entity
-            ;; TODO put this in system-initialize
-            orb (ensure-loaded #'al:load-bitmap "images/orb.png")
-            orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
-            orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
-            orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
-                                      (al:get-bitmap-height orb-fill))))
-  (with-system-config-options ((debug-cursor))
-    (when debug-cursor
-      (setf (player-system-debug-entity system)
-            (make-object '((:debug :order 2000d0)) player-entity)))))
+    (setf (camera-target) entity
+          (player-system-entity system) entity))
 
 (declaim (inline player-entity))
 (defun player-entity ()
@@ -91,12 +80,27 @@
       (setf (player-system-mouse-pressed-p system) nil
             (player-system-last-target system) -1))))
 
+(defmethod system-initialize ((system player-system))
+  (with-system-config-options ((debug-cursor))
+    (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity)
+                        player-system system :read-only nil)
+      (setf orb (ensure-loaded #'al:load-bitmap "images/orb.png")
+            orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
+            orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
+            orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
+                                      (al:get-bitmap-height orb-fill))
+            debug-entity (if debug-cursor
+                             (make-object '((:debug :order 2000d0)))
+                             +invalid-entity+)))))
+
 (defmethod system-finalize ((system player-system))
-  (with-system-slots ((orb orb-fill orb-flare orb-tmp) player-system system)
+  (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity) player-system system)
     (al:destroy-bitmap orb)
     (al:destroy-bitmap orb-fill)
     (al:destroy-bitmap orb-flare)
-    (al:destroy-bitmap orb-tmp)))
+    (al:destroy-bitmap orb-tmp)
+    (when (entity-valid-p debug-entity)
+      (delete-entity debug-entity))))
 
 (defmethod system-update ((system player-system) dt)
   (with-system-slots ((mouse-pressed-p last-target) player-system system)
