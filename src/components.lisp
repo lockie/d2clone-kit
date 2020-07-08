@@ -8,13 +8,6 @@ PARAMETERS could include `:PREFAB` key, in which case component is constructed u
 
 See MAKE-PREFAB-COMPONENT"))
 
-(defgeneric system-adjust-components (system new-size))
-
-(defmethod system-adjust-components ((system system) new-size)
-  (declare (ignore system new-size))
-  ;; default implementation for componentless systems
-  )
-
 (defgeneric delete-component (system entity)
   (:documentation "Deletes SYSTEM's component from ENTITY."))
 
@@ -25,13 +18,20 @@ See MAKE-PREFAB-COMPONENT"))
 
 ;; TODO : automatically delete entities with no components?..
 
-(defgeneric has-component-p (system entity)
-  (:documentation "Returns T when ENTITY has the SYSTEM's component in it."))
+(declaim
+ (inline system-adjust-components)
+ (ftype (function (system array-length)) system-adjust-components))
+(defun system-adjust-components (system new-size)
+  (when-let ((components-index (system-components-index system)))
+    (sparse-array-index-grow components-index new-size)))
 
-(defmethod has-component-p ((system system) entity)
-  (declare (ignore system entity))
-  ;; default implementation for componentless systems
-  )
+(declaim
+ (inline has-component-p)
+ (ftype (function (system fixnum) boolean) has-component-p))
+(defun has-component-p (system entity)
+  "Returns T when ENTITY has the SYSTEM's component in it."
+  (when-let ((components-index (system-components-index system)))
+    (index-valid-p (sparse-array-index-ref components-index entity))))
 
 (defmacro defsoa (name &rest slots)
   "Defines structure-of-arrays with NAME and SLOTS and corresponding accessors."
@@ -124,14 +124,14 @@ See MAKE-PREFAB-COMPONENT"))
                   (symbol-macrolet (,@component-exps)
                     ,@body))))))
        (defmethod system-create ((system ,system-type))
-         (setf (system-components system) (,(symbolicate 'make- plural-name)))
+         (setf (system-components-index system)
+               (make-sparse-array-index :initial-allocated-size *entities-allocated*)
+               (system-components system)
+               (,(symbolicate 'make- plural-name)))
          (preload-prefabs system))
-       (defmethod system-adjust-components ((system ,system-type) new-size)
-         (sparse-array-index-grow (system-components-index system) new-size))
        (defmethod delete-component ((system ,system-type) entity)
-         (sparse-array-index-delete (system-components-index system) entity))
-       (defmethod has-component-p ((system ,system-type) entity)
-         (index-valid-p (sparse-array-index-ref (system-components-index system) entity)))
+         (when-let ((components-index (system-components-index system)))
+           (sparse-array-index-delete components-index entity)))
        (defun ,(symbolicate 'make- name) (entity &key ,@(mapcar #'list slot-names slot-defaults))
          (let* ((system ,system-instance)
                 (components (system-components system))

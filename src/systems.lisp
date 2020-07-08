@@ -7,9 +7,7 @@
             (:predicate nil))
   "Base structure for all ECS systems."
   (name nil :type symbol)
-  (components-index
-   (make-sparse-array-index :initial-allocated-size *entities-allocated*)
-   :type sparse-array-index)
+  (components-index nil)
   (components nil)
   (order 0 :type fixnum))
 
