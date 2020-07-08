@@ -14,6 +14,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
   "Runs game loop."
   (gc :full t)
   (log-info "Starting game loop")
+  (livesupport:setup-lisp-repl)
   (with-system-config-options ((display-vsync display-fps))
     (let* ((vsync display-vsync)
            (renderer (make-renderer))
