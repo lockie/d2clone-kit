@@ -101,14 +101,6 @@
                (:file "tiled"
                 :depends-on ("fs"))
                (:file "ui-system"
-                :depends-on ("components" "systems" "prefabs" "sound-system")))
-  :around-compile (lambda (next)
-                    (when (uiop:featurep :release)
-                      (proclaim '(optimize
-                                  (speed 3)
-                                  (debug 0)
-                                  (compilation-speed 0)
-                                  (safety 1))))
-                    (funcall next)))
+                :depends-on ("components" "systems" "prefabs" "sound-system"))))
 
 (pushnew :deeds-no-startup *features*)
