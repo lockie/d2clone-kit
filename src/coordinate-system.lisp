@@ -1,6 +1,10 @@
 (in-package :d2clone-kit)
 
 
+(declaim (type (integer 0 255) *tile-width* *tile-height*))
+(global-vars:define-global-var *tile-width* 0)
+(global-vars:define-global-var *tile-height* 0)
+
 (defsystem coordinate
   ()
   (:documentation "Stores orthogonal world coordinates."))

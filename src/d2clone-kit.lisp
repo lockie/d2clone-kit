@@ -146,9 +146,8 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
           (when (entity-valid-p *session-entity*)
             (delete-entity *session-entity*))
           (setf *session-entity* +invalid-entity+)
-          (with-systems system
-            (system-finalize system))
-          (unregister-all-systems)
+          (finalize-systems)
+          (finalize-entities)
           (al:inhibit-screensaver nil)
           (al:destroy-user-event-source *event-source*)
           (cffi:foreign-free *event-source*)
