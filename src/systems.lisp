@@ -133,17 +133,15 @@ See RENDER"))
 (defmethod system-draw ((system system) renderer)
   (declare (ignore system) (ignore renderer)))
 
-(defun unregister-all-systems ()
-  (setf *entities-count* 0
-        *entities-allocated* 144)
-  (clrhash *entities-children*)
-  (clrhash *systems*)
-  (setf (fill-pointer *deleted-entities*) 0))
-
 (defmacro with-systems (var &body body)
   "Executes BODY in loop for each system, binding system instance to variable VAR."
   `(loop :for ,var :being :the :hash-value :of *systems*
          :do ,@body))
+
+(defun finalize-systems ()
+  (with-systems system
+    (system-finalize system))
+  (clrhash *systems*))
 
 (defun make-object (spec &optional parent)
   "Creates a new game object following specification SPEC structured as follows:

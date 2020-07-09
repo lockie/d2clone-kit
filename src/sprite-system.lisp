@@ -123,7 +123,7 @@ The following format features are unsupported yet:
 (defun directions (ase-file total-stance-length)
   (ceiling (length (ase-file-frames ase-file)) total-stance-length))
 
-(defun load-sprite-layers (ase-file layer-names stances total-stance-length directions)
+(defun load-sprite-layers (ase-file layer-names total-stance-length directions)
   (loop
     :with cel-width := (ase-file-width ase-file)
     :with cel-height := (ase-file-height ase-file)
@@ -195,8 +195,7 @@ The following format features are unsupported yet:
          (frame-durations (load-sprite-frame-durations ase-file total-stance-length))
          (frame-data (load-sprite-frame-data ase-file total-stance-length))
          (layer-names (load-sprite-layer-names ase-file))
-         (layer-bitmaps
-           (load-sprite-layers ase-file layer-names stances total-stance-length directions))
+         (layer-bitmaps (load-sprite-layers ase-file layer-names total-stance-length directions))
          (layers (make-hash
                   :size (length layer-names) :test 'eq :init-format :keychain
                   :initial-contents layer-names :init-data layer-bitmaps)))

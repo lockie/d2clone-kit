@@ -66,6 +66,13 @@ greater than current allocated size)."
     (setf (growable-vector-ref growable-vector index) value)))
 
 (declaim
+ (inline growable-vector-length)
+ (ftype (function (growable-vector) array-length) growable-vector-length))
+(defun growable-vector-length (growable-vector)
+  "Returns GROWABLE-VECTOR length (i.e. current actual element count)."
+  (%growable-vector-size growable-vector))
+
+(declaim
  (inline growable-vector-push)
  (ftype (function (growable-vector t)) growable-vector-push))
 (defun growable-vector-push (growable-vector value)
@@ -103,13 +110,6 @@ If INDEX is not given, removes and returns last element."
      vector
      :start1 growable-vector-length)
     (incf (%growable-vector-size growable-vector) vector-length)))
-
-(declaim
- (inline growable-vector-length)
- (ftype (function (growable-vector) array-length) growable-vector-length))
-(defun growable-vector-length (growable-vector)
-  "Returns GROWABLE-VECTOR length (i.e. current actual element count)."
-  (%growable-vector-size growable-vector))
 
 (declaim
  (inline growable-vector-clear)

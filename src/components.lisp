@@ -136,6 +136,7 @@ See MAKE-PREFAB-COMPONENT"))
          (let* ((system ,system-instance)
                 (components (system-components system))
                 (index (sparse-array-index-push (system-components-index system) entity)))
+           (declare (ignorable components index))
            (setf ,@(mapcan
                     #'(lambda (a s) `((,@a components index) ,s))
                     slot-accessors slot-names)))))))

@@ -20,7 +20,9 @@
     (setf (camera-target) entity
           (player-system-entity system) entity))
 
-(declaim (inline player-entity))
+(declaim
+ (inline player-entity)
+ (ftype (function () fixnum) player-entity))
 (defun player-entity ()
   "Returns current player entity."
   (player-system-entity *player-system*))

@@ -1,10 +1,10 @@
 (in-package :d2clone-kit)
 
 
-(declaim (type (integer 0 #.array-dimension-limit) *entities-count*))
+(declaim (type array-length *entities-count*))
 (global-vars:define-global-var *entities-count* 0)
 
-(declaim (type (integer 0 #.array-dimension-limit) *entities-allocated*))
+(declaim (type array-length *entities-allocated*))
 (global-vars:define-global-var *entities-allocated* 144)
 
 (declaim (type (vector fixnum) *deleted-entities*))
@@ -61,6 +61,12 @@ See DELETE-CHILD"
 (defun entity-valid-p (entity)
   "Return T if entity is valid."
   (not (minusp entity)))
+
+(defun finalize-entities ()
+  (setf *entities-count* 0
+        *entities-allocated* 144)
+  (clrhash *entities-children*)
+  (setf (fill-pointer *deleted-entities*) 0))
 
 (declaim (type fixnum *session-entity*))
 (global-vars:define-global-var *session-entity* +invalid-entity+)

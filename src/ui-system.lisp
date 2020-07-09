@@ -68,7 +68,7 @@ undesired side effects like processing the same event by different windows."
                                             #'(lambda (parameter)
                                                 (ensure-symbol parameter :d2clone-kit))
                                             parameters))
-              (declare (ignorable entity))
+              (declare (optimize (speed 1) (safety 1) (debug 1)) (ignorable entity))
               ,spec)))
     (let* ((parameters (eval
                         (let ((*package* (find-package :d2clone-kit)))
