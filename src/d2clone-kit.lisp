@@ -109,9 +109,10 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
     (with-system-config-options
         ((display-windowed display-multisampling display-width display-height))
       (al:set-new-display-flags
+       ;; TODO : fix fullscreen
        (if display-windowed
            '(:windowed)
-           '(:fullscreen)))
+           '(:fullscreen-window :frameless)))
       (unless (zerop display-multisampling)
         (al:set-new-display-option :sample-buffers 1 :require)
         (al:set-new-display-option :samples display-multisampling :require))

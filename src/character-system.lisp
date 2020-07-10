@@ -1,5 +1,7 @@
 (in-package :d2clone-kit)
 
+;; TODO : rename this to movable?..
+
 
 (defsystem character
   ()

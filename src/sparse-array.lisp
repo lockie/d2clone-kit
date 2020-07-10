@@ -20,6 +20,8 @@
   (count 0 :type array-length)
   (deleted-indices (make-growable-vector :initial-element +invalid-index+) :type growable-vector))
 
+;; TODO : document!
+
 (defun make-sparse-array-index (&key (initial-allocated-size 1))
   (%make-sparse-array-index
    :indices (make-growable-vector
