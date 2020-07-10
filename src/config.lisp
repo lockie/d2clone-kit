@@ -35,6 +35,7 @@
   (al:destroy-config *config*)
   (setf *config* (cffi:null-pointer)))
 
+;; TODO : come up with some sort of caching to global var, calling al_get_config_value is not free
 (defmacro defoptions (name &rest options)
   "Defines macro to access given group of options. E.g. when NAME is 'SYSTEM, it defines WITH-SYSTEM-CONFIG-OPTIONS macro. OPTIONS should be list of lists containing option's section name, option's name, and :TYPE and :DEFAULT properties.
 
