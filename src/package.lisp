@@ -111,13 +111,14 @@
    (:export
     #:growable-vector
     #:make-growable-vector
-    #:growable-vector-grow
     #:growable-vector-ref
+    #:growable-vector-grow
     #:growable-vector-ref*
+    #:growable-vector-length
+    #:growable-vector-emptyp
     #:growable-vector-push
     #:growable-vector-pop
     #:growable-vector-add
-    #:growable-vector-length
     #:growable-vector-clear
     #:growable-vector-freeze)
     ;; hp-system.lisp

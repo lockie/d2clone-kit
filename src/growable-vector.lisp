@@ -73,6 +73,13 @@ greater than current allocated size)."
   (%growable-vector-size growable-vector))
 
 (declaim
+ (inline growable-vector-emptyp)
+ (ftype (function (growable-vector) boolean) growable-vector-emptyp))
+(defun growable-vector-emptyp (growable-vector)
+  "Returns T if GROWABLE-VECTOR is empty."
+  (zerop (growable-vector-length growable-vector)))
+
+(declaim
  (inline growable-vector-push)
  (ftype (function (growable-vector t)) growable-vector-push))
 (defun growable-vector-push (growable-vector value)
