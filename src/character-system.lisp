@@ -84,6 +84,8 @@
 ;; TODO : optimize
 ;; TODO : penalize turns?..
 ;; TODO : separate thread?..
+;; TODO : XXX : precalculate something?.. like Dijkstra Maps. see
+;; https://www.reddit.com/r/roguelikedev/comments/hpxnkd
 (declaim (ftype (function (double-float double-float double-float double-float)) a*))
 (defun a* (start-x start-y goal-x goal-y)
   "Runs A* algorithm to find path from point START-X, START-Y to GOAL-X, GOAL-Y.
