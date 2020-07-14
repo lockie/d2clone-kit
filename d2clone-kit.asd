@@ -52,7 +52,7 @@
                (:file "debug-system"
                 :depends-on ("components" "systems" "renderer" "growable-vector"))
                (:file "entities"
-                :depends-on ("components" "systems" "log" "event-loop"))
+                :depends-on ("components" "systems" "log" "event-loop" "growable-vector"))
                (:file "event-loop")
                (:file "events"
                 :depends-on ("event-loop"))
