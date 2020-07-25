@@ -20,7 +20,7 @@
  (ftype (function (fixnum)) set-sound-position))
 (defun set-sound-position (entity)
   ;; TODO : use al_set_sample_instance_channel_matrix for 5.1 sound?..
-  (when (has-component-p *coordinate-system* entity)
+  (when (has-component-p :coordinate entity)
     (with-sound entity ()
       (with-coordinate entity ()
         (with-camera (camera-x camera-y)
@@ -65,13 +65,15 @@
           (set-sound-position entity)
           (delete-component system entity))))
 
-(defhandler sound-system sprite-stance-changed (event entity stance)
-  (with-sprite entity ()
-    (maphash
-     #'(lambda (layer toggled)
-         (when toggled
-           (let ((sound-name (make-keyword
-                              (format-symbol nil "~a-~a-~a" prefab-name layer stance))))
-             (when-let (sound-prefab (prefab system sound-name))
-               (make-component system entity :prefab sound-name)))))
-     layers-toggled)))
+(defhandler (sound-system sprite-stance-changed)
+  (let ((entity (sprite-stance-changed-entity event))
+        (stance (sprite-stance-changed-stance event)))
+    (with-sprite entity ()
+      (maphash
+       #'(lambda (layer toggled)
+           (when toggled
+             (let ((sound-name (make-keyword
+                                (format-symbol nil "~a-~a-~a" prefab-name layer stance))))
+               (when-let (sound-prefab (prefab system sound-name))
+                 (make-component system entity :prefab sound-name)))))
+       layers-toggled))))

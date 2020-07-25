@@ -84,18 +84,21 @@
     #:delete-entity
     #:+invalid-entity+
     #:entity-valid-p)
-   ;; event-loop.lisp
+   ;; event-queue.lisp
    (:export
-    #:event-loop
-    #:defevent
+    #:event
+    #:process-event
+    #:process-events
     #:issue
+    #:defevent
     #:defhandler)
    ;; events.lisp
    (:export
     #:allegro-event
-    #:quit
     #:exit
     #:component-created
+    #:entity-deleted
+    #:sprite-stance-changed
     #:character-moved
     #:entity-died)
    ;; fs.lisp

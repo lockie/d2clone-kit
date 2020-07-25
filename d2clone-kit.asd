@@ -12,7 +12,6 @@
                :cl-liballegro
                :cl-liballegro-nuklear
                :cl-ppcre
-               :deeds
                :float-features
                :global-vars
                :livesupport
@@ -31,10 +30,10 @@
                (:file "camera-system"
                 :depends-on ("entities" "systems" "config" "coordinate-system"))
                (:file "character-system"
-                :depends-on ("components" "systems" "config" "event-loop" "collision-system"
+                :depends-on ("components" "systems" "config" "event-queue" "collision-system"
                                           "coordinate-system" "sprite-system" "priority-queue"))
                (:file "collision-system"
-                :depends-on ("entities" "systems" "sparse-matrix" "config" "event-loop" "events"
+                :depends-on ("entities" "systems" "sparse-matrix" "config" "event-queue" "events"
                                         "coordinate-system" "map-system"))
                (:file "combat-system"
                 :depends-on ("entities" "components" "systems" "character-system"
@@ -47,22 +46,22 @@
                (:file "credits-system"
                 :depends-on ("entities" "systems"))
                (:file "d2clone-kit"
-                :depends-on ("entities" "systems" "renderer" "log" "config" "fs" "event-loop"
+                :depends-on ("entities" "systems" "renderer" "log" "config" "fs" "event-queue"
                                         "renderer" "player-system" "ui-system"))
                (:file "debug-system"
                 :depends-on ("components" "systems" "renderer" "growable-vector"))
                (:file "entities"
-                :depends-on ("components" "systems" "log" "event-loop" "growable-vector"))
-               (:file "event-loop")
+                :depends-on ("components" "systems" "log" "event-queue" "growable-vector"))
+               (:file "event-queue")
                (:file "events"
-                :depends-on ("event-loop"))
+                :depends-on ("entities" "event-queue"))
                (:file "fs"
                 :depends-on ("log"))
                (:file "growable-vector")
                (:file "hp-system"
-                :depends-on ("components" "systems" "event-loop"))
+                :depends-on ("components" "systems" "event-queue"))
                (:file "item-system"
-                :depends-on ("components" "systems" "renderer" "event-loop" "events"
+                :depends-on ("components" "systems" "renderer" "event-queue" "events"
                                           "combat-system" "coordinate-system" "hp-system"
                                           "player-system" "sprite-system" "ui-system"))
                (:file "log")
@@ -72,21 +71,21 @@
                 :depends-on ("components" "systems" "prefabs" "config" "camera-system"
                                           "coordinate-system" "sprite-batch-system" "tiled"))
                (:file "menu-system"
-                :depends-on ("entities" "systems" "event-loop" "events" "ui-system"))
+                :depends-on ("entities" "systems" "event-queue" "events" "ui-system"))
                (:file "mob-system"
                 :depends-on ("entities" "components" "systems" "character-system"
                                         "coordinate-system" "hp-system"))
                (:file "player-system"
                 :depends-on ("entities" "components" "systems" "config" "renderer"
-                                        "event-loop" "events" "combat-system" "hp-system"
+                                        "event-queue" "events" "combat-system" "hp-system"
                                         "mana-system" "mob-system" "ui-system"))
                (:file "prefabs"
-                :depends-on ("components" "systems" "event-loop"))
+                :depends-on ("components" "systems" "event-queue"))
                (:file "priority-queue")
                (:file "renderer"
                 :depends-on ("priority-queue"))
                (:file "sound-system"
-                :depends-on ("components" "systems" "prefabs" "config" "event-loop" "events"
+                :depends-on ("components" "systems" "prefabs" "config" "event-queue" "events"
                                           "camera-system" "coordinate-system" "sprite-system"))
                (:file "sparse-array"
                 :depends-on ("growable-vector"))
@@ -95,12 +94,10 @@
                (:file "sprite-batch-system"
                 :depends-on ("components" "systems" "renderer"))
                (:file "sprite-system"
-                :depends-on ("entities" "components" "systems" "prefabs" "event-loop" "events"
+                :depends-on ("entities" "components" "systems" "prefabs" "event-queue" "events"
                                         "aseprite" "hp-system" "sprite-batch-system"))
                (:file "systems")
                (:file "tiled"
                 :depends-on ("fs"))
                (:file "ui-system"
                 :depends-on ("components" "systems" "prefabs" "sound-system"))))
-
-(pushnew :deeds-no-startup *features*)

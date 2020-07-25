@@ -17,7 +17,7 @@
 
 (defmethod system-draw ((system item-system) renderer)
   (with-items
-    (when (has-component-p *coordinate-system* entity)
+    (when (has-component-p :coordinate entity)
       (with-screen-coordinate entity (screen-x screen-y)
         (multiple-value-bind (x y)
             (absolute->viewport screen-x screen-y)
@@ -109,11 +109,11 @@
           (delete-child *session-entity* item-entity)
           (delete-entity item-entity)))))
 
-(defhandler item-system character-moved (event entity new-x new-y)
-  :filter '(= entity (player-entity))
+(defhandler (item-system character-moved
+             :filter (= (character-moved-entity event) (player-entity)))
   (with-coordinate (player-entity) (player-x player-y)
     (with-items
-        (when (has-component-p *coordinate-system* entity)
+        (when (has-component-p :coordinate entity)
           (with-coordinate entity ()
             (when (and (approx-equal x player-x 0.49d0)
                        (approx-equal y player-y 0.49d0))
@@ -138,7 +138,7 @@
                       '(5 10 5 2 1))
   :test (constantly t))
 
-(defhandler item-system entity-died (event entity)
-  :filter '(not (= entity (player-entity)))
+(defhandler (item-system entity-died
+             :filter (not (= (entity-died-entity event) (player-entity))))
   (when-let (item (funcall +item-generator+))
-    (drop-item entity item)))
+    (drop-item (entity-died-entity event) item)))

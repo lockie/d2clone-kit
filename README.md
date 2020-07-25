@@ -5,7 +5,7 @@ Diablo 2 is arguably one of the best action RPG created ever. This is humble att
 * Support for [Tiled](https://www.mapeditor.org) map format.
 * Support for [Aseprite](https://aseprite.org) sprite format.
 * Entity-Component-System implementation.
-* Powerful events subsystem (courtesy of [Shinmera's deeds library](https://github.com/Shinmera/deeds)).
+* Simple yet powerful events subsystem.
 * 2D renderer with functional interface.
 * Sprite batching subsystem.
 * Simple DSL for creating GUI windows by [Nuklear library](https://gitlab.com/lockie/cl-liballegro-nuklear).

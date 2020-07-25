@@ -53,7 +53,7 @@ See DELETE-CHILD"
   (remhash entity *entities-children*)
   (issue entity-deleted :entity entity)
   (with-systems system
-    (when (has-component-p system entity)
+    (when (%has-component-p system entity)
       (delete-component system entity)))
   (growable-vector-push *deleted-entities* entity))
 
