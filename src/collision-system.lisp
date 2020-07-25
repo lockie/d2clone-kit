@@ -12,65 +12,67 @@ boolean property *collides* to *true* in Tiled tileset."))
 
 ;; TODO : optimize this by packing coordinates into single fixnum (31 bits ought to be enough for anyone)
 
-(defhandler collision-system component-created (event entity system-name)
-  :filter '(eq system-name 'map)
-  (with-coordinate entity ()
-    (let ((start-x (truncate x))
-          (start-y (truncate y)))
-      (with-map-chunk entity ()
-        (loop :for layer :across (tiled-map-layers tiled-map)
-              :do (loop :with data := (tiled-layer-data layer)
-                        :for y :from 0 :below (tiled-layer-height layer)
-                        :do (loop :for x :from 0 :below (tiled-layer-width layer)
-                                  :for tile := (aref data y x)
-                                  :do (when (tile-property tiles-properties tile 'collides)
-                                        (multiple-value-bind (ortho-x ortho-y)
-                                            (isometric->orthogonal*
-                                             (coerce x 'double-float)
-                                             (coerce y 'double-float))
-                                          (setf
-                                           (sparse-matrix-ref
-                                            (collision-system-map system)
-                                            (cons (+ (truncate ortho-x) start-x)
-                                                  (+ (truncate ortho-y) start-y)))
-                                           entity))))))))))
+(defhandler (collision-system component-created)
+  (let ((entity (component-created-entity event)))
+    (case (component-created-system-name event)
+      (map
+       (with-coordinate entity ()
+         (let ((start-x (truncate x))
+               (start-y (truncate y)))
+           (with-map-chunk entity ()
+             (loop :for layer :across (tiled-map-layers tiled-map)
+                   :do (loop :with data := (tiled-layer-data layer)
+                             :for y :from 0 :below (tiled-layer-height layer)
+                             :do (loop :for x :from 0 :below (tiled-layer-width layer)
+                                       :for tile := (aref data y x)
+                                       :do (when (tile-property tiles-properties tile 'collides)
+                                             (multiple-value-bind (ortho-x ortho-y)
+                                                 (isometric->orthogonal*
+                                                  (coerce x 'double-float)
+                                                  (coerce y 'double-float))
+                                               (setf
+                                                (sparse-matrix-ref
+                                                 (collision-system-map system)
+                                                 (cons (+ (truncate ortho-x) start-x)
+                                                       (+ (truncate ortho-y) start-y)))
+                                                entity))))))))))
+      (character
+       (with-coordinate entity ()
+         ;; TODO : consider character size (#21)
+         (setf
+          (sparse-matrix-ref (collision-system-characters-map system) (cons (round x) (round y)))
+          entity))))))
 
-(defhandler collision-system entity-deleted (event entity)
-  :filter '(has-component-p (gethash :map *systems*) entity) ;; HACK: *map-system* does not work here
-  (with-system-slots ((map) collision-system system)
-    (sparse-matrix-traverse
-     map
-     #'(lambda (position value)
-         (when (= value entity)
-           (sparse-matrix-remove map position))))))
+(defhandler (collision-system entity-deleted)
+  (let ((entity (entity-deleted-entity event)))
+    (cond
+      ((has-component-p :map entity)
+       (with-system-slots ((map) collision-system system)
+         (sparse-matrix-traverse
+          map
+          #'(lambda (position value)
+              (when (= value entity)
+                (sparse-matrix-remove map position))))))
+      ((has-component-p :character entity)
+       (with-coordinate entity ()
+         (sparse-matrix-remove
+          (collision-system-characters-map system) (cons (round x) (round y))))))))
 
-(defhandler collision-system component-created (event entity system-name)
-  :filter '(eq system-name 'character)
-  (with-coordinate entity ()
-    ;; TODO : consider character size (#21)
-    (setf (sparse-matrix-ref (collision-system-characters-map system) (cons (round x) (round y)))
-          entity)))
-
-(defhandler collision-system entity-deleted (event entity)
-  :filter '(has-component-p (gethash :character *systems*) entity) ;; HACK
-  (with-coordinate entity ()
-    (sparse-matrix-remove (collision-system-characters-map system) (cons (round x) (round y)))))
-
-(defhandler collision-system character-moved (event entity old-x old-y new-x new-y)
+(defhandler (collision-system character-moved)
   ;; TODO : consider character size (#21)
-  (let ((old-int-x (round old-x))
-        (old-int-y (round old-y))
-        (new-int-x (round new-x))
-        (new-int-y (round new-y)))
+  (let ((old-int-x (round (character-moved-old-x event)))
+        (old-int-y (round (character-moved-old-y event)))
+        (new-int-x (round (character-moved-new-x event)))
+        (new-int-y (round (character-moved-new-y event))))
     (unless (and (= old-int-x new-int-x) (= old-int-y new-int-y))
       (with-system-slots ((characters-map) collision-system system)
         (sparse-matrix-remove characters-map (cons old-int-x old-int-y))
         (setf (sparse-matrix-ref characters-map (cons new-int-x new-int-y))
-              entity)))))
+              (character-moved-entity event))))))
 
-(defhandler collision-system entity-died (event entity)
-  (with-coordinate entity ()
-    (sparse-matrix-remove (collision-system-characters-map system) (cons (round x) (round y)))))
+(defhandler (collision-system entity-died)
+  (with-coordinate (entity-died-entity event) ()
+      (sparse-matrix-remove (collision-system-characters-map system) (cons (round x) (round y)))))
 
 (declaim (inline character-at) (ftype (function (fixnum fixnum) fixnum) character-at))
 (defun character-at (x y)

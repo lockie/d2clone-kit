@@ -26,12 +26,18 @@ See MAKE-PREFAB-COMPONENT"))
     (sparse-array-index-grow components-index new-size)))
 
 (declaim
- (inline has-component-p)
- (ftype (function (system fixnum) boolean) has-component-p))
-(defun has-component-p (system entity)
-  "Returns T when ENTITY has the SYSTEM's component in it."
+ (inline %has-component-p)
+ (ftype (function (system fixnum) boolean) %has-component-p))
+(defun %has-component-p (system entity)
   (when-let ((components-index (system-components-index system)))
     (index-valid-p (sparse-array-index-ref components-index entity))))
+
+(declaim
+ (inline has-component-p)
+ (ftype (function (keyword fixnum) boolean) has-component-p))
+(defun has-component-p (system entity)
+  "Returns T when ENTITY has the SYSTEM's component in it."
+  (%has-component-p (gethash system *systems*) entity))
 
 (defmacro defsoa (name &rest slots)
   "Defines structure-of-arrays with NAME and SLOTS and corresponding accessors."

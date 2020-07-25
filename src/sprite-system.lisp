@@ -331,7 +331,7 @@ The following format features are unsupported yet:
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
                      (+ y (truncate *tile-height* -2)
-                        (if (and (has-component-p *hp-system* entity)
+                        (if (and (has-component-p :hp entity)
                                  (deadp entity))
                             (- (coerce (/ display-height *tile-height*)
                                        'double-float))
@@ -345,14 +345,16 @@ The following format features are unsupported yet:
                 (when debug-sprite
                   (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
 
-(defhandler sprite-system entity-died (event entity damage-fraction)
-  (with-sprite entity ()
-    (let ((new-stance
-            (if (and (gethash :critdeath stances)
-                     (> damage-fraction 0.1d0))
-                :critdeath
-                :death)))
-      (setf stance new-stance)
-      (setf frame (first (gethash new-stance stances)))
-      (setf time-counter 0d0)
-      (issue sprite-stance-changed :entity entity :stance new-stance))))
+(defhandler (sprite-system entity-died)
+  (let ((entity (entity-died-entity event))
+        (damage-fraction (entity-died-damage-fraction event)))
+    (with-sprite entity ()
+      (let ((new-stance
+              (if (and (gethash :critdeath stances)
+                       (> damage-fraction 0.1d0))
+                  :critdeath
+                  :death)))
+        (setf stance new-stance)
+        (setf frame (first (gethash new-stance stances)))
+        (setf time-counter 0d0)
+        (issue sprite-stance-changed :entity entity :stance new-stance)))))

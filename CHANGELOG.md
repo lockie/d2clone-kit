@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ECS systems refactored to defstructs for performance reasons.
 - Refactored invalid entity mechanics.
 - ECS components refactored to sparse SoA arrays for performance and memory consumption reasons.
+- Radically simplified events subsystem.
 
 ### Removed
 - Obsolete console-system stub.

@@ -1,14 +1,23 @@
 (in-package :d2clone-kit)
 
-(defunl handle-event (event)
-  "Broadcasts liballegro event EVENT through ECS systems.
-Returns T when EVENT is not :DISPLAY-CLOSE."
-  (let ((event-type
-          (cffi:foreign-slot-value event '(:union al:event) 'al::type)))
-    (issue allegro-event
-      :event event
-      :event-type event-type)
-    (not (eq event-type :display-close))))
+(declaim
+ (inline ui-handle-event)
+ (ftype (function (cffi:foreign-pointer) boolean) ui-handle-event))
+(defun ui-handle-event (event)
+  (and (ui-on-p)
+       (positive-fixnum-p (the fixnum (nk:allegro-handle-event event)))))
+
+(declaim
+ (inline systems-handle-event)
+ (ftype (function (cffi:foreign-pointer) boolean) systems-handle-event))
+(defun systems-handle-event (event)
+  (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
+         (allegro-event (make-allegro-event :type type :struct event)))
+    (declare (dynamic-extent allegro-event))
+    ;; NOTE : processing allegro event without queueing, because event struct is stack allocated
+    (with-systems system
+      (process-event system allegro-event))
+    (not (eq type :display-close))))
 
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   "Runs game loop."
@@ -26,12 +35,9 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
         (loop :do
           (nk:with-input (ui-context)
             (unless (loop :while (al:get-next-event event-queue event)
-                          :always
-                          (or
-                           (and (ui-on-p)
-                                (positive-fixnum-p (the fixnum (nk:allegro-handle-event event))))
-                           (handle-event event)))
+                          :always (or (ui-handle-event event) (systems-handle-event event)))
               (loop-finish)))
+          (process-events)
           (let ((current-tick (al:get-time)))
             (when (> (- current-tick last-repl-update) repl-update-interval)
               (livesupport:update-repl-link)
@@ -144,6 +150,7 @@ Returns T when EVENT is not :DISPLAY-CLOSE."
                    "game loop"
                    (game-loop event-queue))))
           (log-info "Shutting engine down")
+          (growable-vector-clear *event-queue*)
           (when (entity-valid-p *session-entity*)
             (delete-entity *session-entity*))
           (setf *session-entity* +invalid-entity+)

@@ -20,9 +20,10 @@
     (when (entity-valid-p ui-entity)
       (delete-entity ui-entity))))
 
-(defhandler menu-system allegro-event (event event-type)
-  :filter '(eq event-type :key-down)
-  (let ((allegro-event (slot-value event 'event)))
-    (when (eq (cffi:foreign-slot-value allegro-event '(:struct al:keyboard-event) 'al::keycode)
-              :escape)
-      (toggle-ui (menu-system-ui-entity system)))))
+(defhandler (menu-system allegro-event
+             :filter (eq (allegro-event-type event) :key-down))
+  (when (eq (cffi:foreign-slot-value
+             (allegro-event-struct event) '(:struct al:keyboard-event) 'al::keycode)
+            :escape)
+    (toggle-ui (menu-system-ui-entity system))))
+
