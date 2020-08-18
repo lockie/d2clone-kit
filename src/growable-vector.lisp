@@ -92,7 +92,7 @@ greater than current allocated size)."
 (defun growable-vector-pop (growable-vector &optional index)
   "Removes and returns element with INDEX from GROWABLE-VECTOR.
 If INDEX is not given, removes and returns last element."
-  (let* ((idx (if index index (growable-vector-length growable-vector)))
+  (let* ((idx (if index index (1- (growable-vector-length growable-vector))))
          (value (growable-vector-ref growable-vector idx))
          (vector (%growable-vector-vector growable-vector)))
     (replace vector vector :start1 idx :start2 (1+ idx))
