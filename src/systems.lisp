@@ -150,12 +150,25 @@ See RENDER"))
   (:system-name2 :prefab :prefab-name)
   ;; ...
   )
-```"
-  (loop :with entity := (make-entity parent)
-        :for component :in spec
-        :for system := (gethash (car component) *systems*)
-        :for parameters := (cdr component)
-        :unless system
-          :do (error "No such system: ~s" (car component))
-        :do (apply #'make-component system entity parameters)
-        :finally (return entity)))
+```
+
+The components are initialized in the order specified by system's order.
+
+See SYSTEM-ORDER"
+  (let ((components (mapcar
+                     #'(lambda (component)
+                         (if-let (system (gethash (car component) *systems*))
+                           (cons system (cdr component))
+                           (error "No such system: ~s" (car component))))
+                     spec)))
+    (sort components
+          #'(lambda (a b)
+              (declare (type fixnum a b))
+              (< a b))
+          :key #'(lambda (c) (system-order (car c))))
+    (loop :with entity := (make-entity parent)
+          :for component :in components
+          :for system := (car component)
+          :for parameters := (cdr component)
+          :do (apply #'make-component system entity parameters)
+          :finally (return entity))))

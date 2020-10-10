@@ -7,7 +7,8 @@
 
 (defsystem coordinate
   ()
-  (:documentation "Stores orthogonal world coordinates."))
+  (:documentation "Stores orthogonal world coordinates."
+   :order -5))
 
 ;; TODO : deal with types
 ;; (deftype coordinate () `(integer ,(truncate most-negative-fixnum 256)
