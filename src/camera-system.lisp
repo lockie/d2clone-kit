@@ -87,7 +87,7 @@ See ABSOLUTE->VIEWPORT"
      (> y (- height))
      (< y display-height))))
 
-(defmethod system-update ((system camera-system) dt)
+(defmethod system-update ((system camera-system))
   (let ((target (camera-system-target system)))
     (when (entity-valid-p target)
       (with-camera (camera-x camera-y)

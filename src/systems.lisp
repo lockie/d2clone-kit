@@ -119,11 +119,11 @@ If READ-ONLY is T (the default), slots are not SETF-able."
 (defmethod system-finalize ((system system))
   (declare (ignore system)))
 
-(defgeneric system-update (system dt)
+(defgeneric system-update (system) ;; TODO think about optimizing calling that in loop
   (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
 
-(defmethod system-update ((system system) dt)
-  (declare (ignore system) (ignore dt)))
+(defmethod system-update ((system system))
+  (declare (ignore system)))
 
 (defgeneric system-draw (system renderer)
   (:documentation "Renders system SYSTEM using functional renderer RENDERER.

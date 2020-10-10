@@ -65,6 +65,7 @@
    ;; d2clone-kit.lisp
    (:export
     #:handle-event
+    #:*delta-time*
     #:game-loop
     #:new-game
     #:game-started-p

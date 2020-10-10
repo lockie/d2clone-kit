@@ -117,7 +117,7 @@ undesired side effects like processing the same event by different windows."
     (al:destroy-font font-medium)
     (al:destroy-font font-large)))
 
-(defmethod system-update ((system ui-system) dt)
+(defmethod system-update ((system ui-system))
   (with-system-slots ((nuklear-context) ui-system system)
     (with-uis
         (when on

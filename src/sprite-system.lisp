@@ -271,8 +271,7 @@ The following format features are unsupported yet:
       (setf time-counter 0d0)
       (issue sprite-stance-changed :entity entity :stance new-stance))))
 
-(defmethod system-update ((system sprite-system) dt)
-  (declare (type double-float dt))
+(defmethod system-update ((system sprite-system))
   (with-sprites
     (incf time-counter dt)
     (let ((time-delta (the double-float (elt frame-durations frame))))

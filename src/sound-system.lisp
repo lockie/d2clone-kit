@@ -59,7 +59,7 @@
   (with-sound entity ()
     (al:stop-sample-instance sample-instance)))
 
-(defmethod system-update ((system sound-system) dt)
+(defmethod system-update ((system sound-system))
   (with-sounds
       (if (al:get-sample-instance-playing sample-instance)
           (set-sound-position entity)
