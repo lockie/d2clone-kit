@@ -20,5 +20,5 @@
   (priority-queue-traverse
    renderer
    #'(lambda (item)
-       (funcall (cdr item))))
+       (funcall (the function (cdr item)))))
   (priority-queue-clear renderer))
