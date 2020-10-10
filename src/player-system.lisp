@@ -78,7 +78,7 @@
       (:mouse-button-up
        (when (= 1 (cffi:foreign-slot-value struct '(:struct al:mouse-event) 'al::button))
          (setf (player-system-mouse-pressed-p system) nil
-               (player-system-last-target system) -1))))))
+               (player-system-last-target system) +invalid-entity+))))))
 
 (defmethod system-initialize ((system player-system))
   (with-system-config-options ((debug-cursor))
