@@ -102,7 +102,7 @@
     (when (entity-valid-p debug-entity)
       (delete-entity debug-entity))))
 
-(defmethod system-update ((system player-system) dt)
+(defmethod system-update ((system player-system))
   (with-system-slots ((mouse-pressed-p last-target) player-system system)
     (unless (and (entity-valid-p last-target)
                  (deadp last-target))

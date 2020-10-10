@@ -85,7 +85,7 @@
 (defmethod system-finalize ((system debug-system))
   (al:destroy-font (debug-system-font system)))
 
-(defmethod system-update ((system debug-system) dt)
+(defmethod system-update ((system debug-system))
   (with-debug-buffers
       (growable-vector-clear points)))
 

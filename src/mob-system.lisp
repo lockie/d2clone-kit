@@ -13,7 +13,7 @@
   (destructuring-bind (&key name (vision-range 10d0)) parameters
     (make-mob entity :name name :vision-range vision-range)))
 
-(defmethod system-update ((system mob-system) dt)
+(defmethod system-update ((system mob-system))
   (let ((player-entity (player-entity)))
     (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
       (with-coordinate player-entity (player-x player-y)

@@ -147,7 +147,7 @@ conversion maths are badly fucked up."))
   (setf *tile-width* 0)
   (setf *tile-height* 0))
 
-(defmethod system-update ((system map-system) dt)
+(defmethod system-update ((system map-system))
   (flet
       ((intp (n) (zerop (mod n 1))))
     (with-map-chunks

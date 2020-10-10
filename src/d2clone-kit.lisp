@@ -19,6 +19,10 @@
       (process-event system allegro-event))
     (not (eq type :display-close))))
 
+(declaim (type double-float *delta-time*))
+(global-vars:define-global-var *delta-time* 0d0
+  "Delta time between current frame and the previous one, in seconds.")
+
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   "Runs game loop."
   (gc :full t)
@@ -45,9 +49,10 @@
             (when display-fps
               ;; TODO : smooth FPS counter, like in allegro examples
               (add-debug-text :fps "FPS: ~d" (round 1 (- current-tick last-tick))))
+            (setf *delta-time* (- current-tick last-tick))
             (with-systems sys
               ;; TODO : replace system-update with event?.. maybe even system-draw too?..
-              (system-update sys (- current-tick last-tick)))
+              (system-update sys))
             (with-systems sys
               (system-draw sys renderer))
             (al:clear-to-color (al:map-rgb 0 0 0))
