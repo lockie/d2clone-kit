@@ -76,7 +76,7 @@ boolean property *collides* to *true* in Tiled tileset."))
 
 (declaim (inline character-at) (ftype (function (fixnum fixnum) fixnum) character-at))
 (defun character-at (x y)
-  "Returns character entity at ingeter map coordinates X, Y or NIL if there's no character there."
+  "Returns character entity at integer map coordinates X, Y or NIL if there's no character there."
   (values (sparse-matrix-ref (collision-system-characters-map *collision-system*) (cons x y))))
 
 (declaim
