@@ -153,7 +153,8 @@
     #:main-menu)
    ;; mob-system.lisp
    (:export
-    #:mob-system)
+    #:mob-system
+    #:draw-mob-health-bar)
    ;; player-system.lisp
    (:export
     #:player-system

@@ -15,27 +15,24 @@
                     :prefab :loot
                     :layers-initially-toggled (list type))))
 
-(defmethod system-draw ((system item-system) renderer)
-  (with-items
-    (when (has-component-p :coordinate entity)
-      (with-screen-coordinate entity (screen-x screen-y)
-        (multiple-value-bind (x y)
-            (absolute->viewport screen-x screen-y)
-          (when (visiblep x y *tile-width*)
-            (render
-             renderer
-             9000d0
-             (let ((type type)
-                   (x x)
-                   (y y))
-               #'(lambda ()
-                   ;; TODO : prevent text overlap
-                   (let* ((text (string-capitalize (substitute #\Space #\- (string type))))
-                          (width (al:get-text-width (ui-font-large) text)))
-                     (al:draw-filled-rectangle x y (+ x width) (+ y 20)
-                                               (al:map-rgba 10 10 10 160))
-                     (al:draw-text (ui-font-large)
-                                   (al:map-rgba 255 255 255 0) x y 0 text)))))))))))
+(defun draw-item-text (item-entity renderer)
+  "Draws a text above an item for ITEM-ENTITY with RENDERER."
+  (with-item item-entity ()
+    (with-screen-coordinate item-entity (screen-x screen-y)
+      (multiple-value-bind (x y)
+          (absolute->viewport screen-x screen-y)
+        (render
+         renderer
+         9000d0
+         (let ((type type) (x x) (y y))
+           #'(lambda ()
+               ;; TODO : prevent text overlap
+               (let* ((text (string-capitalize (substitute #\Space #\- (string type))))
+                      (width (al:get-text-width (ui-font-large) text)))
+                 (al:draw-filled-rectangle x y (+ x width) (+ y 20)
+                                           (al:map-rgba 10 10 10 160))
+                 (al:draw-text (ui-font-large)
+                               (al:map-rgba 255 255 255 0) x y 0 text)))))))))
 
 (define-constant +item-neighbours+ '((1 . 1)
                                      (1 . 0)
