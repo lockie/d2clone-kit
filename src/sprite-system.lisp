@@ -278,31 +278,54 @@ The following format features are unsupported yet:
       (setf time-counter 0d0)
       (issue sprite-stance-changed :entity entity :stance new-stance))))
 
+(declaim
+ (inline frame-finished-p)
+ (ftype (function (fixnum) (or null double-float)) frame-finished-p))
+(defun frame-finished-p (entity)
+  "Returns generalized boolean indicating whether current animation frame of
+ENTITY is finished and should be switched to the next one. If the latter is
+the case, return the double float representing the amount of time during which
+it was."
+  (with-sprite entity ()
+    (let* ((frame-duration (the double-float (elt frame-durations frame)))
+           (frame-duration-left (- frame-duration *delta-time*)))
+      (if (> time-counter frame-duration-left)
+          frame-duration-left
+          nil))))
+
+(declaim
+ (inline stance-finished-p)
+ (ftype (function (fixnum) boolean) stance-finished-p))
+(defun stance-finished-p (entity)
+  "Returns whether current stance of animation of ENTITY is played through."
+  (with-sprite entity ()
+    (and (frame-finished-p entity)
+         (= frame (the fixnum (car (last (gethash stance stances))))))))
+
 (defmethod system-update ((system sprite-system))
   (with-sprites
-    (incf time-counter dt)
-    (let ((time-delta (the double-float (elt frame-durations frame))))
-      (when (> time-counter time-delta)
-        (decf time-counter time-delta)
-        (let* ((all-frames (gethash stance stances))
-               (remaining-frames (cdr (member frame all-frames :test #'=)))
-               (data (aref frame-data frame))
-               (next-stance (values (gethash :next-stance data)))
-               (last-stance (values (gethash :last-stance data))))
-          (setf frame
-                (cond
-                  (remaining-frames
-                   (first remaining-frames))
-                  (last-stance
-                   frame)
-                  (next-stance
-                   (setf stance next-stance)
-                   (issue sprite-stance-changed :entity entity :stance next-stance)
-                   (first (gethash next-stance stances)))
-                  (t
-                   (setf stance :idle)
-                   (issue sprite-stance-changed :entity entity :stance :idle)
-                   (first (gethash :idle stances))))))))))
+    (if-let (frame-duration-left (frame-finished-p entity))
+      (let* ((all-frames (gethash stance stances))
+             (remaining-frames (cdr (member frame all-frames :test #'=)))
+             (data (aref frame-data frame))
+             (next-stance (values (gethash :next-stance data)))
+             (last-stance (values (gethash :last-stance data))))
+        (decf time-counter frame-duration-left)
+        (setf frame
+              (cond
+                (remaining-frames
+                 (first remaining-frames))
+                (last-stance
+                 frame)
+                (next-stance
+                 (setf stance next-stance)
+                 (issue sprite-stance-changed :entity entity :stance next-stance)
+                 (first (gethash next-stance stances)))
+                (t
+                 (setf stance :idle)
+                 (issue sprite-stance-changed :entity entity :stance :idle)
+                 (first (gethash :idle stances))))))
+      (incf time-counter *delta-time*))))
 
 (defconstant +isometric-angle+ (* pi (/ 45 180)))
 
