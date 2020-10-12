@@ -63,10 +63,11 @@
               (if-let (target (and
                                (not mouse-pressed-p)
                                (character-under-cursor new-x new-y)))
-                (attack player-entity (setf last-target target))
-                (with-combat player-entity ()
-                  (setf target -1)
-                  (set-character-target player-entity new-x new-y)))))))))
+                (unless (= target player-entity)
+                  (attack player-entity (setf last-target target)))
+                (if-let (item (item-at (round new-x) (round new-y)))
+                  (make-item-pickup-action player-entity :target item)
+                  (move player-entity new-x new-y)))))))))
 
 (defhandler (player-system allegro-event)
   (let ((struct (allegro-event-struct event)))

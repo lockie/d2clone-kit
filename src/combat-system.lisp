@@ -7,10 +7,54 @@
    :order 1))
 
 (defcomponent (combat)
-  (target +invalid-entity+ :type fixnum)
   (attack-range nil :type double-float)
   (min-damage nil :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
   (max-damage nil :type double-float))
+
+(defaction swing
+    ((target +invalid-entity+ :type fixnum))
+    (:documentation "Close combat attack action.")
+
+  (defmethod initialize-action ((type (eql :swing)) action)
+    (let ((entity (action-entity action)))
+      (with-swing-action action ()
+        (with-combat entity ()
+          (make-track-action entity
+                             :parent action
+                             :target target
+                             :target-distance attack-range)))))
+
+  (defmethod finalize-action ((type (eql :swing)) action)
+    (switch-stance (action-entity action) :idle)))
+
+(defconstant +stun-threshold+ 0.08d0)
+
+(defperformer swing (action target)
+  (let* ((entity (action-entity action)))
+    (with-combat entity ()
+      (with-coordinate entity (current-x current-y)
+        (with-coordinate target (attack-target-x attack-target-y)
+          (if (> (euclidean-distance attack-target-x attack-target-y current-x current-y)
+                 attack-range)
+              (when (and (not (index-valid-p (action-child action)))
+                         (or (not (eq (current-stance entity) :swing))
+                             (stance-finished-p entity)))
+                (delete-action action))
+              (with-sprite entity ()
+                (unless (eq (current-stance entity) :swing)
+                  (setf angle (face-target current-x current-y attack-target-x attack-target-y)))
+                (switch-stance entity :swing)
+                (when (stance-finished-p entity)
+                  (with-hp target (target-max-hp target-current-hp)
+                    ;; TODO : refactor out damage / stuns
+                    (with-combat entity ()
+                      (let ((damage (+ min-damage (random (- max-damage min-damage)))))
+                        (set-hp target (- target-current-hp damage))
+                        (when (> damage (* target-max-hp +stun-threshold+))
+                          (unless (zerop target-current-hp)
+                            (switch-stance target :hit))
+                          (delete-entity-actions target))))
+                    (delete-action action))))))))))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
   (destructuring-bind (&key (attack-range 2d0) (min-damage 1d0) max-damage) parameters
@@ -22,51 +66,7 @@
 (declaim (ftype (function (fixnum fixnum)) attack))
 (defun attack (attacker-entity target-entity)
   "Initiates a close combat attack of TARGET-ENTITY by ATTACKER-ENTITY."
-  (unless (= attacker-entity target-entity)  ;; prevent self-harm lol
-    (with-sprite attacker-entity ()
-      (unless (eq stance :swing)
-        (with-combat attacker-entity ()
-          (setf target target-entity))))))
-
-(defconstant +stun-threshold+ 0.08d0)
-
-(defmethod system-update ((system combat-system) dt)
-  (with-combats
-      (unless (or (not (entity-valid-p target)) (deadp entity))
-        (with-sprite entity ()
-          (with-coordinate entity (current-x current-y)
-            (with-coordinate target (attack-target-x attack-target-y)
-              (with-character entity ()
-                (cond
-                  ;; track target
-                  ((> (euclidean-distance attack-target-x attack-target-y current-x current-y)
-                      attack-range)
-                   (destructuring-bind (final-target-x . final-target-y)
-                       (if (length= 0 path)
-                           (cons current-x current-y)
-                           (simple-vector-peek path))
-                     (unless (and (= final-target-x attack-target-x)
-                                  (= final-target-y attack-target-y))
-                       (set-character-target entity attack-target-x attack-target-y)
-                       (when (length= 0 path)
-                         (setf target +invalid-entity+)))))
-                  ;; start the blow
-                  (t
-                   (stop-entity entity)
-                   (setf angle (face-target current-x current-y attack-target-x attack-target-y))
-                   (switch-stance entity :swing)))
-                ;; land the blow
-                (when (and (entity-valid-p target)  ;; zero-length path case
-                           (eq stance :swing)
-                           (= frame (the fixnum (car (last (gethash :swing stances))))))
-                  (when (<= (euclidean-distance target-x target-y current-x current-y)
-                            attack-range)
-                    (with-hp target (target-max-hp target-current-hp)
-                      (let ((damage (+ min-damage (random (- max-damage min-damage)))))
-                        (set-hp target (- target-current-hp damage))
-                        (when (> damage (* target-max-hp +stun-threshold+))
-                          (unless (zerop target-current-hp)
-                            (switch-stance target :hit))
-                          (with-combat target (targets-target)
-                            (setf targets-target +invalid-entity+))))))
-                  (setf target +invalid-entity+)))))))))
+  (if-let (swing-action (has-action-p attacker-entity :swing))
+    (with-swing-action swing-action ()
+      (setf target target-entity))
+    (make-swing-action attacker-entity :target target-entity)))

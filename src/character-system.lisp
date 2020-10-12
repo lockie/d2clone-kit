@@ -9,22 +9,116 @@
 
 (defcomponent (character)
   (speed nil :type double-float)
-  (target-x nil :type double-float)
-  (target-y nil :type double-float)
-  (path (make-array 0) :type simple-vector)
   (debug-entity +invalid-entity+ :type fixnum))
 
+(defaction move
+    ((target-x nil :type double-float)
+     (target-y nil :type double-float)
+     (path (make-array 0) :type simple-vector))
+    (:documentation "The movement action.")
+
+  (defmethod initialize-action ((type (eql :move)) action)
+    (let ((entity (action-entity action)))
+      (with-move-action action ()
+        (with-coordinate entity ()
+          (multiple-value-bind (new-target-x new-target-y)
+              ;; make sure new target is walkable
+              (closest-walkable-point entity x y target-x target-y)
+            (when (or (length= 0 path)
+                      (destructuring-bind (current-target-x . current-target-y)
+                          (simple-vector-peek path)
+                        (> (euclidean-distance
+                            new-target-x new-target-y
+                            current-target-x current-target-y)
+                           1d0)))
+              (setf path (a* x y new-target-x new-target-y))
+              (if (length= 0 path)
+                  (setf target-x new-target-x
+                        target-y new-target-y)
+                  (follow-path action))))))))
+
+  (defmethod finalize-action ((type (eql :move)) action)
+    (switch-stance (action-entity action) :idle)))
+
+(defperformer move (action target-x target-y path)
+  (let ((entity (action-entity action)))
+    (with-coordinate entity ()
+      (with-sprite entity ()
+        (if (not (approx-equal angle (face-target x y target-x target-y)))
+            (if (length= 0 path)
+                ;; reach the destination
+                (delete-action action)
+                (follow-path action))
+            (with-character entity ()
+              (let* ((delta (* *delta-time* speed))
+                     (direction-x (* delta (cos angle)))
+                     (direction-y (* delta (sin angle))))
+                (cond
+                  ((collidesp (round (+ x direction-x))
+                              (round (+ y direction-y))
+                              :character entity)
+                   ;; stumble upon an obstacle
+                   (delete-action action))
+                  (t
+                   (issue character-moved
+                          :entity entity
+                          :old-x x
+                          :old-y y
+                          :new-x (incf x direction-x)
+                          :new-y (incf y direction-y))
+                   (switch-stance entity :walk))))))))))
+
+(defaction track
+    ((target +invalid-entity+ :type fixnum)
+     (target-distance 2d0 :type double-float))
+    (:documentation "The entity tracking action.")
+
+  (defmethod initialize-action ((type (eql :track)) action)
+    (let ((entity (action-entity action)))
+      (with-track-action action ()
+        (with-coordinate entity (current-x current-y)
+          (with-coordinate target (target-x target-y)
+            (if (<= (euclidean-distance target-x target-y current-x current-y)
+                    (+ 0.0d0 target-distance))
+                (delete-action action)
+                (make-move-action entity :parent action :target-x target-x :target-y target-y))))))))
+
+(defperformer track (action target target-distance)
+  (let* ((entity (action-entity action))
+         (child-action (action-child action)))
+    (with-coordinate entity (current-x current-y)
+      (with-coordinate target (target-x target-y)
+        (if (> (euclidean-distance target-x target-y current-x current-y)
+               target-distance)
+            (if (not (index-valid-p (action-child action)))
+                (delete-action action) ;; movement action has stuck, stop current action
+                (multiple-value-bind (new-target-x new-target-y)
+                    (closest-walkable-point entity current-x current-y target-x target-y)
+                  (with-move-action child-action (move-target-x move-target-y path)
+                    (destructuring-bind (current-target-x . current-target-y)
+                        (if (length= 0 path)
+                            (cons move-target-x move-target-y)
+                            (simple-vector-peek path))
+                      (declare (type double-float current-target-x current-target-y))
+                      (unless (and (= current-target-x new-target-x)
+                                   (= current-target-y new-target-y))
+                        (setf move-target-x new-target-x
+                              move-target-y new-target-y
+                              path (make-array 0))
+                        (initialize-action :move child-action))))))
+            ;; reach the destination
+            (when (or (not (eq (current-stance entity) :walk))
+                      (stance-finished-p entity))
+              (delete-action action)))))))
+
 (defmethod make-component ((system character-system) entity &rest parameters)
-  (with-coordinate entity ()
-    (destructuring-bind (&key (speed 2d0) (target-x x) (target-y y)) parameters
-      (with-system-config-options ((debug-path))
-        (make-character entity
-                        :speed speed
-                        :target-x target-x
-                        :target-y target-y
-                        :debug-entity (if debug-path
-                                          (make-object '((:debug :order 1050d0)) entity)
-                                          +invalid-entity+))))))
+  (destructuring-bind (&key (speed 2d0)) parameters
+    (with-system-config-options ((debug-path))
+      (make-character entity
+                      :speed speed
+                      :debug-entity (if debug-path
+                                        (make-object '((:debug :order 1050d0)) entity)
+                                        +invalid-entity+)))))
 
 (declaim
  (inline euclidean-distance)
@@ -167,16 +261,17 @@ at point TARGET-X, TARGET-Y."
         (- target-x character-x)))
 
 (declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
-(defun follow-path (character-entity)
-  (with-coordinate character-entity ()
-    (with-sprite character-entity ()
-      (with-character character-entity ()
-        (multiple-value-bind (target new-path)
-            (simple-vector-pop path)
-          (setf path new-path
-                target-x (car target)
-                target-y (cdr target)
-                angle (face-target x y target-x target-y)))))))
+(defun follow-path (move-action-index)
+  (let ((entity (action-entity move-action-index)))
+    (with-coordinate entity ()
+      (with-sprite entity ()
+        (with-move-action move-action-index ()
+          (multiple-value-bind (target new-path)
+              (simple-vector-pop path)
+            (setf path new-path
+                  target-x (car target)
+                  target-y (cdr target)
+                  angle (face-target x y target-x target-y))))))))
 
 (declaim
  (ftype (function ((or null fixnum) double-float double-float double-float double-float)
@@ -198,71 +293,23 @@ at point TARGET-X, TARGET-Y."
 
 ;; TODO : some sort of generic SoA class/macro with getter/setter functions
 (declaim
- (ftype (function (fixnum double-float double-float)) set-character-target))
-(defun set-character-target (entity new-target-x new-target-y)
+ (ftype (function (fixnum double-float double-float)) move))
+(defun move (entity new-target-x new-target-y)
   "Sets character ENTITY new movement target to NEW-TARGET-X, NEW-TARGET-Y."
-  (with-coordinate entity ()
-    (multiple-value-bind (new-target-x new-target-y)
-        ;; make sure new target is walkable
-        (closest-walkable-point entity x y new-target-x new-target-y)
-      (with-character entity ()
-        (when (or (zerop (length path))
-                  (destructuring-bind (current-target-x . current-target-y)
-                      (simple-vector-peek path)
-                    (> (euclidean-distance
-                        new-target-x new-target-y
-                        current-target-x current-target-y)
-                       1d0)))
-          (setf path (a* x y new-target-x new-target-y))
-          (if (zerop (length path))
-              (setf target-x new-target-x
-                    target-y new-target-y)
-              (follow-path entity)))))))
+  (let ((move-action (has-action-p entity :move)))
+    (if (and move-action
+             (not (index-valid-p (action-parent move-action))))
+        (with-move-action move-action ()
+          (setf target-x new-target-x
+                target-y new-target-y)
+          (initialize-action :move move-action))
+        (make-move-action entity :target-x new-target-x :target-y new-target-y))))
 
 (declaim
  (inline approx-equal)
  (ftype (function (double-float double-float &optional double-float) boolean) approx-equal))
 (defun approx-equal (a b &optional (epsilon 0.05d0))
   (< (abs (- a b)) epsilon))
-
-(declaim
- (inline stop-entity)
- (ftype (function (fixnum)) stop-entity))
-(defun stop-entity (entity)
-  "Stops the ENTITY from moving."
-  (with-coordinate entity ()
-    (with-character entity ()
-      (setf target-x x
-            target-y y
-            path (make-array 0)))))
-
-(defmethod system-update ((system character-system) dt)
-  (with-characters
-      (when (stance-interruptible-p entity)
-        (with-coordinate entity ()
-          (with-sprite entity ()
-            (let ((delta (* dt speed)))
-              (if (not (approx-equal angle (face-target x y target-x target-y)))
-                  (if (length= 0 path)
-                      (when (eq stance :walk)
-                        (switch-stance entity :idle))
-                      (follow-path entity))
-                  (let ((direction-x (* delta (cos angle)))
-                        (direction-y (* delta (sin angle))))
-                    (cond
-                      ((collidesp (round (+ x direction-x))
-                                  (round (+ y direction-y))
-                                  :character entity)
-                       (stop-entity entity)
-                       (switch-stance entity :idle))
-                      (t
-                       (let ((old-x x)
-                             (old-y y))
-                         (incf x direction-x)
-                         (incf y direction-y)
-                         (issue character-moved
-                                :entity entity :old-x old-x :old-y old-y :new-x x :new-y y))
-                       (switch-stance entity :walk)))))))))))
 
 (defmethod system-draw ((system character-system) renderer)
   (flet ((path-node-pos (x y)
@@ -274,17 +321,26 @@ at point TARGET-X, TARGET-Y."
               (+ screen-y (floor *tile-height* 2))))))
     (with-system-config-options ((debug-path))
       (when debug-path
-        (with-characters
-            (loop
-              :with r := (first debug-path)
-              :with g := (second debug-path)
-              :with b := (third debug-path)
-              :with a := (fourth debug-path)
-              :for path-node :across path
-              :for start := t :then nil
-              :for node-x := (car path-node)
-              :for node-y := (cdr path-node)
-              :for (x y) := (multiple-value-list (path-node-pos node-x node-y))
-              :do (unless start
-                    (add-debug-point debug-entity x y r g b a))
-                  (add-debug-point debug-entity x y r g b a)))))))
+        (with-move-actions (action target-x target-y path)
+          (let ((entity (action-entity action)))
+            (with-character entity ()
+              (unless (= entity (player-entity))
+                (multiple-value-bind (x y)
+                    (multiple-value-call #'absolute->viewport
+                      (orthogonal->screen
+                       (coerce target-x 'double-float)
+                       (coerce target-y 'double-float)))
+                  (add-debug-tile-rhomb debug-entity x y debug-path nil)))
+              (loop
+                :with r := (first debug-path)
+                :with g := (second debug-path)
+                :with b := (third debug-path)
+                :with a := (fourth debug-path)
+                :for path-node :across path
+                :for start := t :then nil
+                :for node-x := (car path-node)
+                :for node-y := (cdr path-node)
+                :for (x y) := (multiple-value-list (path-node-pos node-x node-y))
+                :do (unless start
+                      (add-debug-point debug-entity x y r g b a))
+                    (add-debug-point debug-entity x y r g b a)))))))))

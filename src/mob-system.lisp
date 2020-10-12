@@ -18,16 +18,10 @@
     (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
       (with-coordinate player-entity (player-x player-y)
         (with-mobs
-            (unless (deadp entity)
-              (with-coordinate entity ()
-                (with-character entity ()
-                  (when (or (zerop (length path))
-                            (destructuring-bind (dest-x . dest-y)
-                                (aref path 0)
-                              (or (not (= (the double-float dest-x) player-x))
-                                  (not (= (the double-float dest-y) player-y)))))
-                    (when (< (euclidean-distance x y player-x player-y) vision-range)
-                      (attack entity player-entity)))))))))))
+          (unless (deadp entity)
+            (with-coordinate entity ()
+              (when (< (euclidean-distance x y player-x player-y) vision-range)
+                (attack entity player-entity)))))))))
 
 (defun draw-mob-health-bar (entity renderer)
   "Draws mob's health bar for the mob ENTITY with RENDERER."

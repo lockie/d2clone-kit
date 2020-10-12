@@ -2,14 +2,45 @@
 
 
 (defsystem item
-  ()
+  ((map (make-sparse-matrix) :type sparse-matrix))
   (:documentation "Handles items."))
 
 (defcomponent (item)
   (type nil :type keyword))
 
+(defconstant +item-pickup-range+ 1d0 "Maximum distance at which character could pick up an item.")
+
+(defaction item-pickup
+    ((target +invalid-entity+ :type fixnum :documentation "Item entity."))
+    (:documentation "The item pickup action.")
+
+  (defmethod initialize-action ((type (eql :item-pickup)) action)
+    (let ((entity (action-entity action)))
+      (with-item-pickup-action action ()
+        (make-track-action entity
+                           :parent action
+                           :target target
+                           :target-distance +item-pickup-range+)))))
+
+(defperformer item-pickup (action target track-action)
+  (let* ((entity (action-entity action)))
+    (with-coordinate entity (current-x current-y)
+      (with-coordinate target (target-x target-y)
+        (if (> (euclidean-distance target-x target-y current-x current-y)
+               +item-pickup-range+)
+            (unless (index-valid-p (action-child action))
+              (delete-action action))
+            (progn
+              (delete-action action)
+              (pickup-item target)))))))
+
 (defmethod make-component ((system item-system) entity &rest parameters)
   (destructuring-bind (&key type) parameters
+    (when (has-component-p :coordinate entity)
+      (with-system-slots ((map) item-system system)
+        (with-coordinate entity ()
+          ;; TODO : consider character size (#21)
+          (setf (sparse-matrix-ref map (cons (round x) (round y))) entity))))
     (make-item entity :type type)
     (make-component *sprite-system* entity
                     :prefab :loot
@@ -34,6 +65,11 @@
                  (al:draw-text (ui-font-large)
                                (al:map-rgba 255 255 255 0) x y 0 text)))))))))
 
+(declaim (inline item-at) (ftype (function (fixnum fixnum) (or fixnum null)) item-at))
+(defun item-at (x y)
+  "Returns item entity at integer map coordinates X, Y or NIL if there's no character there."
+  (sparse-matrix-ref (item-system-map *item-system*) (cons x y)))
+
 (define-constant +item-neighbours+ '((1 . 1)
                                      (1 . 0)
                                      (0 . 1)
@@ -42,6 +78,7 @@
   :test #'equal)
 
 (defun drop-item (owner-entity item)
+  "Makes an OWNER-ENTITY drop an item corresponding to keyword ITEM."
   (flet ((entity-tile (entity)
            (with-coordinate entity ()
              (cons (round x) (round y)))))
@@ -79,7 +116,12 @@
   :test #'equal)
 
 (defun pickup-item (item-entity)
+  "Does an actual picking up of ITEM-ENTITY by player."
   ;; TODO : unhardcode
+  (with-system-slots ((map) item-system)
+    (with-coordinate item-entity ()
+      ;; TODO : consider character size (#21)
+      (setf (sparse-matrix-ref map (cons (round x) (round y))) nil)))
   (with-item item-entity ()
     (if (eq type :health-potion)
         (let ((player-entity (player-entity)))
@@ -105,17 +147,6 @@
                     max-damage weapon-max-dmg)))
           (delete-child *session-entity* item-entity)
           (delete-entity item-entity)))))
-
-(defhandler (item-system character-moved
-             :filter (= (character-moved-entity event) (player-entity)))
-  (with-coordinate (player-entity) (player-x player-y)
-    (with-items
-        (when (has-component-p :coordinate entity)
-          (with-coordinate entity ()
-            (when (and (approx-equal x player-x 0.49d0)
-                       (approx-equal y player-y 0.49d0))
-              (pickup-item entity)
-              (return)))))))
 
 (eval-when (:compile-toplevel :load-toplevel)
   ;; https://stackoverflow.com/a/29361029/1336774

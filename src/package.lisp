@@ -2,14 +2,35 @@
 
 #+(and sbcl (not windows)) (require :sb-sprof)
 
+(cl-environments:enable-hook)
+
 (defpackage :d2clone-kit
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
   ;; TODO : don't use :use, see https://git.io/Jfc8D
-  (:use :cl :alexandria :trivial-garbage :parse-float :xmls)
+  (:use #+docs :cl #-docs :static-dispatch-cl :alexandria :trivial-garbage :parse-float :xmls)
   (:import-from :make-hash :make-hash)
   (:import-from :cl-inflector :plural-of)
   (:shadow character)
+   ;; actions.lisp
+   (:export
+    #:current-action
+    #:current-action-of
+    #:has-action-p
+    #:action-type
+    #:action-entity
+    #:action-parent
+    #:action-child
+    #:actions-length
+    #:action-print
+    #:initialize-action
+    #:finalize-action
+    #:delete-action
+    #:delete-entity-actions
+    #:defaction
+    #:defperformer
+    #:process-actions
+    #:finalize-actions)
    ;; camera-system.lisp
    (:export
     #:camera-system
@@ -25,8 +46,7 @@
     #:character-system
     #:a*
     #:face-target
-    #:set-character-target
-    #:stop-entity)
+    #:move)
    ;; collision-system.lisp
    (:export
     #:collision-system
@@ -130,6 +150,15 @@
     #:hp-system
     #:set-hp
     #:deadp)
+   ;; item-system.lisp
+   (:export
+    #:item-system
+    #:+item-pickup-range+
+    #:make-item-pickup-action
+    #:draw-item-text
+    #:item-at
+    #:drop-item
+    #:pickup-item)
    ;; log.lisp
    (:export
     #:defunl

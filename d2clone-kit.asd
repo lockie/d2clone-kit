@@ -18,6 +18,7 @@
                :make-hash
                :parse-float
                :qbase64
+               :static-dispatch
                :trivial-features
                :trivial-garbage
                :trivial-gray-streams
@@ -25,13 +26,16 @@
                :xmls)
   :pathname "src"
   :components ((:file "package")
+               (:file "actions"
+                :depends-on ("entities" "components" "systems" "growable-vector"))
                (:file "aseprite"
                 :depends-on ("fs"))
                (:file "camera-system"
                 :depends-on ("entities" "systems" "config" "coordinate-system"))
                (:file "character-system"
-                :depends-on ("components" "systems" "config" "event-queue" "collision-system"
-                                          "coordinate-system" "sprite-system" "priority-queue"))
+                :depends-on ("components" "systems" "config" "event-queue" "actions"
+                                          "collision-system" "coordinate-system" "sprite-system"
+                                          "priority-queue"))
                (:file "collision-system"
                 :depends-on ("entities" "systems" "sparse-matrix" "config" "event-queue" "events"
                                         "coordinate-system" "map-system"))
@@ -47,7 +51,7 @@
                 :depends-on ("entities" "systems"))
                (:file "d2clone-kit"
                 :depends-on ("entities" "systems" "renderer" "log" "config" "fs" "event-queue"
-                                        "renderer" "player-system" "ui-system"))
+                                        "actions" "player-system" "ui-system"))
                (:file "debug-system"
                 :depends-on ("components" "systems" "renderer" "growable-vector"))
                (:file "entities"
@@ -59,7 +63,7 @@
                 :depends-on ("log"))
                (:file "growable-vector")
                (:file "hp-system"
-                :depends-on ("components" "systems" "event-queue"))
+                :depends-on ("components" "systems" "event-queue" "actions"))
                (:file "item-system"
                 :depends-on ("components" "systems" "renderer" "event-queue" "events"
                                           "combat-system" "coordinate-system" "hp-system"
