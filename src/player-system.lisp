@@ -171,39 +171,17 @@
             (multiple-value-call #'viewport->absolute
               (mouse-position)))
 
-        (flet ((draw-mob-health-bar (entity)
-                 (unless (= entity (player-entity))
-                   (render
-                    renderer
-                    10000d0
-                    (let ((entity entity))
-                      #'(lambda ()
-                          (with-mob entity ()
-                            (with-hp entity ()
-                              (let* ((text-width (al:get-text-width (ui-font-large) name))
-                                     (bar-width (truncate (* (+ text-width 40)
-                                                             (/ current-hp maximum-hp))))
-                                     (name-offset (truncate (- display-width text-width) 2)))
-                                (al:draw-filled-rectangle
-                                 (- name-offset 20) 24
-                                 (+ name-offset text-width 20) 52
-                                 (al:map-rgba 0 0 0 220))
-                                (al:draw-filled-rectangle
-                                 (- name-offset 20) 24
-                                 (+ name-offset bar-width -20) 52
-                                 (al:map-rgba 40 0 0 0))
-                                (al:draw-text
-                                 (ui-font-large)
-                                 (al:map-rgba 255 255 255 10)
-                                 name-offset 26
-                                 0 name))))))))))
-          (with-system-slots ((mouse-pressed-p last-target) player-system system)
-            (if (entity-valid-p last-target)
-                (unless (deadp last-target)
-                  (draw-mob-health-bar last-target))
-                (unless mouse-pressed-p
-                  (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
-                    (draw-mob-health-bar target))))))
+        (when-let (item (item-at (round cursor-map-x) (round cursor-map-y)))
+          (draw-item-text item renderer))
+
+        (with-system-slots ((mouse-pressed-p last-target) player-system system)
+          (if (entity-valid-p last-target)
+              (unless (deadp last-target)
+                (draw-mob-health-bar last-target renderer))
+              (unless mouse-pressed-p
+                (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
+                  (unless (= target (player-entity))
+                    (draw-mob-health-bar target renderer))))))
 
         (with-system-config-options ((debug-cursor))
           (when debug-cursor
