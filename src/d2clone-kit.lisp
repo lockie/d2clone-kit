@@ -50,6 +50,7 @@
               ;; TODO : smooth FPS counter, like in allegro examples
               (add-debug-text :fps "FPS: ~d" (round 1 (- current-tick last-tick))))
             (setf *delta-time* (- current-tick last-tick))
+            (process-actions)
             (with-systems sys
               ;; TODO : replace system-update with event?.. maybe even system-draw too?..
               (system-update sys))
@@ -161,6 +162,7 @@
           (setf *session-entity* +invalid-entity+)
           (finalize-systems)
           (finalize-entities)
+          (finalize-actions)
           (growable-vector-clear *event-queue*)
           (al:inhibit-screensaver nil)
           (al:destroy-user-event-source *event-source*)

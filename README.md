@@ -38,6 +38,7 @@ $ sbcl --quit --eval "(progn (ql:register-local-projects) (ql:quickload :d2clone
 ```
 
 ## Glossary
+* **action** - abstraction of a multi-frame action performed by an entity. Unless stated otherwise, action is represented with its global index.
 * **isometric coordinates** - coordinates in isometric projection.
 * **orthogonal coordinates** - floating point in-game world coordinates. One unit of length corresponds to one map tile width, typically 64 pixels.
 * **prefab** - system-specific object loaded from file and used as a template to create new instances of system's component.

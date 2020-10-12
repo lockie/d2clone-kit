@@ -16,6 +16,11 @@
 (declaim (type hash-table *entities-children*))
 (global-vars:define-global-var *entities-children* (make-hash-table))
 
+(declaim (type growable-vector *current-action*))
+(global-vars:define-global-var* *current-action*
+    (make-growable-vector :initial-element +invalid-index+
+                          :initial-allocated-size *entities-allocated*))
+
 (defunl make-entity (&optional parent)
   "Allocates new entity. When PARENT is set, deleting parent entity automatically deletes it.
 
@@ -28,7 +33,8 @@ See DELETE-ENTITY"
                   (setf *entities-allocated* (round (* *entities-allocated* +array-growth-factor+)))
                   (log-debug "Adjusting component allocated size to ~a" *entities-allocated*)
                   (with-systems system
-                    (system-adjust-components system *entities-allocated*)))
+                    (system-adjust-components system *entities-allocated*))
+                  (growable-vector-grow *current-action* *entities-allocated*))
                 res)
               (growable-vector-pop *deleted-entities* 0))))
     (when parent
@@ -51,6 +57,7 @@ See DELETE-CHILD"
   (dolist (child (gethash entity *entities-children* nil))
     (delete-entity child))
   (remhash entity *entities-children*)
+  (delete-entity-actions entity)
   (issue entity-deleted :entity entity)
   (with-systems system
     (when (%has-component-p system entity)
@@ -64,7 +71,9 @@ See DELETE-CHILD"
 
 (defun finalize-entities ()
   (setf *entities-count* 0
-        *entities-allocated* 144)
+        *entities-allocated* 144
+        *current-action* (make-growable-vector :initial-element +invalid-index+
+                                               :initial-allocated-size *entities-allocated*))
   (clrhash *entities-children*)
   (growable-vector-clear *deleted-entities*))
 
