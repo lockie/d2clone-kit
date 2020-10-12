@@ -2,6 +2,8 @@
 
 ;; TODO : rename this to movable?..
 
+;; TODO : perhaps turn the character towards the goal while movement to make it more natural
+
 
 (defsystem character
   ()
@@ -126,6 +128,7 @@
         euclidean-distance))
 (defun euclidean-distance (x1 y1 x2 y2)
   (flet ((sqr (x) (the double-float (* x x))))
+    ;; TODO : use Carmack's fast sqrt here
     (sqrt
      (+
       (sqr (- x1 x2))
@@ -178,6 +181,7 @@
 ;; TODO : optimize
 ;; TODO : penalize turns?..
 ;; TODO : separate thread?..
+;; TODO : XXX : the path changes when moving along the way.
 ;; TODO : XXX : precalculate something?.. like Dijkstra Maps. see
 ;; https://www.reddit.com/r/roguelikedev/comments/hpxnkd
 (declaim (ftype (function (double-float double-float double-float double-float)) a*))
@@ -291,7 +295,6 @@ at point TARGET-X, TARGET-Y."
       :finally
          (return (values new-target-x new-target-y)))))
 
-;; TODO : some sort of generic SoA class/macro with getter/setter functions
 (declaim
  (ftype (function (fixnum double-float double-float)) move))
 (defun move (entity new-target-x new-target-y)
@@ -302,6 +305,7 @@ at point TARGET-X, TARGET-Y."
         (with-move-action move-action ()
           (setf target-x new-target-x
                 target-y new-target-y)
+          ;; TODO when path is 1 node long, movement is slower. has to do with pathfinding
           (initialize-action :move move-action))
         (make-move-action entity :target-x new-target-x :target-y new-target-y))))
 

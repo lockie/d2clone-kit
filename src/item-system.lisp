@@ -2,11 +2,15 @@
 
 
 (defsystem item
+  ;; TODO : by using this design, I can only have one item per tile. Do something about the coords
   ((map (make-sparse-matrix) :type sparse-matrix))
   (:documentation "Handles items."))
 
 (defcomponent (item)
   (type nil :type keyword))
+
+;; TODO : highlight an item when hovering -> need color changing mechanic
+;; TODO : periodically draw star thing (to alert a player there's an item on the ground)
 
 (defconstant +item-pickup-range+ 1d0 "Maximum distance at which character could pick up an item.")
 
@@ -117,6 +121,7 @@
 
 (defun pickup-item (item-entity)
   "Does an actual picking up of ITEM-ENTITY by player."
+  ;; TODO : add picking up sound
   ;; TODO : unhardcode
   (with-system-slots ((map) item-system)
     (with-coordinate item-entity ()

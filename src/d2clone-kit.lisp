@@ -35,7 +35,7 @@
            (last-repl-update last-tick))
       (cffi:with-foreign-object (event '(:union al:event))
         (sleep 0.016)
-        ;; TODO : restart to continue loop
+        ;; TODO : restart to continue loop from the next iteration
         (loop :do
           (nk:with-input (ui-context)
             (unless (loop :while (al:get-next-event event-queue event)
@@ -100,6 +100,7 @@
       (init-fs dir-name data-dir)
       (init-config))
 
+    ;; TODO : proper recover from those errors
     (unless (al:init-primitives-addon)
       (error "Initializing primitives addon failed"))
     (unless (al:init-image-addon)

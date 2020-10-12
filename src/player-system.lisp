@@ -42,6 +42,7 @@
           (mouse-position-values al:mouse-state state)))))
 
 (defun character-under-cursor (cursor-map-x cursor-map-y)
+  ;; XXX TODO XXX : reimplement that using character-map in collision system
   ;; XXX HACK. Need to use some sort of bounding box for sprites; see #21
   (with-mobs
     (with-coordinate entity ()

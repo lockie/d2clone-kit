@@ -101,7 +101,7 @@ If READ-ONLY is T (the default), slots are not SETF-able."
          (,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
           ,@body)))))
 
-(defgeneric system-create (system)
+(defgeneric system-create (system) ;; TODO use CLOS optimization
   (:documentation "Low-level method to properly initialize SYSTEM. Not meant to be redefined."))
 
 (defmethod system-create ((system system))
