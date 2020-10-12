@@ -59,6 +59,7 @@ boolean property *collides* to *true* in Tiled tileset."))
           (collision-system-characters-map system) (cons (round x) (round y))))))))
 
 (defhandler (collision-system character-moved)
+  ;; TODO : also put those in characters-map when character is created
   ;; TODO : consider character size (#21)
   (let ((old-int-x (round (character-moved-old-x event)))
         (old-int-y (round (character-moved-old-y event)))

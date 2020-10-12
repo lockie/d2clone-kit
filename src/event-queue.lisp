@@ -44,8 +44,9 @@
      ,documentation
      ,@slots))
 
+;; TODO : think of docstrings for handlers
 (defmacro defhandler ((system event &key (filter t)) &body body)
-  "Defines event handler in SYSTEM for event type EVENT. 
+  "Defines event handler in SYSTEM for event type EVENT.
 FILTER could be an expression checked to be T before running BODY."
   `(defmethod process-event ((system ,system) (event ,event))
      (when ,filter

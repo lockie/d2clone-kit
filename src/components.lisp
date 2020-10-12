@@ -117,6 +117,8 @@ See MAKE-PREFAB-COMPONENT"))
                                                  ',unsafe-slot-accessors))))
              `(let* ((,system ,',system-instance)
                      (,components (system-components ,system))
+                     ;; TODO : check if index is valid in debug mode
+                     ;;  also check if it was deleted
                      (,index (sparse-array-index-ref (system-components-index ,system) ,entity)))
                 (symbol-macrolet (,@component-exps) ,@body)))))
        (defmacro ,(symbolicate 'with- plural-name) (&body body)

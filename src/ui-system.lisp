@@ -97,6 +97,7 @@ undesired side effects like processing the same event by different windows."
   (with-system-slots ((font-small font-medium font-large
                                   nuklear-font nuklear-context) ui-system system :read-only nil)
       (with-system-config-options ((display-font display-width display-height))
+      ;; TODO : better error message
         (let ((font-name (format nil "fonts/~a" display-font)))
           (setf
            ;; TODO : unhardcode font sizes

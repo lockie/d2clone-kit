@@ -26,6 +26,8 @@
     ((entity +invalid-entity+ :type fixnum))
     (:documentation "Event class issued when an entity is about to be deleted."))
 
+;; TODO : consider making generic "component value changed" event
+
 (defevent sprite-stance-changed
     ((entity +invalid-entity+ :type fixnum)
      (stance nil :type keyword))
