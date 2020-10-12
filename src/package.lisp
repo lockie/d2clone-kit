@@ -219,6 +219,8 @@
     #:toggle-layer
     #:stance-interruptible-p
     #:switch-stance
+    #:frame-finished-p
+    #:stance-finished-p
     #:sprite-direction)
    ;; systems.lisp
    (:export
