@@ -252,11 +252,18 @@ The following format features are unsupported yet:
 
 (declaim
  (inline stance-interruptible-p)
- (ftype (function (fixnum) boolean)))
+ (ftype (function (fixnum) boolean) stance-interruptible-p))
 (defun stance-interruptible-p (entity)
   "Returns whether current stance can be interrupted for ENTITY."
   (with-sprite entity ()
     (not (gethash :non-interruptible (aref frame-data frame)))))
+
+(declaim
+ (inline current-stance)
+ (ftype (function (fixnum) keyword) current-stance))
+(defun current-stance (entity)
+  (with-sprite entity ()
+    stance))
 
 (declaim
  (inline switch-stance)
