@@ -26,7 +26,7 @@
        (let ((damage-fraction (/ (- current-hp new-hp) maximum-hp)))
          (setf current-hp 0d0)
          (delete-entity-actions entity)
-         (issue entity-died :entity entity :damage-fraction damage-fraction)))
+         (issue (entity-died) :entity entity :damage-fraction damage-fraction)))
       (t
        (setf current-hp new-hp)))))
 

@@ -31,9 +31,16 @@
 (defun %issue (event)
   (growable-vector-push *event-queue* event))
 
-(defmacro issue (event-class &rest args)
-  "Shorthand macro to allow more convenient issuing of events."
-  `(%issue (,(symbolicate 'make- event-class) ,@args)))
+(defmacro issue ((event-class &key (async t)) &rest args)
+  "Shorthand macro to allow more convenient issuing of events. If ASYNC is
+NIL, process the event immediately."
+  `(progn
+     (let ((event (,(symbolicate 'make- event-class) ,@args)))
+       ,(if async
+            '(%issue event)
+            '(with-systems system
+              (process-event system event)))
+       event)))
 
 (defmacro defevent (name slots (&key documentation))
   "Defines event class with NAME, SLOTS and DOCUMENTATION."

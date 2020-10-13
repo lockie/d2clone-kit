@@ -62,7 +62,7 @@
                    ;; stumble upon an obstacle
                    (delete-action action))
                   (t
-                   (issue character-moved
+                   (issue (character-moved)
                           :entity entity
                           :old-x x
                           :old-y y
