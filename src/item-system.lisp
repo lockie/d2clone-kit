@@ -175,3 +175,11 @@
              :filter (not (= (entity-died-entity event) (player-entity))))
   (when-let (item (funcall +item-generator+))
     (drop-item (entity-died-entity event) item)))
+
+(defhandler (item-system entity-deleted)
+  (let ((entity (entity-deleted-entity event)))
+    (when (%has-component-p system entity)
+      (with-system-slots ((map) item-system system)
+        (with-coordinate entity ()
+          (sparse-matrix-remove map (cons (the fixnum (round x))
+                                          (the fixnum (round y)))))))))
