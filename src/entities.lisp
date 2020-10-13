@@ -79,3 +79,13 @@ See DELETE-CHILD"
 
 (declaim (type fixnum *session-entity*))
 (global-vars:define-global-var *session-entity* +invalid-entity+)
+
+(declaim (ftype (function (fixnum &optional stream fixnum)) dump-entities))
+(defun dump-entities (root &optional (stream *standard-output*) (offset 0))
+  "Dumps entities tree starting from ROOT node to the STREAM."
+  (let ((components (loop :for system :being :the :hash-key
+                          :using (hash-value system-instance) :of *systems*
+                          :when (%has-component-p system-instance root) :collect system)))
+    (format stream "~vT~d[~{~a~^  ~}]~%" offset root components)
+    (dolist (child (reverse (gethash root *entities-children*)))
+      (dump-entities child stream (+ offset 4)))))
