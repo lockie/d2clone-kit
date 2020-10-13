@@ -58,7 +58,7 @@ See DELETE-CHILD"
     (delete-entity child))
   (remhash entity *entities-children*)
   (delete-entity-actions entity)
-  (issue entity-deleted :entity entity)
+  (issue (entity-deleted) :entity entity)
   (with-systems system
     (when (%has-component-p system entity)
       (delete-component system entity)))

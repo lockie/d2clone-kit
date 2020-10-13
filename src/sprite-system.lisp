@@ -248,7 +248,7 @@ The following format features are unsupported yet:
        :debug-entity (if debug-sprite
                          (make-object '((:debug :order 1010d0)) entity)
                          +invalid-entity+))))
-  (issue sprite-stance-changed :entity entity :stance :idle))
+  (issue (sprite-stance-changed) :entity entity :stance :idle))
 
 (declaim
  (inline stance-interruptible-p)
@@ -276,7 +276,7 @@ The following format features are unsupported yet:
       (setf stance new-stance)
       (setf frame (first (gethash new-stance stances)))
       (setf time-counter 0d0)
-      (issue sprite-stance-changed :entity entity :stance new-stance))))
+      (issue (sprite-stance-changed) :entity entity :stance new-stance))))
 
 (declaim
  (inline frame-finished-p)
@@ -319,11 +319,11 @@ it was."
                  frame)
                 (next-stance
                  (setf stance next-stance)
-                 (issue sprite-stance-changed :entity entity :stance next-stance)
+                 (issue (sprite-stance-changed) :entity entity :stance next-stance)
                  (first (gethash next-stance stances)))
                 (t
                  (setf stance :idle)
-                 (issue sprite-stance-changed :entity entity :stance :idle)
+                 (issue (sprite-stance-changed) :entity entity :stance :idle)
                  (first (gethash :idle stances))))))
       (incf time-counter *delta-time*))))
 
@@ -386,4 +386,4 @@ it was."
         (setf stance new-stance)
         (setf frame (first (gethash new-stance stances)))
         (setf time-counter 0d0)
-        (issue sprite-stance-changed :entity entity :stance new-stance)))))
+        (issue (sprite-stance-changed) :entity entity :stance new-stance)))))

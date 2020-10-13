@@ -33,7 +33,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
                                  (make-prefab system prefab))
                                rest-parameters)
         (call-next-method))
-    (issue component-created :entity entity :system-name (system-name system))))
+    (issue (component-created) :entity entity :system-name (system-name system))))
 
 (defmacro defprefab (system extension &rest slots)
   "Defines prefab structure with slots SLOTS and file name extension EXTENSION within system SYSTEM."
