@@ -104,7 +104,8 @@
     #:delete-child
     #:delete-entity
     #:+invalid-entity+
-    #:entity-valid-p)
+    #:entity-valid-p
+    #:dump-entities)
    ;; event-queue.lisp
    (:export
     #:event
