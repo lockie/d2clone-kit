@@ -44,7 +44,8 @@
                 (unless (eq (current-stance entity) :swing)
                   (setf angle (face-target current-x current-y attack-target-x attack-target-y)))
                 (switch-stance entity :swing)
-                (when (stance-finished-p entity)
+                (when (and (eq (current-stance entity) :swing)
+                           (stance-finished-p entity))
                   (with-hp target (target-max-hp target-current-hp)
                     ;; TODO : refactor out damage / stuns
                     (with-combat entity ()
