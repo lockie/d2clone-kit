@@ -7,7 +7,8 @@
    (font-large (cffi:null-pointer) :type cffi:foreign-pointer)
    (nuklear-font (cffi:null-pointer) :type cffi:foreign-pointer)
    (nuklear-context (cffi:null-pointer) :type cffi:foreign-pointer))
-  (:documentation "Handles UI windows."))
+  (:documentation "Handles UI windows."
+   :order 25))
 
 (defcomponent (ui)
   (on nil :type boolean)
@@ -93,9 +94,9 @@ undesired side effects like processing the same event by different windows."
              :function (ui-prefab-function prefab)
              :parameters (ui-prefab-parameters prefab))))
 
-(defmethod system-initialize ((system ui-system))
-  (with-system-slots ((font-small font-medium font-large
-                                  nuklear-font nuklear-context) ui-system system :read-only nil)
+(defmethod system-create :after ((system ui-system))
+  (with-system-slots ((font-small font-medium font-large nuklear-font
+                                  nuklear-context) ui-system system :read-only nil)
       (with-system-config-options ((display-font display-width display-height))
       ;; TODO : better error message
         (let ((font-name (format nil "fonts/~a" display-font)))
