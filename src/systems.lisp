@@ -89,7 +89,7 @@ See DEFSYSTEM"
                    (set-loading-screen-progress (coerce (/ i n) 'double-float)))
              :collect
                 (setf (gethash (make-keyword (system-name system)) *systems*)
-                system)))
+                      system)))
     (system-initialize system))
   (toggle-loading-screen nil))
 
