@@ -54,6 +54,8 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
          (log-info "Preloading ~a prefabs" ',system)
          (enumerate-directory ,(format nil "~(~as~)" system)
            (when (uiop:string-suffix-p file ,(concatenate 'string "." extension))
+             (when *loading-screen-system*
+               (set-loading-screen-text file))
              (make-prefab system (make-keyword (string-upcase (pathname-name file)))))))
        (defmethod make-component ((system ,system-name) entity &rest parameters)
          (declare (ignore system entity parameters))

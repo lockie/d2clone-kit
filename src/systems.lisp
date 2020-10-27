@@ -79,12 +79,20 @@ See WITH-SYSTEMS"
   "Initializes defined ECS systems in specified order.
 
 See DEFSYSTEM"
-  (dolist (system (mapcar
-                   #'(lambda (initializer)
-                       (let ((system (funcall (cdr initializer))))
-                         (setf (gethash (make-keyword (system-name system)) *systems*) system)))
-                   *system-initializers*))
-    (system-initialize system)))
+  (dolist (system
+           (loop
+             :with n :of-type array-length := (length *system-initializers*)
+             :for i :of-type array-index :from 0
+             :for initializer :in *system-initializers*
+             :for system := (funcall (the function (cdr initializer)))
+             :do (when *loading-screen-system*
+                   (set-loading-screen-progress (coerce (/ i n) 'double-float)))
+             :collect
+                (setf (gethash (make-keyword (system-name system)) *systems*)
+                system)))
+    (system-initialize system))
+  (toggle-loading-screen nil))
+
 
 (defmacro with-system-slots ((slots system-type &optional (system-instance nil)
                               &key (read-only t)) &body body)

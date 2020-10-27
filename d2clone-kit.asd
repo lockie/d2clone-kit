@@ -68,6 +68,8 @@
                 :depends-on ("components" "systems" "renderer" "event-queue" "events"
                                           "combat-system" "coordinate-system" "hp-system"
                                           "player-system" "sprite-system" "ui-system"))
+               (:file "loading-screen-system"
+                :depends-on ("entities" "systems" "ui-system"))
                (:file "log")
                (:file "mana-system"
                 :depends-on ("components" "systems"))
