@@ -58,7 +58,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
        (defmethod make-component ((system ,system-name) entity &rest parameters)
          (declare (ignore system entity parameters))
          nil)
-       (defmethod system-finalize :after ((system ,system-name))
+       (defmethod system-finalize :before ((system ,system-name))
          (clrhash ,storage-name))
        (defstruct ,struct-name
          ,@ro-slots))))

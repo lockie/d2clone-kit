@@ -64,11 +64,13 @@ See WITH-SYSTEMS"
        (declaim (inline ,@slot-names))
        ,@slot-docs
        (global-vars:define-global-var ,variable-name nil)
-       (declaim (type ,system-name ,variable-name))
+       (declaim (type (or null ,system-name) ,variable-name))
        (defun ,ctor-name ()
          (let ((system (,(symbolicate '%make- system-name))))
            (system-create system)
            (setf ,variable-name system)))
+       (defmethod system-finalize :after ((system ,system-name))
+         (setf ,variable-name nil))
        (setf *system-initializers*
              (merge 'list (list (cons ,order #',ctor-name)) *system-initializers*
                     #'(lambda (s1 s2) (> (car s1) (car s2))))))))
@@ -114,7 +116,8 @@ If READ-ONLY is T (the default), slots are not SETF-able."
   (declare (ignore system)))
 
 (defgeneric system-finalize (system)
-  (:documentation "Performs SYSTEM finalization."))
+  (:documentation "Performs SYSTEM finalization. Note: constructing components
+  from prefabs is not permitted in the body of SYSTEM-FINALIZE."))
 
 (defmethod system-finalize ((system system))
   (declare (ignore system)))
@@ -138,8 +141,28 @@ See RENDER"))
   `(loop :for ,var :being :the :hash-value :of *systems*
          :do ,@body))
 
+(defmacro with-systems* (var &body body)
+  "Executes BODY in loop for each system honoring the systems order, binding
+system instance to variable VAR."
+  `(dolist (,var (sort (hash-table-values *systems*)
+                       #'(lambda (a b)
+                           (declare (type fixnum a b))
+                           (> a b))
+                       :key #'system-order))
+     ,@body))
+
+(defmacro with-systems** (var &body body)
+  "Executes BODY in loop for each system in reverse systems order, binding
+system instance to variable VAR."
+  `(dolist (,var (sort (hash-table-values *systems*)
+                       #'(lambda (a b)
+                           (declare (type fixnum a b))
+                           (< a b))
+                       :key #'system-order))
+     ,@body))
+
 (defun finalize-systems ()
-  (with-systems system
+  (with-systems** system
     (system-finalize system))
   (clrhash *systems*))
 
