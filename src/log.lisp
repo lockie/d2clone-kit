@@ -100,6 +100,7 @@ Otherwise, just executes BODY."
                      (software-type))
            ,@body)
          #+(and sbcl (not windows))
+         ;; TODO : silence "deleting unreachable code" warning
          (progn
            (let ((was-profiling sb-sprof::*profiling*))
              (sb-sprof:start-profiling)
