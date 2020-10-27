@@ -7,7 +7,9 @@
   (:documentation "Handles sounds."))
 
 (defcomponent (sound)
-  (sample-instance nil :type cffi:foreign-pointer))
+  (sample-instance nil :type cffi:foreign-pointer)
+  (non-interruptible nil :type boolean :documentation "Indicates that the
+  sound should be played through no matter what."))
 
 (defprefab sound "ogg"
   (sample (cffi:null-pointer) :type cffi:foreign-pointer))
@@ -51,7 +53,9 @@
                      (coerce (/ display-height 2 *tile-height*) 'double-float)))
                  'single-float))
           (setf pan-factor (/ 1f0 (/ display-width *tile-width* 2))))))
-    (make-sound entity :sample-instance sample-instance)
+    (destructuring-bind (&key non-interruptible &allow-other-keys) parameters
+      (make-sound entity :sample-instance sample-instance
+                         :non-interruptible non-interruptible))
     (set-sound-position entity)
     (al:set-sample-instance-playing sample-instance t)))
 
@@ -64,6 +68,13 @@
       (if (al:get-sample-instance-playing sample-instance)
           (set-sound-position entity)
           (delete-component system entity))))
+
+(defmethod system-finalize ((system sound-system))
+  (with-sounds
+    (when non-interruptible
+      (loop :while (al:get-sample-instance-playing sample-instance)
+            :do (al:rest-time 0.016)))
+    (delete-component system entity)))
 
 (defhandler (sound-system sprite-stance-changed)
   (let ((entity (sprite-stance-changed-entity event))
