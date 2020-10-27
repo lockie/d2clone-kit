@@ -60,7 +60,7 @@ undesired side effects like processing the same event by different windows."
 (declaim (inline make-button-press-sound) (ftype (function (fixnum)) make-button-press-sound))
 (defun make-button-press-sound (entity)
   "Adds button press sound component to ENTITY."
-  (make-component *sound-system* entity :prefab :button-press))
+  (make-component *sound-system* entity :prefab :button-press :non-interruptible t))
 
 (defmethod make-prefab ((system ui-system) prefab-name)
   (flet ((spec->defun (spec parameters)
