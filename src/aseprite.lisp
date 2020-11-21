@@ -65,6 +65,7 @@
   (data nil :type (vector (unsigned-byte 8))))
 
 (defstruct (ase-user-data-chunk (:include ase-chunk (type 'user-data)))
+  (layer-id 0 :type fixnum)
   (cel-id 0 :type fixnum)
   (text "" :type string)
   (red 0 :type unsigned-byte)
@@ -137,6 +138,9 @@
 (declaim (type fixnum *cel-id*))
 (defvar *cel-id*)
 
+(declaim (type (or null ase-cel-chunk)))
+(defvar *last-cel-chunk* nil)
+
 (defmethod read-chunk ((type (eql #x2005)) stream)
   (let ((layer-id (read-binary 'word stream)))
     (when (zerop layer-id)
@@ -152,9 +156,10 @@
       (read-binary 7 stream)
       (let ((width (the sprite-dimension (read-binary 'word stream)))
             (height (the sprite-dimension (read-binary 'word stream))))
-        (make-ase-cel-chunk
-         :layer-id layer-id
-         :data (funcall process stream (* 4 width height)))))))
+        (setf *last-cel-chunk*
+              (make-ase-cel-chunk
+               :layer-id layer-id
+               :data (funcall process stream (* 4 width height))))))))
 
 (defmethod read-chunk ((type (eql #x2018)) stream)
   (let* ((num-tags (read-binary 'word stream))
@@ -186,6 +191,7 @@
        b (read-binary 'byte stream)
        a (read-binary 'byte stream)))
     (make-ase-user-data-chunk
+     :layer-id (if *last-cel-chunk* (ase-cel-chunk-layer-id *last-cel-chunk*) +invalid-index+)
      :cel-id *cel-id*
      :text text
      :red r :green g :blue b :alpha a)))

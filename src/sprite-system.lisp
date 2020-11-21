@@ -24,7 +24,7 @@ The following format features are unsupported yet:
   (stances nil :type hash-table :documentation "stance name (keyword) -> list of frame #s")
   (directions nil :type fixnum :documentation "count of directions")
   (frame-durations nil :type (simple-array double-float))
-  (frame-data nil :type (simple-array hash-table))
+  (frame-data nil :type hash-table)
   (prefab-name nil :type keyword)
   ;; instance state
   (stance :idle :type keyword)
@@ -42,7 +42,8 @@ The following format features are unsupported yet:
   (stances nil :type hash-table)
   (directions nil :type fixnum)
   (frame-durations nil :type (simple-array double-float))
-  (frame-data nil :type (simple-array hash-table)))
+  (frame-data nil :type hash-table)  ;; layer name (keyword) -> array of hash-tables with properties corresponding to each frame
+  )
 
 (defun toggle-layer (entity layer &optional (on nil on-supplied-p))
   "Toggles layer LAYER on sprite entity ENTITY."
@@ -54,6 +55,26 @@ The following format features are unsupported yet:
         (error "no such layer: ~a" layer))
       (let ((value (if on-supplied-p on (not old-value))))
         (setf (gethash layer layers-toggled) value)))))
+
+(declaim
+ (inline frame-property)
+ (ftype (function (fixnum keyword &key (:layer keyword))) frame-property))
+(defun frame-property (entity property-name &key layer)
+  "Returns current frame's property called PROPERTY-NAME of a sprite component
+of ENTITY within the LAYER (or the default layer, if not specified). Retruns
+NIL if no such property exists."
+  ;; TODO : optimize by having property-name as multiple values + returning multiple values
+  (with-sprite entity ()
+    (gethash
+     property-name
+     (aref
+      (the simple-vector
+           (gethash
+            (if layer
+                layer
+                (first layer-names))
+            frame-data))
+      frame))))
 
 (cffi:defcfun memcpy :pointer
   (dst :pointer)
@@ -162,27 +183,33 @@ The following format features are unsupported yet:
        (loop :for bitmap :across layer-bitmaps :do (al:unlock-bitmap bitmap))
        (return layer-bitmaps)))
 
-(defun load-sprite-frame-data (ase-file total-stance-length)
-  (let ((result (make-array total-stance-length
-                            :element-type 'hash-table
-                            :initial-contents
-                            (loop :repeat total-stance-length
-                                  :collect (make-hash-table)))))
+(defun load-sprite-frame-data (ase-file layer-names total-stance-length)
+  (let ((result (make-hash :test 'eq
+                           :init-format :keychain
+                           :initial-contents layer-names
+                           :init-data (loop :repeat (length layer-names)
+                                            :collect (make-array total-stance-length
+                                                                 :element-type 'hash-table
+                                                                 :initial-contents
+                                                                 (loop :repeat total-stance-length
+                                                                       :collect (make-hash-table)))))))
+    ;; TODO : also support layer userdata
     (loop
       :for frame :across (ase-file-frames ase-file)
       :when (ase-frame-chunks frame)
         :do (loop
               :for chunk across (ase-frame-chunks frame)
               :when (and chunk (ase-user-data-chunk-p chunk))
-                :do (let ((text (ase-user-data-chunk-text chunk))
-                          (cel-id (ase-user-data-chunk-cel-id chunk)))
-                      (unless (or (> cel-id total-stance-length)
-                                  (length= 0 text))
-                        (setf (aref result cel-id)
-                              (plist-hash-table
-                               (with-input-from-string (s text)
-                                 (read s))
-                               :test 'eq))))))
+              :do (let ((text (ase-user-data-chunk-text chunk))
+                        (layer-id (ase-user-data-chunk-layer-id chunk))
+                        (cel-id (ase-user-data-chunk-cel-id chunk)))
+                    (unless (or (> cel-id total-stance-length)
+                                (length= 0 text))
+                      (setf (aref (gethash (aref layer-names layer-id) result) cel-id)
+                            (plist-hash-table
+                             (with-input-from-string (s text)
+                               (read s))
+                             :test 'eq))))))
     result))
 
 (defmethod make-prefab ((system sprite-system) prefab-name)
@@ -193,8 +220,8 @@ The following format features are unsupported yet:
          (total-stance-length (total-stance-length stances))
          (directions (directions ase-file total-stance-length))
          (frame-durations (load-sprite-frame-durations ase-file total-stance-length))
-         (frame-data (load-sprite-frame-data ase-file total-stance-length))
          (layer-names (load-sprite-layer-names ase-file))
+         (frame-data (load-sprite-frame-data ase-file layer-names total-stance-length))
          (layer-bitmaps (load-sprite-layers ase-file layer-names total-stance-length directions))
          (layers (make-hash
                   :size (length layer-names) :test 'eq :init-format :keychain
@@ -255,8 +282,7 @@ The following format features are unsupported yet:
  (ftype (function (fixnum) boolean) stance-interruptible-p))
 (defun stance-interruptible-p (entity)
   "Returns whether current stance can be interrupted for ENTITY."
-  (with-sprite entity ()
-    (not (gethash :non-interruptible (aref frame-data frame)))))
+    (not (frame-property entity :non-interruptible)))
 
 (declaim
  (inline current-stance)
@@ -307,9 +333,8 @@ it was."
     (if-let (frame-duration-left (frame-finished-p entity))
       (let* ((all-frames (gethash stance stances))
              (remaining-frames (cdr (member frame all-frames :test #'=)))
-             (data (aref frame-data frame))
-             (next-stance (values (gethash :next-stance data)))
-             (last-stance (values (gethash :last-stance data))))
+             (next-stance (frame-property entity :next-stance))
+             (last-stance (frame-property entity :last-stance)))
         (decf time-counter frame-duration-left)
         (setf frame
               (cond
