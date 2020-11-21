@@ -30,7 +30,8 @@
 
 (defevent sprite-stance-changed
     ((entity +invalid-entity+ :type fixnum)
-     (stance nil :type keyword))
+     (old-stance nil :type keyword)
+     (new-stance nil :type keyword))
     (:documentation "Event class issued when sprite stance is changed."))
 
 (defevent character-moved

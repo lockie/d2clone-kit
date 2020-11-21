@@ -75,16 +75,3 @@
       (loop :while (al:get-sample-instance-playing sample-instance)
             :do (al:rest-time 0.016)))
     (delete-component system entity)))
-
-(defhandler (sound-system sprite-stance-changed)
-  (let ((entity (sprite-stance-changed-entity event))
-        (stance (sprite-stance-changed-stance event)))
-    (with-sprite entity ()
-      (maphash
-       #'(lambda (layer toggled)
-           (when toggled
-             (let ((sound-name (make-keyword
-                                (format-symbol nil "~a-~a-~a" prefab-name layer stance))))
-               (when-let (sound-prefab (prefab system sound-name))
-                 (make-component system entity :prefab sound-name)))))
-       layers-toggled))))

@@ -236,6 +236,32 @@ NIL if no such property exists."
      :frame-durations frame-durations
      :frame-data frame-data)))
 
+(declaim
+ (inline emit-frame-sound)
+ (ftype (function (fixnum)) emit-frame-sound))
+(defun emit-frame-sound (entity)
+  "Emits sound associated with frame through :SOUND property, if any."
+  (with-sprite entity ()
+    (loop :for layer
+          :being :the :hash-key
+          :using (hash-value toggled) :of layers-toggled
+          :when toggled :do
+             (when-let (sound (frame-property entity :sound :layer layer))
+               (make-component *sound-system* entity :prefab sound)))))
+
+(declaim
+ (inline %switch-stance)
+ (ftype (function (fixnum keyword)) %switch-stance))
+(defun %switch-stance (entity new-stance)
+  "Immediately switches stance of the sprite ENTITY to NEW-STANCE without any
+extra checks. Does not affect TIME-COUNTER of sprite."
+  (with-sprite entity ()
+    (let ((old-stance stance))
+      (setf stance new-stance
+            frame (first (gethash new-stance stances)))
+      (emit-frame-sound entity)
+      (issue (sprite-stance-changed) :entity entity :old-stance old-stance :new-stance new-stance))))
+
 (defmethod make-prefab-component ((system sprite-system) entity prefab parameters)
   (with-system-config-options ((debug-sprite))
     (let ((width (sprite-prefab-width prefab))
@@ -275,7 +301,7 @@ NIL if no such property exists."
        :debug-entity (if debug-sprite
                          (make-object '((:debug :order 1010d0)) entity)
                          +invalid-entity+))))
-  (issue (sprite-stance-changed) :entity entity :stance :idle))
+  (%switch-stance entity :idle))
 
 (declaim
  (inline stance-interruptible-p)
@@ -295,14 +321,13 @@ NIL if no such property exists."
  (inline switch-stance)
  (ftype (function (fixnum keyword)) switch-stance))
 (defun switch-stance (entity new-stance)
-  "Immediately switches stance of the sprite ENTITY to NEW-STANCE."
+  "Immediately switches stance of the sprite ENTITY to NEW-STANCE unless it is
+already at that stance or the current stance is non-interruptible."
   (with-sprite entity ()
     (unless (or (eq stance new-stance)
-                (gethash :non-interruptible (aref frame-data frame)))
-      (setf stance new-stance)
-      (setf frame (first (gethash new-stance stances)))
+                (not (stance-interruptible-p entity)))
       (setf time-counter 0d0)
-      (issue (sprite-stance-changed) :entity entity :stance new-stance))))
+      (%switch-stance entity new-stance))))
 
 (declaim
  (inline frame-finished-p)
@@ -336,20 +361,15 @@ it was."
              (next-stance (frame-property entity :next-stance))
              (last-stance (frame-property entity :last-stance)))
         (decf time-counter frame-duration-left)
-        (setf frame
-              (cond
-                (remaining-frames
-                 (first remaining-frames))
-                (last-stance
-                 frame)
-                (next-stance
-                 (setf stance next-stance)
-                 (issue (sprite-stance-changed) :entity entity :stance next-stance)
-                 (first (gethash next-stance stances)))
-                (t
-                 (setf stance :idle)
-                 (issue (sprite-stance-changed) :entity entity :stance :idle)
-                 (first (gethash :idle stances))))))
+        (cond
+          (remaining-frames
+           (setf frame (first remaining-frames))
+           (emit-frame-sound entity))
+          (last-stance)
+          (next-stance
+           (%switch-stance entity next-stance))
+          (t
+           (%switch-stance entity :idle))))
       (incf time-counter *delta-time*))))
 
 (defconstant +isometric-angle+ (* pi (/ 45 180)))
@@ -408,7 +428,5 @@ it was."
                        (> damage-fraction 0.1d0))
                   :critdeath
                   :death)))
-        (setf stance new-stance)
-        (setf frame (first (gethash new-stance stances)))
         (setf time-counter 0d0)
-        (issue (sprite-stance-changed) :entity entity :stance new-stance)))))
+        (%switch-stance entity new-stance)))))
