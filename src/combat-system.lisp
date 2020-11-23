@@ -50,6 +50,9 @@
                     ;; TODO : refactor out damage / stuns
                     (with-combat entity ()
                       (let ((damage (+ min-damage (random (- max-damage min-damage)))))
+                        ;; TODO (#49): add impact sound component on entity being attacked
+                        ;; get it from a table (weapon class, armor class) -> sound prefab
+                        ;; get armor class from call to layer-property?..
                         (set-hp target (- target-current-hp damage))
                         (when (> damage (* target-max-hp +stun-threshold+))
                           (unless (zerop target-current-hp)

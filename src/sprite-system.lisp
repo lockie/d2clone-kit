@@ -12,6 +12,8 @@ The following format features are unsupported yet:
 * layer blend modes
 * linked cels"))
 
+;; TODO : document sprite properties.
+
 (deftype angle ()
   "Angle value in radians."
   `(double-float ,(- (* 2 pi)) ,(* 2 pi)))
@@ -21,6 +23,7 @@ The following format features are unsupported yet:
   (height nil :type fixnum)
   (layer-names nil :type list :documentation "layer names to keep the order of layers")
   (layer-batches nil :type hash-table :documentation "layer name (keyword) -> sprite batch entity")
+  ;; TODO : consider renaming stance to sequence
   (stances nil :type hash-table :documentation "stance name (keyword) -> list of frame #s")
   (directions nil :type fixnum :documentation "count of directions")
   (frame-durations nil :type (simple-array double-float))
@@ -29,7 +32,8 @@ The following format features are unsupported yet:
   (prefab-name nil :type keyword)
   ;; instance state
   (stance :idle :type keyword)
-  (frame 0 :type fixnum)
+  (frame 0 :type fixnum
+           :documentation "not an actual frame in ase file, but rather frame no. in animation stance")
   (angle 0d0 :type angle)
   (time-counter 0d0 :type double-float)
   (layers-toggled nil :type hash-table :documentation "layer name (keyword) -> boolean")
@@ -79,6 +83,8 @@ NIL if no such property exists."
 (defun layer-property (entity property-name &key layer)
   "Returns LAYER's property called PROPERTY-NAME of a sprite component of
 ENTITY. Returns NIL of no such property exists."
+  ;; TODO : default?.. (in frame-property too)
+  ;; TODO : layer parameter logic ???
   (with-sprite entity ()
     (gethash
      property-name
@@ -260,6 +266,7 @@ ENTITY. Returns NIL of no such property exists."
          (layer-data (load-sprite-layer-data ase-file layer-names))
          (layer-bitmaps (load-sprite-layers ase-file layer-names total-stance-length directions))
          (layers (make-hash
+                  ;; TODO do I need :size here?
                   :size (length layer-names) :test 'eq :init-format :keychain
                   :initial-contents layer-names :init-data layer-bitmaps)))
     (make-sprite-prefab

@@ -37,6 +37,7 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
 
 (defmacro defprefab (system extension &rest slots)
   "Defines prefab structure with slots SLOTS and file name extension EXTENSION within system SYSTEM."
+  ;; TODO : add possibility to add field documentation
   (let ((storage-name (symbolicate '* system '- 'prefabs '*))
         (system-name (symbolicate system '- 'system))
         (struct-name (symbolicate system '- 'prefab))
