@@ -25,6 +25,7 @@ The following format features are unsupported yet:
   (directions nil :type fixnum :documentation "count of directions")
   (frame-durations nil :type (simple-array double-float))
   (frame-data nil :type hash-table)
+  (layer-data nil :type hash-table)
   (prefab-name nil :type keyword)
   ;; instance state
   (stance :idle :type keyword)
@@ -43,6 +44,7 @@ The following format features are unsupported yet:
   (directions nil :type fixnum)
   (frame-durations nil :type (simple-array double-float))
   (frame-data nil :type hash-table)  ;; layer name (keyword) -> array of hash-tables with properties corresponding to each frame
+  (layer-data nil :type hash-table)  ;; layer name (keyword) -> hash-table with layer properties
   )
 
 (defun toggle-layer (entity layer &optional (on nil on-supplied-p))
@@ -70,11 +72,19 @@ NIL if no such property exists."
      (aref
       (the simple-vector
            (gethash
-            (if layer
-                layer
-                (first layer-names))
+            (or layer (first layer-names))
             frame-data))
       frame))))
+
+(defun layer-property (entity property-name &key layer)
+  "Returns LAYER's property called PROPERTY-NAME of a sprite component of
+ENTITY. Returns NIL of no such property exists."
+  (with-sprite entity ()
+    (gethash
+     property-name
+     (gethash
+      (or layer (first layer-names))
+      layer-data))))
 
 (cffi:defcfun memcpy :pointer
   (dst :pointer)
@@ -203,7 +213,8 @@ NIL if no such property exists."
               :do (let ((text (ase-user-data-chunk-text chunk))
                         (layer-id (ase-user-data-chunk-layer-id chunk))
                         (cel-id (ase-user-data-chunk-cel-id chunk)))
-                    (unless (or (> cel-id total-stance-length)
+                    (unless (or (minusp cel-id)
+                                (> cel-id total-stance-length)
                                 (length= 0 text))
                       (setf (aref (gethash (aref layer-names layer-id) result) cel-id)
                             (plist-hash-table
@@ -211,6 +222,30 @@ NIL if no such property exists."
                                (read s))
                              :test 'eq))))))
     result))
+
+(defun load-sprite-layer-data (ase-file layer-names)
+  (loop
+    :with result := (make-hash :test 'eq
+                               :init-format :keychain
+                               :initial-contents layer-names
+                               :init-data (loop :repeat (length layer-names)
+                                                :collect (make-hash :test 'eq)))
+    :for frame :across (ase-file-frames ase-file)
+    :when (ase-frame-chunks frame)
+    :do (loop
+          :for chunk across (ase-frame-chunks frame)
+          :when (and chunk (ase-user-data-chunk-p chunk))
+          :do (let ((text (ase-user-data-chunk-text chunk))
+                    (layer-id (ase-user-data-chunk-layer-id chunk))
+                    (cel-id (ase-user-data-chunk-cel-id chunk)))
+                (when (and (minusp cel-id)
+                           (not (length= 0 text)))
+                  (setf (gethash (aref layer-names layer-id) result)
+                        (plist-hash-table
+                         (with-input-from-string (s text)
+                           (read s))
+                         :test 'eq)))))
+    :finally (return result)))
 
 (defmethod make-prefab ((system sprite-system) prefab-name)
   (let* ((ase-file (load-aseprite
@@ -222,6 +257,7 @@ NIL if no such property exists."
          (frame-durations (load-sprite-frame-durations ase-file total-stance-length))
          (layer-names (load-sprite-layer-names ase-file))
          (frame-data (load-sprite-frame-data ase-file layer-names total-stance-length))
+         (layer-data (load-sprite-layer-data ase-file layer-names))
          (layer-bitmaps (load-sprite-layers ase-file layer-names total-stance-length directions))
          (layers (make-hash
                   :size (length layer-names) :test 'eq :init-format :keychain
@@ -234,7 +270,8 @@ NIL if no such property exists."
      :stances stances
      :directions directions
      :frame-durations frame-durations
-     :frame-data frame-data)))
+     :frame-data frame-data
+     :layer-data layer-data)))
 
 (declaim
  (inline emit-frame-sound)
@@ -274,6 +311,7 @@ extra checks. Does not affect TIME-COUNTER of sprite."
        :directions (sprite-prefab-directions prefab)
        :frame-durations (sprite-prefab-frame-durations prefab)
        :frame-data (sprite-prefab-frame-data prefab)
+       :layer-data (sprite-prefab-layer-data prefab)
        :layer-names (sprite-prefab-layer-names prefab)
        :layer-batches (make-hash
                        :test 'eq
