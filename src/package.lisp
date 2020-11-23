@@ -247,6 +247,8 @@
     #:sprite-system
     #:angle
     #:toggle-layer
+    #:frame-property
+    #:layer-property
     #:stance-interruptible-p
     #:switch-stance
     #:frame-finished-p
