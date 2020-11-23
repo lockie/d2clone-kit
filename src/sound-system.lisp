@@ -6,6 +6,7 @@
    (pan-factor 0f0 :type single-float))
   (:documentation "Handles sounds."))
 
+;; TODO add possibility to play several sounds on an entity at once?..
 (defcomponent (sound)
   (sample-instance nil :type cffi:foreign-pointer)
   (non-interruptible nil :type boolean :documentation "Indicates that the

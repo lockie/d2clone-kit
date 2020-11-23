@@ -42,6 +42,7 @@
      (new-y nil :type double-float))
     (:documentation "Event class issued when a character is about to move."))
 
+;; TODO : reuse death mechanics in other places (e.g. for loot)?..
 (defevent entity-died
     ((entity +invalid-entity+ :type fixnum)
      (damage-fraction nil :type double-float))
