@@ -194,34 +194,34 @@ ENTITY. Returns NIL of no such property exists."
        (return layer-bitmaps)))
 
 (defun load-sprite-frame-data (ase-file layer-names total-stance-length)
-  (let ((result (make-hash :test 'eq
-                           :init-format :keychain
-                           :initial-contents layer-names
-                           :init-data (loop :repeat (length layer-names)
-                                            :collect (make-array total-stance-length
-                                                                 :element-type 'hash-table
-                                                                 :initial-contents
-                                                                 (loop :repeat total-stance-length
-                                                                       :collect (make-hash-table)))))))
-    ;; TODO : also support layer userdata
-    (loop
-      :for frame :across (ase-file-frames ase-file)
-      :when (ase-frame-chunks frame)
-        :do (loop
-              :for chunk across (ase-frame-chunks frame)
-              :when (and chunk (ase-user-data-chunk-p chunk))
-              :do (let ((text (ase-user-data-chunk-text chunk))
-                        (layer-id (ase-user-data-chunk-layer-id chunk))
-                        (cel-id (ase-user-data-chunk-cel-id chunk)))
-                    (unless (or (minusp cel-id)
-                                (> cel-id total-stance-length)
-                                (length= 0 text))
-                      (setf (aref (gethash (aref layer-names layer-id) result) cel-id)
-                            (plist-hash-table
-                             (with-input-from-string (s text)
-                               (read s))
-                             :test 'eq))))))
-    result))
+  ;; TODO : also support layer userdata
+  (loop
+    :with result := (make-hash :test 'eq
+                               :init-format :keychain
+                               :initial-contents layer-names
+                               :init-data (loop :repeat (length layer-names)
+                                                :collect (make-array total-stance-length
+                                                                     :element-type 'hash-table
+                                                                     :initial-contents
+                                                                     (loop :repeat total-stance-length
+                                                                           :collect (make-hash-table)))))
+    :for frame :across (ase-file-frames ase-file)
+    :when (ase-frame-chunks frame)
+    :do (loop
+          :for chunk across (ase-frame-chunks frame)
+          :when (and chunk (ase-user-data-chunk-p chunk))
+          :do (let ((text (ase-user-data-chunk-text chunk))
+                    (layer-id (ase-user-data-chunk-layer-id chunk))
+                    (cel-id (ase-user-data-chunk-cel-id chunk)))
+                (unless (or (minusp cel-id)
+                            (> cel-id total-stance-length)
+                            (length= 0 text))
+                  (setf (aref (gethash (aref layer-names layer-id) result) cel-id)
+                        (plist-hash-table
+                         (with-input-from-string (s text)
+                           (read s))
+                         :test 'eq)))))
+    :finally (return result)))
 
 (defun load-sprite-layer-data (ase-file layer-names)
   (loop
