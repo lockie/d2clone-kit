@@ -34,7 +34,8 @@
     (with-combat entity ()
       (with-coordinate entity (current-x current-y)
         (with-coordinate target (attack-target-x attack-target-y)
-          (if (> (euclidean-distance attack-target-x attack-target-y current-x current-y)
+          (if (> (euclidean-distance attack-target-x attack-target-y
+                                     current-x current-y)
                  attack-range)
               (when (and (not (index-valid-p (action-child action)))
                          (or (not (eq (current-stance entity) :swing))
@@ -42,17 +43,20 @@
                 (delete-action action))
               (with-sprite entity ()
                 (unless (eq (current-stance entity) :swing)
-                  (setf angle (face-target current-x current-y attack-target-x attack-target-y)))
+                  (setf angle (face-target current-x current-y
+                                           attack-target-x attack-target-y)))
                 (switch-stance entity :swing)
                 (when (and (eq (current-stance entity) :swing)
                            (stance-finished-p entity))
                   (with-hp target (target-max-hp target-current-hp)
                     ;; TODO : refactor out damage / stuns
                     (with-combat entity ()
-                      (let ((damage (+ min-damage (random (- max-damage min-damage)))))
-                        ;; TODO (#49): add impact sound component on entity being attacked
-                        ;; get it from a table (weapon class, armor class) -> sound prefab
-                        ;; get armor class from call to layer-property?..
+                      (let ((damage (+ min-damage
+                                       (random (- max-damage min-damage)))))
+                        ;; TODO (#49): add impact sound component on entity
+                        ;; being attacked. Get it from a table (weapon class,
+                        ;; armor class) -> sound prefab. Get armor class from
+                        ;; call to layer-property?..
                         (set-hp target (- target-current-hp damage))
                         (when (> damage (* target-max-hp +stun-threshold+))
                           (unless (zerop target-current-hp)
@@ -61,7 +65,8 @@
                     (delete-action action))))))))))
 
 (defmethod make-component ((system combat-system) entity &rest parameters)
-  (destructuring-bind (&key (attack-range 2d0) (min-damage 1d0) max-damage) parameters
+  (destructuring-bind (&key (attack-range 2d0) (min-damage 1d0) max-damage)
+      parameters
     (make-combat entity
                  :attack-range attack-range
                  :min-damage min-damage

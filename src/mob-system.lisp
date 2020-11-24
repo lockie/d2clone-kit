@@ -46,4 +46,5 @@
                   (+ name-offset bar-width -20) 52
                   (al:map-rgba 40 0 0 0))
                  (al:draw-text
-                  (ui-font-large) (al:map-rgba 255 255 255 10) name-offset 26 0 name)))))))))
+                  (ui-font-large) (al:map-rgba 255 255 255 10)
+                  name-offset 26 0 name)))))))))

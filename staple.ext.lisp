@@ -23,12 +23,14 @@
                    (T
                     (subseq string mstart mend))))))
     (let* ((docstring (plump:encode-entities docstring))
-           (docstring (cl-ppcre:regex-replace-all "[sS]ee (.*)" docstring #'replace-see))
+           (docstring (cl-ppcre:regex-replace-all "[sS]ee (.*)" docstring
+                                                  #'replace-see))
            (*package* (first (staple:packages page))))
       (staple:markup-code-snippets-ignoring-errors
        (staple:compile-source docstring :markdown)))))
 
-(defmethod staple:definition-wanted-p ((definition definitions:method) (__ my-page))
+(defmethod staple:definition-wanted-p ((definition definitions:method)
+                                       (__ my-page))
   (let* ((designator (definitions:designator definition))
          (symbol (etypecase designator
                    (cons (cadr designator))

@@ -17,7 +17,8 @@
   (height 0 :type fixnum :read-only t))
 
 (declaim
- (ftype (function (sprite-batch-element sprite-batch-element)) sprite-batch-element-less-p))
+ (ftype (function (sprite-batch-element sprite-batch-element))
+        sprite-batch-element-less-p))
 (defun sprite-batch-element-less-p (e1 e2)
   (< (sprite-batch-element-order e1)
      (sprite-batch-element-order e2)))
@@ -31,22 +32,26 @@
   (sprite-height nil :type (integer 0 #.+maximum-sprite-size+))
   (columns nil :type fixnum)
   ;; TODO : try optimizing using simple-vector
-  (sprites (make-array 0 :element-type 'sprite-batch-element :adjustable t :fill-pointer t)
+  (sprites (make-array 0 :element-type 'sprite-batch-element :adjustable t
+                         :fill-pointer t)
            :type (vector sprite-batch-element)))
 
 (defmethod make-component ((system sprite-batch-system) entity &rest parameters)
   (destructuring-bind (&key bitmap sprite-width sprite-height) parameters
     (unless (find :video-bitmap (al:get-bitmap-flags bitmap))
-      (log-warn "Bitmap ~a is not video bitmap, it makes no sense to batch it" bitmap))
+      (log-warn "Bitmap ~a is not video bitmap, it makes no sense to batch it"
+                bitmap))
     (make-sprite-batch entity
                        :bitmap bitmap
                        :sprite-width sprite-width
                        :sprite-height sprite-height
-                       :columns (floor (al:get-bitmap-width bitmap) sprite-width))))
+                       :columns (floor (al:get-bitmap-width bitmap)
+                                       sprite-width))))
 
 (declaim
  (inline add-sprite-to-batch)
- (ftype (function (fixnum double-float fixnum fixnum fixnum fixnum)) add-sprite-to-batch))
+ (ftype (function (fixnum double-float fixnum fixnum fixnum fixnum))
+        add-sprite-to-batch))
 (defun add-sprite-to-batch (entity order image-x image-y screen-x screen-y)
   "Adds sprite to sprite batch ENTITY using order ORDER, sprite coordinates
 IMAGE-X, IMAGE-Y and screen coordinates SCREEN-X, SCREEN-Y.
@@ -67,7 +72,8 @@ See ADD-SPRITE-INDEX-TO-BATCH"
 
 (declaim
  (inline add-sprite-index-to-batch)
- (ftype (function (fixnum double-float fixnum fixnum fixnum)) add-sprite-index-to-batch))
+ (ftype (function (fixnum double-float fixnum fixnum fixnum))
+        add-sprite-index-to-batch))
 (defun add-sprite-index-to-batch (entity order index screen-x screen-y)
   "Adds sprite to sprite batch ENTITY using order ORDER, sprite index INDEX and
 screen coordinates SCREEN-X, SCREEN-Y.
@@ -77,7 +83,10 @@ See ADD-SPRITE-TO-BATCH"
     (vector-push-extend
      (multiple-value-bind (q r)
          (floor index columns)
-       (declare (type (integer 0 #.(truncate most-positive-fixnum +maximum-sprite-size+)) q r))
+       (declare
+        (type
+         (integer 0 #.(truncate most-positive-fixnum +maximum-sprite-size+))
+         q r))
        (make-sprite-batch-element
         :bitmap bitmap
         :order order

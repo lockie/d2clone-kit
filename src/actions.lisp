@@ -30,15 +30,18 @@
 (defun has-action-p (entity type)
   "Returns generalized boolean indicating whether action chain of ENTITY
 contains action with TYPE. If it does, the return value is that action."
-  (loop :for current-action = (current-action entity) :then (action-parent current-action)
+  (loop :for current-action := (current-action entity)
+        :then (action-parent current-action)
         :while (index-valid-p current-action)
         :thereis (and (eq type (action-type current-action)) current-action)))
 
 (defsoa actions
   (index +invalid-index+ :type fixnum :documentation "")
   (type nil :type keyword :documentation "Keyword designating action type.")
-  (entity +invalid-entity+ :type fixnum :documentation "Entity the action belongs to.")
-  (parent +invalid-index+ :type fixnum :documentation "Action's parent action.")
+  (entity +invalid-entity+ :type fixnum
+                           :documentation "Entity the action belongs to.")
+  (parent +invalid-index+ :type fixnum
+                          :documentation "Action's parent action.")
   (child +invalid-index+ :type fixnum :documentation "Action's child action."))
 
 (declaim (type actions *actions*))
@@ -77,17 +80,20 @@ contains action with TYPE. If it does, the return value is that action."
   "Returns ACTION's child action."
   (actions-child-aref *actions* action))
 
-(declaim (inline actions-length) (ftype (function () array-length) actions-length))
+(declaim (inline actions-length)
+         (ftype (function () array-length) actions-length))
 (defun actions-length ()
   "Returns the total current count of actions."
   (growable-vector-length (actions-index *actions*)))
 
-(declaim (ftype (function (fixnum &optional (or boolean stream))) action-print))
+(declaim
+ (ftype (function (fixnum &optional (or boolean stream))) action-print))
 (defun action-print (action &optional stream)
   "Prints human-readable representation of ACTION to STREAM."
   (if (index-valid-p action)
       (format stream "#<~a action ~d (global ~d), ent ~d, par ~d>"
-              (string (action-type action)) (actions-index-aref *actions* action) action
+              (string (action-type action))
+              (actions-index-aref *actions* action) action
               (action-entity action) (action-parent action))
       (format stream "#<invalid action>")))
 
@@ -128,7 +134,8 @@ contains action with TYPE. If it does, the return value is that action."
 (declaim (ftype (function (fixnum)) delete-entity-actions))
 (defun delete-entity-actions (entity)
   "Deletes all actions of ENTITY."
-  (loop :for current-action := (current-action entity) :then (action-parent current-action)
+  (loop :for current-action := (current-action entity)
+        :then (action-parent current-action)
         :while (index-valid-p current-action)
         :do (delete-action current-action)))
 
@@ -146,7 +153,8 @@ See FINALIZE-ACTION"
   (declare (ignorable documentation))
   (with-gensyms (index storage)
     (let* ((type (make-keyword name))
-           ;; TODO: replace symbols with keywords in macroses to prevent unwanted interning
+           ;; TODO: replace symbols with keywords in macroses to prevent
+           ;;  unwanted interning
            (struct (symbolicate name :-action))
            (storage-variable (symbolicate :* name :-actions*))
            (deleted-indices (symbolicate :* name :-action-deleted-indices*))
@@ -156,28 +164,36 @@ See FINALIZE-ACTION"
            (slot-types (mapcar #'(lambda (s) (getf s :type 't)) slots))
            (slot-accessors
              (mapcar
-              #'(lambda (s) `(,(symbolicate name :-action- s :-aref*) ,storage ,index))
+              #'(lambda (s) `(,(symbolicate name :-action- s :-aref*)
+                              ,storage ,index))
               slot-names))
            (unsafe-slot-accessors
              (mapcar
-              #'(lambda (s) `(,(symbolicate name :-action- s :-aref) ,storage ,index))
+              #'(lambda (s) `(,(symbolicate name :-action- s :-aref)
+                              ,storage ,index))
               slot-names)))
       `(progn
          (pushnew ,type *action-types*)
          (defsoa ,struct ,@slots)
          (declaim (type ,struct ,storage-variable))
-         (global-vars:define-global-var* ,storage-variable (,(symbolicate :make- struct :s)))
+         (global-vars:define-global-var* ,storage-variable
+             (,(symbolicate :make- struct :s)))
          (declaim (type growable-vector ,deleted-indices))
-         (global-vars:define-global-var* ,deleted-indices (make-growable-vector))
-         (declaim (inline ,length-helper) (ftype (function () array-length) ,length-helper))
+         (global-vars:define-global-var* ,deleted-indices
+             (make-growable-vector))
+         (declaim (inline ,length-helper)
+                  (ftype (function () array-length) ,length-helper))
          (defun ,length-helper ()
-           (growable-vector-length (,(symbolicate struct :- (car slot-names)) ,storage-variable)))
+           (growable-vector-length
+            (,(symbolicate struct :- (car slot-names)) ,storage-variable)))
          (declaim
           (ftype (function (fixnum &key (:parent fixnum)
-                                   ,@(mapcar #'(lambda (n type) (list (make-keyword n) type))
+                                   ,@(mapcar #'(lambda (n type)
+                                                 (list (make-keyword n) type))
                                              slot-names slot-types)))
                  ,(symbolicate :make- struct)))
-         (defmacro ,(symbolicate :with- name :-action) (global-index bindings &body body)
+         (defmacro ,(symbolicate :with- name :-action) (global-index bindings
+                                                        &body body)
            (let ((slot-exps (mapcar #'list
                                     (if bindings bindings ',slot-names)
                                     ',unsafe-slot-accessors)))
@@ -191,7 +207,8 @@ See FINALIZE-ACTION"
                   :with ,types := (actions-type *actions*)
                   :for ,index :of-type fixnum :from 0 :below (actions-length)
                   :when (eq (growable-vector-ref ,types ,index) ,',type)
-                  :do (,',(symbolicate :with- name :-action) ,index ,(rest bindings)
+                  :do (,',(symbolicate :with- name :-action)
+                       ,index ,(rest bindings)
                        ,@body)))))
          (defmethod finalize-action-type ((type (eql ,type)))
            (setf ,storage-variable (,(symbolicate :make- struct :s))
@@ -199,8 +216,12 @@ See FINALIZE-ACTION"
          ,@body
          (defun ,(symbolicate :make- struct) (entity &key
                                                      (parent +invalid-index+)
-                                                     ,@(mapcar #'list slot-names slot-defaults))
-           ,(format nil "Creates and returns a new ~a action belonging to ENTITY with PARENT action and other keyword arguments corresponding to action slots." (substitute #\Space #\- (string-downcase type)))
+                                                     ,@(mapcar #'list
+                                                               slot-names
+                                                               slot-defaults))
+           ,(format nil "Creates and returns a new ~a action belonging to ENTITY
+ with PARENT action and other keyword arguments corresponding to action slots."
+                    (substitute #\Space #\- (string-downcase type)))
            ;; NOTE: side-effect of ctor function is
            ;;  to replace current action chain with the new action
            ;;  (or make one more link to that chain)
@@ -210,9 +231,11 @@ See FINALIZE-ACTION"
                  (,index (if (zerop (growable-vector-length ,deleted-indices))
                              (,length-helper)
                              (growable-vector-pop ,deleted-indices)))
-                 (global-index (if (zerop (growable-vector-length *action-deleted-indices*))
+                 (global-index (if (zerop (growable-vector-length
+                                           *action-deleted-indices*))
                                    (actions-length)
-                                   (growable-vector-pop *action-deleted-indices*))))
+                                   (growable-vector-pop
+                                    *action-deleted-indices*))))
              (setf ,@(mapcan
                       #'(lambda (a s) (list a s))
                       slot-accessors slot-names)
@@ -224,13 +247,15 @@ See FINALIZE-ACTION"
                    (current-action entity) global-index)
              (when (index-valid-p parent)
                (setf (actions-child-aref* *actions* parent) global-index))
-             ;; TODO : there's possible leak when parent != entity's current-action ???
+             ;; TODO : there's possible leak when parent != entity's
+             ;;  current-action ???
              (initialize-action ,type global-index)
              global-index))
          (defmethod do-delete-action ((type (eql ,type)) index)
            (declare (type (eql ,type) type))
            (finalize-action type index)
-           (growable-vector-push ,deleted-indices (actions-index-aref *actions* index)))))))
+           (growable-vector-push ,deleted-indices
+                                 (actions-index-aref *actions* index)))))))
 
 (defmacro defperformer (action bindings &body body)
   "Defines a performer function for ACTION symbol with BODY. BINDINGS is a

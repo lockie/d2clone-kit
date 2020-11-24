@@ -108,7 +108,9 @@
      :id (prog1 *layer-id* (incf *layer-id*))
      :name name)))
 
-(declaim (ftype (function (virtual-binary-stream fixnum) (vector (unsigned-byte 8))) pass-data))
+(declaim
+ (ftype (function (virtual-binary-stream fixnum) (vector (unsigned-byte 8)))
+        pass-data))
 (defun pass-data (binary-stream size)
   (declare (ignore size))
   (let* ((buffer (slot-value binary-stream 'buffer))
@@ -191,7 +193,9 @@
        b (read-binary 'byte stream)
        a (read-binary 'byte stream)))
     (make-ase-user-data-chunk
-     :layer-id (if *last-cel-chunk* (ase-cel-chunk-layer-id *last-cel-chunk*) +invalid-index+)
+     :layer-id (if *last-cel-chunk*
+                   (ase-cel-chunk-layer-id *last-cel-chunk*)
+                   +invalid-index+)
      :cel-id *cel-id*
      :text text
      :red r :green g :blue b :alpha a)))
@@ -220,30 +224,33 @@
        :with frames-count := (ase-binary-header-frames header)
        :with frames := (make-array frames-count)
        :for frame-index :below frames-count
-       :for frame := (let ((binary-frame (read-binary 'ase-binary-frame stream)))
-                       (unless (= (ase-binary-frame-magic binary-frame) +frame-magic+)
-                         (error "Invalid ASE frame"))
-                       (make-ase-frame
-                        :duration (ase-binary-frame-duration binary-frame)
-                        :chunks
-                        (loop
-                          :with chunks-count := (ase-binary-frame-chunks binary-frame)
-                          :with chunks := (make-array chunks-count)
-                          :for chunk-index :below chunks-count
-                          :for chunk := (let ((chunk-header (read-binary
-                                                             'ase-binary-chunk-header stream)))
-                                          (read-chunk
-                                           (ase-binary-chunk-header-type chunk-header)
-                                           (make-instance
-                                            'virtual-binary-stream
-                                            :buffer
-                                            (read-binary
-                                             (the fixnum
-                                                  (- (ase-binary-chunk-header-size chunk-header)
-                                                     6 ;; sizeof chunk-header
-                                                     ))
-                                             stream))))
-                          :do (setf (elt chunks chunk-index) chunk)
-                          :finally (return chunks))))
+       :for frame :=
+          (let ((binary-frame (read-binary 'ase-binary-frame stream)))
+            (unless (= (ase-binary-frame-magic binary-frame) +frame-magic+)
+              (error "Invalid ASE frame"))
+            (make-ase-frame
+             :duration (ase-binary-frame-duration binary-frame)
+             :chunks
+             (loop
+               :with chunks-count := (ase-binary-frame-chunks binary-frame)
+               :with chunks := (make-array chunks-count)
+               :for chunk-index :below chunks-count
+               :for chunk := (let ((chunk-header (read-binary
+                                                  'ase-binary-chunk-header
+                                                  stream)))
+                               (read-chunk
+                                (ase-binary-chunk-header-type chunk-header)
+                                (make-instance
+                                 'virtual-binary-stream
+                                 :buffer
+                                 (read-binary
+                                  (the fixnum
+                                       (- (ase-binary-chunk-header-size
+                                           chunk-header)
+                                          6 ;; sizeof chunk-header
+                                          ))
+                                  stream))))
+               :do (setf (elt chunks chunk-index) chunk)
+               :finally (return chunks))))
        :do (setf (elt frames frame-index) frame)
        :finally (return frames)))))

@@ -21,34 +21,50 @@ The following format features are unsupported yet:
 (defcomponent (sprite)
   (width nil :type fixnum)
   (height nil :type fixnum)
-  (layer-names nil :type list :documentation "layer names to keep the order of layers")
-  (layer-batches nil :type hash-table :documentation "layer name (keyword) -> sprite batch entity")
+  (layer-names
+   nil :type list
+       :documentation "layer names to keep the order of layers")
+  (layer-batches
+   nil :type hash-table
+       :documentation "layer name (keyword) -> sprite batch entity")
   ;; TODO : consider renaming stance to sequence
-  (stances nil :type hash-table :documentation "stance name (keyword) -> list of frame #s")
-  (directions nil :type fixnum :documentation "count of directions")
+  (stances
+   nil :type hash-table
+       :documentation "stance name (keyword) -> list of frame #s")
+  (directions
+   nil :type fixnum
+       :documentation "count of directions")
   (frame-durations nil :type (simple-array double-float))
   (frame-data nil :type hash-table)
   (layer-data nil :type hash-table)
   (prefab-name nil :type keyword)
   ;; instance state
   (stance :idle :type keyword)
-  (frame 0 :type fixnum
-           :documentation "not an actual frame in ase file, but rather frame no. in animation stance")
+  (frame
+   0 :type fixnum
+     :documentation "not an actual frame in ase file, but rather frame no. in
+animation stance")
   (angle 0d0 :type angle)
   (time-counter 0d0 :type double-float)
-  (layers-toggled nil :type hash-table :documentation "layer name (keyword) -> boolean")
+  (layers-toggled
+   nil :type hash-table
+       :documentation "layer name (keyword) -> boolean")
   (debug-entity +invalid-entity+ :type fixnum))
 
 (defprefab sprite "ase"
   (width nil :type fixnum)
   (height nil :type fixnum)
   (layer-names nil :type list)
-  (layers nil :type hash-table)  ;; layer name (keyword) -> al_bitmap
+  ;; layer name (keyword) -> al_bitmap
+  (layers nil :type hash-table)
   (stances nil :type hash-table)
   (directions nil :type fixnum)
   (frame-durations nil :type (simple-array double-float))
-  (frame-data nil :type hash-table)  ;; layer name (keyword) -> array of hash-tables with properties corresponding to each frame
-  (layer-data nil :type hash-table)  ;; layer name (keyword) -> hash-table with layer properties
+  ;; layer name (keyword) -> array of hash-tables with properties
+  ;; corresponding to each frame
+  (frame-data nil :type hash-table)
+  ;; layer name (keyword) -> hash-table with layer properties
+  (layer-data nil :type hash-table)
   )
 
 (defun toggle-layer (entity layer &optional (on nil on-supplied-p))
@@ -69,7 +85,8 @@ The following format features are unsupported yet:
   "Returns current frame's property called PROPERTY-NAME of a sprite component
 of ENTITY within the LAYER (or the default layer, if not specified). Retruns
 NIL if no such property exists."
-  ;; TODO : optimize by having property-name as multiple values + returning multiple values
+  ;; TODO : optimize by having property-name as multiple values + returning
+  ;; multiple values
   (with-sprite entity ()
     (gethash
      property-name
@@ -130,16 +147,21 @@ ENTITY. Returns NIL of no such property exists."
                                                (format-symbol
                                                 nil "~{~:@(~a~)~^-~}"
                                                 (butlast
-                                                 (uiop:split-string tag-name :separator '(#\-)))))
+                                                 (uiop:split-string
+                                                  tag-name
+                                                  :separator '(#\-)))))
                           :do (if (uiop:string-suffix-p tag-name "-0")
                                   (setf (gethash stance-name stances)
                                         (loop :for i :from (ase-tag-from tag)
                                               :upto (ase-tag-to tag)
                                               :collect i))
-                                  (when-let (stance-frames (gethash stance-name stances))
+                                  (when-let (stance-frames
+                                             (gethash stance-name stances))
                                     (unless (= (1- (length stance-frames))
-                                               (- (ase-tag-to tag) (ase-tag-from tag)))
-                                      (error "length mismatch for tag ~a" tag-name))))))
+                                               (- (ase-tag-to tag)
+                                                  (ase-tag-from tag)))
+                                      (error "length mismatch for tag ~a"
+                                             tag-name))))))
         :finally (return stances)))
 
 (defun load-sprite-layer-names (ase-file)
@@ -150,7 +172,8 @@ ENTITY. Returns NIL of no such property exists."
                     :do (let ((id (ase-layer-chunk-id chunk))
                               (layer-name (ase-layer-chunk-name chunk)))
                           (setf (growable-vector-ref* layer-names id)
-                                (make-keyword (format-symbol nil "~:@(~a~)" layer-name)))))
+                                (make-keyword
+                                 (format-symbol nil "~:@(~a~)" layer-name)))))
         :finally (return (growable-vector-freeze layer-names))))
 
 (defun total-stance-length (stances)
@@ -169,31 +192,38 @@ ENTITY. Returns NIL of no such property exists."
     :with bitmap-width := (* cel-width total-stance-length)
     :with bitmap-height := (* cel-height directions)
     :with layers-count := (length layer-names)
-    :with layer-bitmaps := (make-array layers-count :element-type 'cffi:foreign-pointer
-                                                    :initial-element (cffi:null-pointer))
+    :with layer-bitmaps := (make-array layers-count
+                                       :element-type 'cffi:foreign-pointer
+                                       :initial-element (cffi:null-pointer))
     :with locked-bitmaps := (loop
                               :for i :below layers-count
-                              :for bitmap := (al:create-bitmap bitmap-width bitmap-height)
+                              :for bitmap :=
+                                 (al:create-bitmap bitmap-width bitmap-height)
                               :do (setf (elt layer-bitmaps i) bitmap)
-                              :collect (al:lock-bitmap bitmap :abgr-8888 :writeonly))
+                              :collect
+                                 (al:lock-bitmap bitmap :abgr-8888 :writeonly))
     :for frame :across frames
     :for frame-id :below frames-count
     :do (loop
-         :for chunk across (ase-frame-chunks frame)
-         :when (and chunk (ase-cel-chunk-p chunk))
-           :do (cffi:with-foreign-slots ((data pitch pixel-size)
-                                        (elt locked-bitmaps (ase-cel-chunk-layer-id chunk))
-                                        (:struct locked-bitmap-region))
+          :for chunk across (ase-frame-chunks frame)
+          :when (and chunk (ase-cel-chunk-p chunk))
+          :do (cffi:with-foreign-slots
+                  ((data pitch pixel-size)
+                   (elt locked-bitmaps (ase-cel-chunk-layer-id chunk))
+                   (:struct locked-bitmap-region))
                 (multiple-value-bind (row col)
                     (truncate frame-id total-stance-length)
                   (loop
                     :with start-x := (* cel-width col)
                     :with start-y := (* cel-height row)
                     :for y :from start-y :below (+ start-y cel-height)
-                    :for dst := (cffi:inc-pointer data (+ (* 4 start-x) (* y pitch)))
-                    :do (cffi:with-pointer-to-vector-data (src (ase-cel-chunk-data chunk))
+                    :for dst := (cffi:inc-pointer data (+ (* 4 start-x)
+                                                          (* y pitch)))
+                    :do (cffi:with-pointer-to-vector-data
+                            (src (ase-cel-chunk-data chunk))
                           (memcpy dst
-                                  (cffi:inc-pointer src (* 4 (- y start-y) cel-width))
+                                  (cffi:inc-pointer src (* 4 (- y start-y)
+                                                           cel-width))
                                   (* 4 cel-width)))))))
     :finally
        (loop :for bitmap :across layer-bitmaps :do (al:unlock-bitmap bitmap))
@@ -206,11 +236,16 @@ ENTITY. Returns NIL of no such property exists."
                                :init-format :keychain
                                :initial-contents layer-names
                                :init-data (loop :repeat (length layer-names)
-                                                :collect (make-array total-stance-length
-                                                                     :element-type 'hash-table
-                                                                     :initial-contents
-                                                                     (loop :repeat total-stance-length
-                                                                           :collect (make-hash-table)))))
+                                                :collect
+                                                   (make-array
+                                                    total-stance-length
+                                                    :element-type 'hash-table
+                                                    :initial-contents
+                                                    (loop
+                                                      :repeat
+                                                      total-stance-length
+                                                      :collect
+                                                         (make-hash-table)))))
     :for frame :across (ase-file-frames ase-file)
     :when (ase-frame-chunks frame)
     :do (loop
@@ -222,7 +257,8 @@ ENTITY. Returns NIL of no such property exists."
                 (unless (or (minusp cel-id)
                             (> cel-id total-stance-length)
                             (length= 0 text))
-                  (setf (aref (gethash (aref layer-names layer-id) result) cel-id)
+                  (setf (aref (gethash (aref layer-names layer-id) result)
+                              cel-id)
                         (plist-hash-table
                          (with-input-from-string (s text)
                            (read s))
@@ -260,11 +296,14 @@ ENTITY. Returns NIL of no such property exists."
          (stances (load-sprite-stances ase-file))
          (total-stance-length (total-stance-length stances))
          (directions (directions ase-file total-stance-length))
-         (frame-durations (load-sprite-frame-durations ase-file total-stance-length))
+         (frame-durations
+           (load-sprite-frame-durations ase-file total-stance-length))
          (layer-names (load-sprite-layer-names ase-file))
-         (frame-data (load-sprite-frame-data ase-file layer-names total-stance-length))
+         (frame-data
+           (load-sprite-frame-data ase-file layer-names total-stance-length))
          (layer-data (load-sprite-layer-data ase-file layer-names))
-         (layer-bitmaps (load-sprite-layers ase-file layer-names total-stance-length directions))
+         (layer-bitmaps (load-sprite-layers
+                         ase-file layer-names total-stance-length directions))
          (layers (make-hash
                   ;; TODO do I need :size here?
                   :size (length layer-names) :test 'eq :init-format :keychain
@@ -304,9 +343,11 @@ extra checks. Does not affect TIME-COUNTER of sprite."
       (setf stance new-stance
             frame (first (gethash new-stance stances)))
       (emit-frame-sound entity)
-      (issue (sprite-stance-changed) :entity entity :old-stance old-stance :new-stance new-stance))))
+      (issue (sprite-stance-changed)
+             :entity entity :old-stance old-stance :new-stance new-stance))))
 
-(defmethod make-prefab-component ((system sprite-system) entity prefab parameters)
+(defmethod make-prefab-component ((system sprite-system) entity prefab
+                                  parameters)
   (with-system-config-options ((debug-sprite))
     (let ((width (sprite-prefab-width prefab))
           (height (sprite-prefab-height prefab)))
@@ -335,10 +376,12 @@ extra checks. Does not affect TIME-COUNTER of sprite."
                                (make-hash
                                 :test 'eq
                                 :init-format :keys
-                                :initial-contents (sprite-prefab-layer-names prefab)
+                                :initial-contents
+                                (sprite-prefab-layer-names prefab)
                                 :init-default nil)))
                          (destructuring-bind
-                             (&key (layers-initially-toggled nil) &allow-other-keys) parameters
+                             (&key (layers-initially-toggled nil)
+                              &allow-other-keys) parameters
                            (dolist (layer layers-initially-toggled)
                              (setf (gethash layer layers-toggled) t)))
                          layers-toggled)
@@ -423,7 +466,9 @@ it was."
  (inline sprite-direction)
  (ftype (function (fixnum double-float) unsigned-byte) sprite-direction))
 (defun sprite-direction (directions angle)
-  "Calculates sprite direction from angle value ANGLE assuming total sprite direction count DIRECTIONS. East direction is 0 degree angle; counted clockwise."
+  "Calculates sprite direction from angle value ANGLE assuming total sprite
+direction count DIRECTIONS. East direction is 0 degree angle; counted
+clockwise."
   ;; (declare (type angle angle))
   (let ((angle (+ angle +isometric-angle+)))
     (when (minusp angle)
@@ -443,9 +488,11 @@ it was."
               (absolute->viewport sprite-x sprite-y)
             (when (visiblep x y (max width height))
               (let ((x0 (- x (truncate (- width *tile-width*) 2)))
-                    (y0 (- y (- (* 3 (truncate height 4)) (truncate *tile-height* 2)))))
+                    (y0 (- y (- (* 3 (truncate height 4))
+                                (truncate *tile-height* 2)))))
                 (loop
-                  :for layer :being :the :hash-key :using (hash-value toggled) :of layers-toggled
+                  :for layer :being :the :hash-key
+                  :using (hash-value toggled) :of layers-toggled
                   :when toggled :do
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
@@ -462,7 +509,8 @@ it was."
                      (* (sprite-direction directions angle) height)
                      x0 y0))
                 (when debug-sprite
-                  (add-debug-rectangle debug-entity x0 y0 width height debug-sprite)))))))))
+                  (add-debug-rectangle debug-entity x0 y0 width height
+                                       debug-sprite)))))))))
 
 (defhandler (sprite-system entity-died)
   (let ((entity (entity-died-entity event))

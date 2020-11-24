@@ -2,7 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 ### Added
@@ -20,14 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Removed ubiquitous mana system component.
-- Refactored coordinates system. Now orthogonal coordinates are stored and used everywhere, and isometric ones are calculated on the fly when needed.
+- Refactored coordinates system. Now orthogonal coordinates are stored and used
+  everywhere, and isometric ones are calculated on the fly when needed.
 - Removed ubiquitous coordinates component.
 - Removed ubiquitous sprite batch system component.
 - Refactored new game object initialization to avoid runtime code generation.
 - DEFPREFAB macro now also defines necessary empty make-component method.
 - ECS systems refactored to defstructs for performance reasons.
 - Refactored invalid entity mechanics.
-- ECS components refactored to sparse SoA arrays for performance and memory consumption reasons.
+- ECS components refactored to sparse SoA arrays for performance and memory
+  consumption reasons.
 - Radically simplified events subsystem.
 
 ### Removed
@@ -37,7 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed compilation on CCL.
-- Assets are now loaded using path relative to executable, not to current working directory.
+- Assets are now loaded using path relative to executable, not to current
+  working directory.
 - Minor performance improvements in asset loading.
 - Fixed bug causing FLOATING-POINT-INVALID-OPERATION on some systems.
 - Greatly improved memory usage by avoiding storing parsed ase files.
@@ -45,13 +49,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed bug causing log messages longer than approx. 2kbytes to be truncated.
 - Fixed bug causing character shadow to be drawn over the weapon.
 - Fixed bug causing character to be able to move through other characters.
-- Fixed bug causing player character not being able to stop the initiated attack.
+- Fixed bug causing player character not being able to stop the initiated
+  attack.
 - Fixed item-related performance issue.
 - Greatly improved sprite batch performance.
-- Fixed bug causing item sprite batch to be still drawn when item was picked up.
+- Fixed bug causing item sprite batch to be still drawn when item was picked
+  up.
 - Fixed bug causing sprites to glitch when all objects were recreated.
 - Fixed bug causing the game to crash on exit when some fonts were not deleted.
-- Fixed bug causing corpse sprites to be incorrectly rendered on top of other ones.
+- Fixed bug causing corpse sprites to be incorrectly rendered on top of other
+  ones.
 - Fixed several memory leaks on exit.
 
 
@@ -81,25 +88,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Minor deployment-related fixes.
 - Fixed character movement speed maths.
-- Fixed bug causing memory faults on secondary start attempts after caught conditions.
-- Fixed bug when the character was registered as colliding with some stuff when it really wasn't.
-- Fixed bug when the player character would start moving when it was not asked to.
-- Fixed bug when the player character would keep moving when it was not asked to.
+- Fixed bug causing memory faults on secondary start attempts after caught
+  conditions.
+- Fixed bug when the character was registered as colliding with some stuff when
+  it really wasn't.
+- Fixed bug when the player character would start moving when it was not asked
+  to.
+- Fixed bug when the player character would keep moving when it was not asked
+  to.
 
 ## [0.0.1] - 2020-04-10
 ### Added
 - Aseprite format parser.
 - Viewport handling routines.
 - A* algorithm.
-- Config subsystem built on top of [liballegro APIs](https://liballeg.org/a5docs/5.2.0/config.html).
+- Config subsystem built on top of
+  [liballegro APIs](https://liballeg.org/a5docs/5.2.0/config.html).
 - Simple engine demo.
 - Means of visual debugging.
-- Simple event loop built on top of [deeds](https://github.com/Shinmera/deeds) library.
+- Simple event loop built on top of [deeds](https://github.com/Shinmera/deeds)
+  library.
 - Support for loading assets from zip files.
 - Utilities to easily parse binary files.
-- Some data structures, including simple-vector of dynamic size, priority queue and sparse-matrix.
+- Some data structures, including simple-vector of dynamic size, priority queue
+  and sparse-matrix.
 - Log subsystem built on top of liballegro APIs.
-- Proper (not like the [last time](https://awkravchuk.itch.io/darkness-looming)) isometric <-> orthogonal conversion maths.
+- Proper (not like the
+  [last time](https://awkravchuk.itch.io/darkness-looming))
+  isometric <-> orthogonal conversion maths.
 - Functional 2D renderer.
 - Sprite batching subsystem.
 - Stateful movable sprites.

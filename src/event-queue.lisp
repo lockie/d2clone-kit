@@ -18,7 +18,8 @@
 (defun process-events ()
   "Processes events collected in event queue by systems."
   (loop :with i :of-type array-index := 0
-        :for length :of-type array-length := (growable-vector-length *event-queue*)
+        :for length :of-type array-length :=
+           (growable-vector-length *event-queue*)
         :while (< i length)
         :do (let ((event (growable-vector-ref *event-queue* i)))
               (with-systems system

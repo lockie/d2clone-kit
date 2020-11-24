@@ -14,7 +14,8 @@
   (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
          (allegro-event (make-allegro-event :type type :struct event)))
     (declare (dynamic-extent allegro-event))
-    ;; NOTE : processing allegro event without queueing, because event struct is stack allocated
+    ;; NOTE : processing allegro event without queueing, because event struct
+    ;; is stack allocated
     (with-systems system
       (process-event system allegro-event))
     (not (eq type :display-close))))
@@ -39,7 +40,8 @@
         (loop :do
           (nk:with-input (ui-context)
             (unless (loop :while (al:get-next-event event-queue event)
-                          :always (or (ui-handle-event event) (systems-handle-event event)))
+                          :always (or (ui-handle-event event)
+                                      (systems-handle-event event)))
               (loop-finish)))
           (process-events)
           (let ((current-tick (al:get-time)))
@@ -48,11 +50,13 @@
               (setf last-repl-update current-tick))
             (when display-fps
               ;; TODO : smooth FPS counter, like in allegro examples
-              (add-debug-text :fps "FPS: ~d" (round 1 (- current-tick last-tick))))
+              (add-debug-text :fps "FPS: ~d"
+                              (round 1 (- current-tick last-tick))))
             (setf *delta-time* (- current-tick last-tick))
             (process-actions)
             (with-systems sys
-              ;; TODO : replace system-update with event?.. maybe even system-draw too?..
+              ;; TODO : replace system-update with event?.. maybe even
+              ;; system-draw too?..
               (system-update sys))
             (with-systems sys
               (system-draw sys renderer))
@@ -137,7 +141,8 @@
           (error "Initializing display failed"))
         (al:inhibit-screensaver t)
         (al:set-window-title display *game-name*)
-        (al:register-event-source event-queue (al:get-display-event-source display))
+        (al:register-event-source event-queue
+                                  (al:get-display-event-source display))
         (al:install-keyboard)
         (al:register-event-source event-queue (al:get-keyboard-event-source))
         (al:install-mouse)
@@ -184,8 +189,9 @@
 
 (defunl start-engine (game-name new-game-object-specs &rest config)
   "Initializes and starts engine to run the game named by GAME-NAME.
-NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when the new game is started.
- CONFIG plist is used to override variables read from config file."
+NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when
+ the new game is started.  CONFIG plist is used to override variables read
+ from config file."
   (let ((*game-name* game-name)
         (*new-game-object-specs* new-game-object-specs)
         (*config-options* config))

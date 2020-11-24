@@ -18,7 +18,8 @@
 (defvar *function-name* "")
 
 (defmacro defunl (fname lambda-list &body body)
-  "DEFUN wrapper which sets correct current function name for logging functions."
+  "DEFUN wrapper which sets correct current function name for logging
+functions."
   (let ((docstring (when (stringp (car body)) (pop body))))
     `(defun ,fname ,lambda-list
        ,@(ensure-list docstring)
@@ -34,12 +35,15 @@
   (flet
       ((do-trace (level function-name message)
          (when (trace-prefix
-                "d2clone-kit" level (file-namestring (or (uiop:argv0) "")) 0 function-name)
+                "d2clone-kit" level (file-namestring (or (uiop:argv0) "")) 0
+                function-name)
            (loop :with finalized-message := (format nil "~a~%" message)
                  :with length := (length finalized-message)
                  :for i :of-type fixnum :from 0 :to length :by 1024
                  :do (trace-suffix
-                      "%s" :string (subseq finalized-message i (min length (+ i 1024))))))))
+                      "%s"
+                      :string
+                      (subseq finalized-message i (min length (+ i 1024))))))))
     (let ((full-message (apply #'format (list* nil message args))))
       (cond
         ((string= *last-message* full-message)
@@ -60,19 +64,25 @@
        (%trace ,level message args))))
 
 (deflog debug 0
-  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro debug channel.")
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro debug channel.")
 
 (deflog info 1
-  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro info channel.")
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro info channel.")
 
 (deflog warn 2
-  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro warn channel.")
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro warn channel.")
 
 (deflog error 3
-  "Adds formatted message MESSAGE using placeholder arguments ARGS to liballegro error channel.")
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro error channel.")
 
 (defmacro with-condition-reporter (&body body)
-  "Executes body BODY with generic error handler which puts full error condition info including backtrace to liballegro log and displays error messagebox when not in debugger."
+  "Executes body BODY with generic error handler which puts full error
+condition info including backtrace to liballegro log and displays error
+messagebox when not in debugger."
   `(handler-bind
        ((error #'(lambda (e)
                    (log-error "~a"
@@ -80,15 +90,16 @@
                                 (uiop:print-condition-backtrace e :stream s)))
                    (unless *debugger-hook*
                      (al:show-native-message-box
-                      (cffi:null-pointer) "Hey guys" "We got a big error here :("
-                      (format nil "~a" e) (cffi:null-pointer) :error)))))
+                      (cffi:null-pointer) "Hey guys"
+                      "We got a big error here :(" (format nil "~a" e)
+                      (cffi:null-pointer) :error)))))
      ,@body))
 
 (defmacro with-profiling (on marker &body body)
   "On SBCL, when the variable denoted by symbol ON is T, executes BODY with
-[statistical profiler](http://www.sbcl.org/manual/#Statistical-Profiler) turned on
-and then prints its results into liballegro log along with MARKER string
-used to identify this profiling run among others.
+[statistical profiler](http://www.sbcl.org/manual/#Statistical-Profiler)
+turned on and then prints its results into liballegro log along with MARKER
+string used to identify this profiling run among others.
 
 Otherwise, just executes BODY."
   (let ((on-variable (symbolicate on)))

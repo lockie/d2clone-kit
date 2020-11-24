@@ -24,7 +24,8 @@
 
 (defevent entity-deleted
     ((entity +invalid-entity+ :type fixnum))
-    (:documentation "Event class issued when an entity is about to be deleted."))
+    (:documentation "Event class issued when an entity is about to be
+    deleted."))
 
 ;; TODO : consider making generic "component value changed" event
 

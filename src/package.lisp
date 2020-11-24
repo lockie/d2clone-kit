@@ -8,7 +8,8 @@
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
   ;; TODO : don't use :use, see https://git.io/Jfc8D
-  (:use #+docs :cl #-docs :static-dispatch-cl :alexandria :trivial-garbage :parse-float :xmls)
+  (:use #+docs :cl #-docs :static-dispatch-cl :net.mfiano.lisp.golden-utils
+   :trivial-garbage :parse-float :xmls)
   (:import-from :make-hash :make-hash)
   (:import-from :cl-inflector :plural-of)
   (:shadow character)

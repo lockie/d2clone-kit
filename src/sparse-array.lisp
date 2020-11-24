@@ -18,7 +18,8 @@
   "A sparse array index shared between several growable vectors."
   (indices nil :type growable-vector)
   (count 0 :type array-length)
-  (deleted-indices (make-growable-vector :initial-element +invalid-index+) :type growable-vector))
+  (deleted-indices (make-growable-vector :initial-element +invalid-index+)
+   :type growable-vector))
 
 ;; TODO : document!
 
@@ -32,20 +33,26 @@
  (inline sparse-array-index-grow)
  (ftype (function (sparse-array-index array-length)) sparse-array-index-grow))
 (defun sparse-array-index-grow (sparse-array-index new-allocated-size)
-  (growable-vector-grow (%sparse-array-index-indices sparse-array-index) new-allocated-size))
+  (growable-vector-grow (%sparse-array-index-indices sparse-array-index)
+                        new-allocated-size))
 
 (declaim
  (inline sparse-array-index-ref)
- (ftype (function (sparse-array-index array-index) fixnum) sparse-array-index-ref))
+ (ftype (function (sparse-array-index array-index) fixnum)
+        sparse-array-index-ref))
 (defun sparse-array-index-ref (sparse-array-index subscript)
-  (growable-vector-ref (%sparse-array-index-indices sparse-array-index) subscript))
+  (growable-vector-ref (%sparse-array-index-indices sparse-array-index)
+                       subscript))
 
 (declaim
  (inline sparse-array-index-push)
- (ftype (function (sparse-array-index array-index) array-index) sparse-array-index-push))
+ (ftype (function (sparse-array-index array-index) array-index)
+        sparse-array-index-push))
 (defun sparse-array-index-push (sparse-array-index subscript)
-  (let ((deleted-indices (%sparse-array-index-deleted-indices sparse-array-index)))
-    (setf (growable-vector-ref* (%sparse-array-index-indices sparse-array-index) subscript)
+  (let ((deleted-indices
+          (%sparse-array-index-deleted-indices sparse-array-index)))
+    (setf (growable-vector-ref* (%sparse-array-index-indices sparse-array-index)
+                                subscript)
           (if (zerop (growable-vector-length deleted-indices))
               (prog1 (%sparse-array-index-count sparse-array-index)
                 (incf (%sparse-array-index-count sparse-array-index)))
@@ -57,14 +64,17 @@
 (defun sparse-array-index-delete (sparse-array-index subscript)
   (growable-vector-push
    (%sparse-array-index-deleted-indices sparse-array-index)
-   (growable-vector-ref (%sparse-array-index-indices sparse-array-index) subscript))
-  (setf (growable-vector-ref (%sparse-array-index-indices sparse-array-index) subscript)
+   (growable-vector-ref (%sparse-array-index-indices sparse-array-index)
+                        subscript))
+  (setf (growable-vector-ref (%sparse-array-index-indices sparse-array-index)
+                             subscript)
         +invalid-index+))
 
 (defmacro do-sparse-array ((subscript index sparse-array-index) &body body)
   (with-gensyms (indices)
     `(let ((,indices (%sparse-array-index-indices ,sparse-array-index)))
        (loop :for ,subscript :from 0 :to (growable-vector-length ,indices)
-             :for ,index := (the fixnum (growable-vector-ref ,indices ,subscript))
+             :for ,index := (the fixnum
+                                 (growable-vector-ref ,indices ,subscript))
              :when (index-valid-p ,index)
                :do ,@body))))

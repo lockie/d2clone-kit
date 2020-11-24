@@ -14,9 +14,11 @@
 (defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
 
 (declaim (inline make-growable-vector))
-(defun make-growable-vector (&key (initial-element nil) (initial-allocated-size 1))
-  "Creates new growable vector with initial allocated size INITIAL-ALLOCATED-SIZE
-(1 by default) and initial element INITIAL-ELEMENT (NIL by default)."
+(defun make-growable-vector (&key (initial-element nil)
+                                  (initial-allocated-size 1))
+  "Creates new growable vector with initial allocated size
+INITIAL-ALLOCATED-SIZE (1 by default) and initial element
+INITIAL-ELEMENT (NIL by default)."
   (%make-growable-vector
    :vector (make-array initial-allocated-size :initial-element initial-element)
    :initial-element initial-element))
@@ -39,11 +41,13 @@
             (adjust-array
              vector
              new-allocated-size
-             :initial-element (%growable-vector-initial-element growable-vector))))))
+             :initial-element
+             (%growable-vector-initial-element growable-vector))))))
 
 (declaim
  (inline (setf growable-vector-ref))
- (ftype (function (t growable-vector array-index) t) (setf growable-vector-ref)))
+ (ftype (function (t growable-vector array-index) t)
+        (setf growable-vector-ref)))
 (defun (setf growable-vector-ref) (value growable-vector index)
   "Access GROWABLE-VECTOR by INDEX with no bounds checking whatsoever."
   (setf (%growable-vector-size growable-vector)
@@ -53,7 +57,8 @@
 
 (declaim
  (inline (setf growable-vector-ref*))
- (ftype (function (t growable-vector array-index) t) (setf growable-vector-ref*)))
+ (ftype (function (t growable-vector array-index) t)
+        (setf growable-vector-ref*)))
 (defun (setf growable-vector-ref*) (value growable-vector index)
   "Access GROWABLE-VECTOR by INDEX, growing if necessary (when index is
 greater than current allocated size)."
@@ -84,7 +89,9 @@ greater than current allocated size)."
  (ftype (function (growable-vector t)) growable-vector-push))
 (defun growable-vector-push (growable-vector value)
   "Appends VALUE to the end of GROWABLE-VECTOR."
-  (setf (growable-vector-ref* growable-vector (%growable-vector-size growable-vector)) value))
+  (setf (growable-vector-ref* growable-vector
+                              (%growable-vector-size growable-vector))
+        value))
 
 (declaim
  (inline growable-vector-pop)
@@ -130,7 +137,8 @@ If INDEX is not given, removes and returns last element."
  (ftype (function (growable-vector &key (:element-type symbol)) simple-array)
         growable-vector-freeze))
 (defun growable-vector-freeze (growable-vector &key (element-type 't))
-  "Creates SIMPLE-ARRAY of ELEMENT-TYPE holding the same elements that GROWABLE-VECTOR holds."
+  "Creates SIMPLE-ARRAY of ELEMENT-TYPE holding the same elements that
+GROWABLE-VECTOR holds."
   (let* ((size (%growable-vector-size growable-vector))
          (result (make-array size :element-type element-type)))
     (replace

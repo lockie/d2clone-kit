@@ -23,7 +23,9 @@
 (defhandler (menu-system allegro-event
              :filter (eq (allegro-event-type event) :key-down))
   (when (eq (cffi:foreign-slot-value
-             (allegro-event-struct event) '(:struct al:keyboard-event) 'al::keycode)
+             (allegro-event-struct event)
+             '(:struct al:keyboard-event)
+             'al::keycode)
             :escape)
     (toggle-ui (menu-system-ui-entity system))))
 

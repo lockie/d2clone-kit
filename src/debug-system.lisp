@@ -17,7 +17,8 @@
          (fixnum fixnum fixnum fixnum fixnum fixnum &optional (or fixnum null)))
         add-debug-point))
 (defun add-debug-point (entity x y r g b &optional (a nil))
-  "Adds point with screen coordinates X, Y and color R, G, B, A to debug buffer ENTITY."
+  "Adds point with screen coordinates X, Y and color R, G, B, A to debug
+buffer ENTITY."
   (with-debug-buffer entity ()
     (let ((count (growable-vector-length points)))
       (growable-vector-grow points (+ count 9))
@@ -31,9 +32,11 @@
       (setf (growable-vector-ref points (+ count 7)) (float b))
       (setf (growable-vector-ref points (+ count 8)) (float (or a 0))))))
 
-(declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list)) add-debug-rectangle))
+(declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list))
+                add-debug-rectangle))
 (defun add-debug-rectangle (entity x y w h color)
-  "Adds rectangle with screen coordinates X, Y, dimensions W, H and color COLOR to debug buffer ENTITY."
+  "Adds rectangle with screen coordinates X, Y, dimensions W, H and color
+COLOR to debug buffer ENTITY."
   (let ((r (first color))
         (g (second color))
         (b (third color))
@@ -47,30 +50,40 @@
     (add-debug-point entity x (+ y h) r g b a)
     (add-debug-point entity x y r g b a)))
 
-(declaim (ftype (function (fixnum fixnum fixnum list boolean)) add-debug-tile-rhomb))
+(declaim (ftype (function (fixnum fixnum fixnum list boolean))
+                add-debug-tile-rhomb))
 (defun add-debug-tile-rhomb (entity x y color mark)
-  "Adds grid rhomb with screen coordinates X, Y and color COLOR to debug buffer ENTITY. If MARK is T, then rhomb is drawn crossed out."
+  "Adds grid rhomb with screen coordinates X, Y and color COLOR to debug
+buffer ENTITY. If MARK is T, then rhomb is drawn crossed out."
   (let ((r (first color))
         (g (second color))
         (b (third color))
         (a (fourth color)))
-  (add-debug-point entity (+ x (ceiling *tile-width* 2)) y r g b a)
-  (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2)) r g b a)
-  (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2)) r g b a)
-  (add-debug-point entity (+ x (ceiling *tile-width* 2)) (+ y *tile-height*) r g b a)
-  (add-debug-point entity (+ x (ceiling *tile-width* 2)) (+ y *tile-height*) r g b a)
-  (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a)
-  (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a)
-  (add-debug-point entity (+ x (ceiling *tile-width* 2)) y r g b a)
-  (when mark
     (add-debug-point entity (+ x (ceiling *tile-width* 2)) y r g b a)
-    (add-debug-point entity (+ x (ceiling *tile-width* 2)) (+ y *tile-height*) r g b a)
-    (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2)) r g b a)
-    (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a))))
+    (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2))
+                     r g b a)
+    (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2))
+                     r g b a)
+    (add-debug-point entity (+ x (ceiling *tile-width* 2)) (+ y *tile-height*)
+                     r g b a)
+    (add-debug-point entity (+ x (ceiling *tile-width* 2)) (+ y *tile-height*)
+                     r g b a)
+    (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a)
+    (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a)
+    (add-debug-point entity (+ x (ceiling *tile-width* 2)) y r g b a)
+    (when mark
+      (add-debug-point entity (+ x (ceiling *tile-width* 2)) y r g b a)
+      (add-debug-point entity (+ x (ceiling *tile-width* 2)) (+ y *tile-height*)
+                       r g b a)
+      (add-debug-point entity (+ x *tile-width*) (+ y (ceiling *tile-height* 2))
+                       r g b a)
+      (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a))))
 
 (declaim (ftype (function (keyword string &rest t)) add-debug-text))
 (defun add-debug-text (designator text &rest args)
-  "Adds debug text TEXT using FORMAT-like arguments ARGS to display on top left corner of the screen. To identify same text line each frame, set keyword DESIGNATOR to same value."
+  "Adds debug text TEXT using FORMAT-like arguments ARGS to display on top
+left corner of the screen. To identify same text line each frame, set keyword
+DESIGNATOR to same value."
   (with-system-slots ((texts text-designators) debug-system nil :read-only nil)
     (pushnew designator text-designators)
     (setf (gethash designator texts) (apply #'format nil text args))))
@@ -80,7 +93,8 @@
     (make-debug-buffer
      entity
      :render-order order
-     :points (make-growable-vector :initial-element 0d0 :initial-allocated-size size))))
+     :points (make-growable-vector :initial-element 0d0
+                                   :initial-allocated-size size))))
 
 (defmethod system-finalize ((system debug-system))
   (al:destroy-font (debug-system-font system)))
@@ -96,7 +110,8 @@
        (let ((points points))
          #'(lambda ()
              (cffi:with-pointer-to-vector-data
-                 (ptr (growable-vector-freeze points :element-type 'single-float))
+                 (ptr (growable-vector-freeze points
+                                              :element-type 'single-float))
                (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
                              (ceiling (growable-vector-length points) 9) 0))))))
   (with-system-slots ((font texts text-designators) debug-system system)

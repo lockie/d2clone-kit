@@ -2,12 +2,14 @@
 
 ;; TODO : rename this to movable?..
 
-;; TODO : perhaps turn the character towards the goal while movement to make it more natural
+;; TODO : perhaps turn the character towards the goal while movement to make
+;; it more natural
 
 
 (defsystem character
   ()
-  (:documentation "Handles sprites that are able to walk and collide with obstacles."))
+  (:documentation "Handles sprites that are able to walk and collide with
+  obstacles."))
 
 (defcomponent (character)
   (speed nil :type double-float)
@@ -83,7 +85,9 @@
             (if (<= (euclidean-distance target-x target-y current-x current-y)
                     (+ 0.0d0 target-distance))
                 (delete-action action)
-                (make-move-action entity :parent action :target-x target-x :target-y target-y))))))))
+                (make-move-action entity :parent action
+                                         :target-x target-x
+                                         :target-y target-y))))))))
 
 (defperformer track (action target target-distance)
   (let* ((entity (action-entity action))
@@ -93,15 +97,21 @@
         (if (> (euclidean-distance target-x target-y current-x current-y)
                target-distance)
             (if (not (index-valid-p (action-child action)))
-                (delete-action action) ;; movement action has stuck, stop current action
+                ;; movement action has stuck, stop current action
+                (delete-action action)
                 (multiple-value-bind (new-target-x new-target-y)
-                    (closest-walkable-point entity current-x current-y target-x target-y)
-                  (with-move-action child-action (move-target-x move-target-y path)
+                    (closest-walkable-point entity
+                                            current-x current-y
+                                            target-x target-y)
+                  (with-move-action child-action (move-target-x
+                                                  move-target-y
+                                                  path)
                     (destructuring-bind (current-target-x . current-target-y)
                         (if (length= 0 path)
                             (cons move-target-x move-target-y)
                             (simple-vector-peek path))
-                      (declare (type double-float current-target-x current-target-y))
+                      (declare (type double-float
+                                     current-target-x current-target-y))
                       (unless (and (= current-target-x new-target-x)
                                    (= current-target-y new-target-y))
                         (setf move-target-x new-target-x
@@ -119,12 +129,14 @@
       (make-character entity
                       :speed speed
                       :debug-entity (if debug-path
-                                        (make-object '((:debug :order 1050d0)) entity)
+                                        (make-object '((:debug :order 1050d0))
+                                                     entity)
                                         +invalid-entity+)))))
 
 (declaim
  (inline euclidean-distance)
- (ftype (function (double-float double-float double-float double-float) double-float)
+ (ftype (function (double-float double-float double-float double-float)
+                  double-float)
         euclidean-distance))
 (defun euclidean-distance (x1 y1 x2 y2)
   (flet ((sqr (x) (the double-float (* x x))))
@@ -184,7 +196,8 @@
 ;; TODO : XXX : the path changes when moving along the way.
 ;; TODO : XXX : precalculate something?.. like Dijkstra Maps. see
 ;; https://www.reddit.com/r/roguelikedev/comments/hpxnkd
-(declaim (ftype (function (double-float double-float double-float double-float)) a*))
+(declaim
+(ftype (function (double-float double-float double-float double-float)) a*))
 (defun a* (start-x start-y goal-x goal-y)
   "Runs A* algorithm to find path from point START-X, START-Y to GOAL-X, GOAL-Y.
 Returns simple array containing conses of x and y path node world coordinates.
@@ -211,39 +224,62 @@ Note: if goal point is not walkable, this function will stuck."
                                               (the fixnum (cdr neighbour)))))
                           (let* ((cost (+ (euclidean-distance
                                            start-x start-y
-                                           (coerce (path-node-x current) 'double-float)
-                                           (coerce (path-node-y current) 'double-float))
-                                          (sqrt (+ (expt (the fixnum (car neighbour)) 2)
-                                                   (expt (the fixnum (cdr neighbour)) 2)))
-                                          (if (collidesp neighbour-x neighbour-y)
+                                           (coerce (path-node-x current)
+                                                   'double-float)
+                                           (coerce (path-node-y current)
+                                                   'double-float))
+                                          (sqrt (+ (expt
+                                                    (the fixnum (car neighbour))
+                                                    2)
+                                                   (expt
+                                                    (the fixnum (cdr neighbour))
+                                                    2)))
+                                          (if (collidesp
+                                               neighbour-x neighbour-y)
                                               10000d0 0d0)))
                                  (neighbour-cost (euclidean-distance
                                                   start-x start-y
-                                                  (coerce neighbour-x 'double-float)
-                                                  (coerce neighbour-y 'double-float)))
-                                 (neighbour-node (make-path-node neighbour-x neighbour-y))
-                                 (neighbour-open-index (priority-queue-find open neighbour-node)))
-                            (if (and (< cost neighbour-cost) neighbour-open-index)
+                                                  (coerce neighbour-x
+                                                          'double-float)
+                                                  (coerce neighbour-y
+                                                          'double-float)))
+                                 (neighbour-node (make-path-node
+                                                  neighbour-x neighbour-y))
+                                 (neighbour-open-index (priority-queue-find
+                                                        open neighbour-node)))
+                            (if (and (< cost neighbour-cost)
+                                     neighbour-open-index)
                                 ;; new path is better
-                                (priority-queue-remove open neighbour-open-index)
+                                (priority-queue-remove
+                                 open neighbour-open-index)
                                 (let ((neighbour-closed-index
-                                        (position neighbour-node closed :test #'path-node-equal)))
+                                        (position neighbour-node closed
+                                                  :test #'path-node-equal)))
                                   (cond
-                                    ((and neighbour-closed-index (< cost neighbour-cost))
-                                     ;; XXX this does happen with the chosen metric.
-                                     (setf closed (remove-nth closed neighbour-closed-index)))
+                                    ((and neighbour-closed-index
+                                          (< cost neighbour-cost))
+                                     ;; XXX this does happen with the chosen
+                                     ;; metric.
+                                     (setf closed
+                                           (remove-nth
+                                            closed neighbour-closed-index)))
                                     ((and (not neighbour-open-index)
                                           (not neighbour-closed-index))
                                      (setf (path-node-cost neighbour-node)
                                            (+ cost (euclidean-distance
-                                                    (coerce neighbour-x 'double-float)
-                                                    (coerce neighbour-y 'double-float)
+                                                    (coerce neighbour-x
+                                                            'double-float)
+                                                    (coerce neighbour-y
+                                                            'double-float)
                                                     goal-x goal-y))
-                                           (path-node-parent neighbour-node) current)
-                                     (priority-queue-push open neighbour-node))))))))
+                                           (path-node-parent neighbour-node)
+                                           current)
+                                     (priority-queue-push
+                                      open neighbour-node))))))))
                   :finally (return current))))
       (loop
-        :with result := (make-array 0 :element-type 'cons :adjustable t :fill-pointer t)
+        :with result := (make-array 0 :element-type 'cons
+                                      :adjustable t :fill-pointer t)
         :for node := goal-node :then (path-node-parent node)
         :until (eq start-node node)
         :do (vector-push-extend (cons
@@ -256,11 +292,12 @@ Note: if goal point is not walkable, this function will stuck."
 
 (declaim
  (inline face-target)
- (ftype (function (double-float double-float double-float double-float) double-float)
+ (ftype (function (double-float double-float double-float double-float)
+                  double-float)
         face-target))
 (defun face-target (character-x character-y target-x target-y)
-  "Returns the angle that the character at CHARACTER-X, CHARACTER-Y should be facing to look
-at point TARGET-X, TARGET-Y."
+  "Returns the angle that the character at CHARACTER-X, CHARACTER-Y should be
+facing to look at point TARGET-X, TARGET-Y."
   (atan (- target-y character-y)
         (- target-x character-x)))
 
@@ -278,17 +315,20 @@ at point TARGET-X, TARGET-Y."
                   angle (face-target x y target-x target-y))))))))
 
 (declaim
- (ftype (function ((or null fixnum) double-float double-float double-float double-float)
-                  (values double-float double-float)) closest-walkable-point))
+ (ftype (function
+         ((or null fixnum) double-float double-float double-float double-float)
+         (values double-float double-float)) closest-walkable-point))
 (defun closest-walkable-point (character-entity x y target-x target-y)
-  "Returns walkable point closest to target on line from X, Y to TARGET-X, TARGET-Y."
+  "Returns walkable point closest to target on line from X, Y to TARGET-X,
+TARGET-Y."
   ;; TODO : when there's some obstacle between, that's a problem
   (let ((new-target-x target-x)
         (new-target-y target-y))
     (loop
       :with dx := (- new-target-x x) :and dy := (* (- new-target-y y) 0.5d0)
       :with a := (atan dy dx) :and r := (sqrt (+ (* dx dx) (* dy dy)))
-      :while (collidesp (floor new-target-x) (floor new-target-y) :character character-entity)
+      :while (collidesp (floor new-target-x) (floor new-target-y)
+                        :character character-entity)
       :do (setf r (- r 0.5d0)
                 new-target-x (+ x (* r (cos a)))
                 new-target-y (+ y (* 2d0 r (sin a))))
@@ -305,13 +345,16 @@ at point TARGET-X, TARGET-Y."
         (with-move-action move-action ()
           (setf target-x new-target-x
                 target-y new-target-y)
-          ;; TODO when path is 1 node long, movement is slower. has to do with pathfinding
+          ;; TODO when path is 1 node long, movement is slower. has to do with
+          ;; pathfinding
           (initialize-action :move move-action))
-        (make-move-action entity :target-x new-target-x :target-y new-target-y))))
+        (make-move-action entity :target-x new-target-x
+                                 :target-y new-target-y))))
 
 (declaim
  (inline approx-equal)
- (ftype (function (double-float double-float &optional double-float) boolean) approx-equal))
+ (ftype (function (double-float double-float &optional double-float) boolean)
+        approx-equal))
 (defun approx-equal (a b &optional (epsilon 0.05d0))
   (< (abs (- a b)) epsilon))
 
@@ -344,7 +387,8 @@ at point TARGET-X, TARGET-Y."
                 :for start := t :then nil
                 :for node-x := (car path-node)
                 :for node-y := (cdr path-node)
-                :for (x y) := (multiple-value-list (path-node-pos node-x node-y))
+                :for (x y) := (multiple-value-list
+                               (path-node-pos node-x node-y))
                 :do (unless start
                       (add-debug-point debug-entity x y r g b a))
                     (add-debug-point debug-entity x y r g b a)))))))))
