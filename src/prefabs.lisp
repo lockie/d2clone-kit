@@ -2,18 +2,21 @@
 
 
 (defgeneric prefab (system prefab-name)
-  (:documentation "Returns prefab with name symbol PREFAB-NAME within system SYSTEM."))
+  (:documentation "Returns prefab with name symbol PREFAB-NAME within SYSTEM."))
 
 (defgeneric (setf prefab) (new-prefab system prefab-name)
-  (:documentation "Sets prefab NEW-PREFAB with name symbol PREFAB-NAME within system SYSTEM."))
+  (:documentation "Sets prefab NEW-PREFAB with name symbol PREFAB-NAME within
+SYSTEM."))
 
 (defgeneric prefab-path (system prefab-name)
-  (:documentation "Returns prefab file path for system SYSTEM and prefab name symbol PREFAB-NAME."))
+  (:documentation "Returns prefab file path for SYSTEM and prefab name symbol
+PREFAB-NAME."))
 (defgeneric make-prefab (system prefab-name)
-  (:documentation "Loads prefab with name symbol PREFAB-NAME within system SYSTEM."))
+  (:documentation "Loads prefab with name symbol PREFAB-NAME within SYSTEM."))
 
 (defgeneric preload-prefabs (system)
-  (:documentation "Loads all prefabs for SYSTEM to avoid in-game performance degradations."))
+  (:documentation "Loads all prefabs for SYSTEM to avoid in-game performance
+degradations."))
 
 (defmethod preload-prefabs ((system system)))
 
@@ -21,11 +24,12 @@
   (setf (prefab system prefab-name) (call-next-method)))
 
 (defgeneric make-prefab-component (system entity prefab parameters)
-  (:documentation "Creates new component using prefab instance PREFAB as a template and optional
-extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
+  (:documentation "Creates new component using prefab instance PREFAB as a
+template and optional extra parameters PARAMETERS within SYSTEM for ENTITY."))
 
 (defmethod make-component :around (system entity &rest parameters)
-  (destructuring-bind (&rest rest-parameters &key (prefab nil) &allow-other-keys) parameters
+  (destructuring-bind (&rest rest-parameters &key (prefab nil)
+                       &allow-other-keys) parameters
     (if prefab
         (make-prefab-component system entity
                                (if-let (prefab-instance (prefab system prefab))
@@ -33,10 +37,13 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
                                  (make-prefab system prefab))
                                rest-parameters)
         (call-next-method))
-    (issue (component-created) :entity entity :system-name (system-name system))))
+    (issue (component-created)
+           :entity entity
+           :system-name (system-name system))))
 
 (defmacro defprefab (system extension &rest slots)
-  "Defines prefab structure with slots SLOTS and file name extension EXTENSION within system SYSTEM."
+  "Defines prefab structure with slots SLOTS and file name EXTENSION within
+SYSTEM."
   ;; TODO : add possibility to add field documentation
   (let ((storage-name (symbolicate '* system '- 'prefabs '*))
         (system-name (symbolicate system '- 'system))
@@ -54,10 +61,12 @@ extra parameters PARAMETERS within system SYSTEM for entity ENTITY."))
        (defmethod preload-prefabs ((system ,system-name))
          (log-info "Preloading ~a prefabs" ',system)
          (enumerate-directory ,(format nil "~(~as~)" system)
-           (when (uiop:string-suffix-p file ,(concatenate 'string "." extension))
+           (when (uiop:string-suffix-p file
+                                       ,(concatenate 'string "." extension))
              (when *loading-screen-system*
                (set-loading-screen-text file))
-             (make-prefab system (make-keyword (string-upcase (pathname-name file)))))))
+             (make-prefab system (make-keyword (string-upcase
+                                                (pathname-name file)))))))
        (defmethod make-component ((system ,system-name) entity &rest parameters)
          (declare (ignore system entity parameters))
          nil)

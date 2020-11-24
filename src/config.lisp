@@ -35,9 +35,13 @@
   (al:destroy-config *config*)
   (setf *config* (cffi:null-pointer)))
 
-;; TODO : come up with some sort of caching to global var, calling al_get_config_value is not free
+;; TODO : come up with some sort of caching to global var, calling
+;; al_get_config_value is not free
 (defmacro defoptions (name &rest options)
-  "Defines macro to access given group of options. E.g. when NAME is 'SYSTEM, it defines WITH-SYSTEM-CONFIG-OPTIONS macro. OPTIONS should be list of lists containing option's section name, option's name, and :TYPE and :DEFAULT properties.
+  "Defines macro to access given group of options. E.g. when NAME is 'SYSTEM,
+it defines WITH-SYSTEM-CONFIG-OPTIONS macro. OPTIONS should be list of lists
+containing option's section name, option's name, and :TYPE and :DEFAULT
+properties.
 
 See WITH-SYSTEM-CONFIG-OPTIONS"
   (let* ((section-names (mapcar #'car options))
@@ -49,11 +53,16 @@ See WITH-SYSTEM-CONFIG-OPTIONS"
          (let-clauses (mapcar
                        #'(lambda (o s k type d)
                            `(,o . ((the ,type
-                                        (config ,(make-keyword s) ,(make-keyword k) ,d)))))
+                                        (config ,(make-keyword s)
+                                                ,(make-keyword k)
+                                                ,d)))))
                        option-names section-names key-names
                        option-types option-defaults)))
-    `(defmacro ,(symbolicate 'with- name '-config-options) ((options &key (read-only t)) &body body)
-       "Executes BODY with bindings for config options OPTIONS. If READ-ONLY is T (the default), options are not SETF-able."
+    `(defmacro ,(symbolicate 'with- name '-config-options) ((options
+                                                             &key (read-only t))
+                                                            &body body)
+       "Executes BODY with bindings for config options OPTIONS. If READ-ONLY is
+T (the default), options are not SETF-able."
        (let ((let-clauses
                (remove-if-not
                 #'(lambda (c) (find (car c) options))

@@ -23,11 +23,13 @@
 
 (declaim (inline (setf camera-target)))
 (defun (setf camera-target) (target)
-  "Sets current camera target, i.e. the entity camera tracks. Set to NIL to stop camera tracking."
+  "Sets current camera target, i.e. the entity camera tracks. Set to NIL to
+stop camera tracking."
   (setf (camera-system-target *camera-system*) target))
 
 (defmacro with-camera (bindings &body body)
-  "Executes BODY with current camera position bound to two symbols in BIDNINGS list."
+  "Executes BODY with current camera position bound to two symbols in BIDNINGS
+list."
   (with-gensyms (camera-entity)
     `(let ((,camera-entity (camera-entity)))
        (when (entity-valid-p ,camera-entity)
@@ -36,7 +38,8 @@
 
 (declaim
  (inline absolute->viewport)
- ;; (ftype (function (coordinate coordinate) (values fixnum fixnum)) absolute->viewport)
+ ;; (ftype (function (coordinate coordinate) (values fixnum fixnum))
+ ;;  absolute->viewport)
  )
 (defun absolute->viewport (x y)
   "Converts given integer absolute screen coordinates to viewport coordinates.
@@ -79,7 +82,8 @@ See ABSOLUTE->VIEWPORT"
  (inline range-visible-p)
  (ftype (function (fixnum fixnum fixnum fixnum) boolean) range-visible-p))
 (defun range-visible-p (x y width height)
-  "Returns T if any part of rectangular range defined by given viewport coordinates and dimensions is visible on screen."
+  "Returns T if any part of rectangular range defined by given viewport
+coordinates and dimensions is visible on screen."
   (with-system-config-options ((display-width display-height))
     (and
      (> x (- width))

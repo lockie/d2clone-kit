@@ -10,7 +10,8 @@
 To make tile collide (e.g. be non-walkable by characters), set custom
 boolean property *collides* to *true* in Tiled tileset."))
 
-;; TODO : optimize this by packing coordinates into single fixnum (31 bits ought to be enough for anyone)
+;; TODO : optimize this by packing coordinates into single fixnum (31 bits
+;; ought to be enough for anyone)
 
 (defhandler (collision-system component-created)
   (let ((entity (component-created-entity event)))
@@ -23,24 +24,30 @@ boolean property *collides* to *true* in Tiled tileset."))
              (loop :for layer :across (tiled-map-layers tiled-map)
                    :do (loop :with data := (tiled-layer-data layer)
                              :for y :from 0 :below (tiled-layer-height layer)
-                             :do (loop :for x :from 0 :below (tiled-layer-width layer)
+                             :do (loop :for x :from 0
+                                       :below (tiled-layer-width layer)
                                        :for tile := (aref data y x)
-                                       :do (when (tile-property tiles-properties tile 'collides)
-                                             (multiple-value-bind (ortho-x ortho-y)
+                                       :do (when (tile-property tiles-properties
+                                                                tile 'collides)
+                                             (multiple-value-bind (ortho-x
+                                                                   ortho-y)
                                                  (isometric->orthogonal*
                                                   (coerce x 'double-float)
                                                   (coerce y 'double-float))
                                                (setf
                                                 (sparse-matrix-ref
                                                  (collision-system-map system)
-                                                 (cons (+ (truncate ortho-x) start-x)
-                                                       (+ (truncate ortho-y) start-y)))
+                                                 (cons (+ (truncate ortho-x)
+                                                          start-x)
+                                                       (+ (truncate ortho-y)
+                                                          start-y)))
                                                 entity))))))))))
       (character
        (with-coordinate entity ()
          ;; TODO : consider character size (#21)
          (setf
-          (sparse-matrix-ref (collision-system-characters-map system) (cons (round x) (round y)))
+          (sparse-matrix-ref (collision-system-characters-map system)
+                             (cons (round x) (round y)))
           entity))))))
 
 (defhandler (collision-system entity-deleted)
@@ -56,7 +63,8 @@ boolean property *collides* to *true* in Tiled tileset."))
       ((has-component-p :character entity)
        (with-coordinate entity ()
          (sparse-matrix-remove
-          (collision-system-characters-map system) (cons (round x) (round y))))))))
+          (collision-system-characters-map system)
+          (cons (round x) (round y))))))))
 
 (defhandler (collision-system character-moved)
   ;; TODO : also put those in characters-map when character is created
@@ -73,19 +81,27 @@ boolean property *collides* to *true* in Tiled tileset."))
 
 (defhandler (collision-system entity-died)
   (with-coordinate (entity-died-entity event) ()
-      (sparse-matrix-remove (collision-system-characters-map system) (cons (round x) (round y)))))
+    (sparse-matrix-remove (collision-system-characters-map system)
+                          (cons (round x) (round y)))))
 
-(declaim (inline character-at) (ftype (function (fixnum fixnum) fixnum) character-at))
+(declaim
+ (inline character-at)
+ (ftype (function (fixnum fixnum) fixnum) character-at))
 (defun character-at (x y)
-  "Returns character entity at integer map coordinates X, Y or NIL if there's no character there."
-  (values (sparse-matrix-ref (collision-system-characters-map *collision-system*) (cons x y))))
+  "Returns character entity at integer map coordinates X, Y or NIL if there's
+no character there."
+  (values (sparse-matrix-ref
+           (collision-system-characters-map *collision-system*)
+           (cons x y))))
 
 (declaim
  (inline collidesp)
- (ftype (function (fixnum fixnum &key (:character (or fixnum null))) boolean) collidesp))
+ (ftype (function (fixnum fixnum &key (:character (or fixnum null))) boolean)
+        collidesp))
 (defun collidesp (x y &key (character nil))
-  "Returns whether tile located at integer map coordinates X, Y does collide with other objects.
-CHARACTER, when non-NIL, specifies character entity to check for collisions with other characters."
+  "Returns whether tile located at integer map coordinates X, Y does collide
+with other objects. CHARACTER, when non-NIL, specifies character entity to
+check for collisions with other characters."
   (with-system-slots ((map characters-map) collision-system)
     (let ((point (cons x y)))
       (or

@@ -29,9 +29,13 @@
 
 (declaim
  (inline mouse-position)
- (ftype (function (&optional (or cffi:foreign-pointer null)) (values fixnum fixnum)) mouse-position))
+ (ftype (function (&optional (or cffi:foreign-pointer null))
+                  (values fixnum fixnum))
+        mouse-position))
 (defun mouse-position (&optional (event nil))
-  "Get current mouse cursor coordinates using liballegro mouse event EVENT or by calling [al_get_mouse_state](https://liballeg.org/a5docs/trunk/mouse.html#al_get_mouse_state)."
+  "Get current mouse cursor coordinates using liballegro mouse event EVENT or
+by calling [al_get_mouse_state
+](https://liballeg.org/a5docs/trunk/mouse.html#al_get_mouse_state)."
   (macrolet
       ((mouse-position-values (type struct)
          `(cffi:with-foreign-slots ((al::x al::y) ,struct (:struct ,type))
@@ -51,10 +55,12 @@
         (return entity)))))
 
 (defun target-player (&optional (mouse-event nil))
-  "Set new player character target according to MOUSE-EVENT or current mouse cursor position."
+  "Set new player character target according to MOUSE-EVENT or current mouse
+cursor position."
   (let ((player-entity (player-entity)))
     (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
-      (with-system-slots ((mouse-pressed-p last-target) player-system nil :read-only nil)
+      (with-system-slots ((mouse-pressed-p last-target) player-system nil
+                          :read-only nil)
         (if (entity-valid-p last-target)
             (attack player-entity last-target)
             (multiple-value-bind (new-x new-y)
@@ -74,11 +80,13 @@
   (let ((struct (allegro-event-struct event)))
     (case (allegro-event-type event)
       (:mouse-button-down
-       (when (= 1 (cffi:foreign-slot-value struct '(:struct al:mouse-event) 'al::button))
+       (when (= 1 (cffi:foreign-slot-value struct '(:struct al:mouse-event)
+                                           'al::button))
          (target-player struct)
          (setf (player-system-mouse-pressed-p system) t)))
       (:mouse-button-up
-       (when (= 1 (cffi:foreign-slot-value struct '(:struct al:mouse-event) 'al::button))
+       (when (= 1 (cffi:foreign-slot-value struct '(:struct al:mouse-event)
+                                           'al::button))
          (setf (player-system-mouse-pressed-p system) nil
                (player-system-last-target system) +invalid-entity+))))))
 
@@ -96,7 +104,8 @@
                              +invalid-entity+)))))
 
 (defmethod system-finalize ((system player-system))
-  (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity) player-system system)
+  (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity)
+                      player-system system)
     (al:destroy-bitmap orb)
     (al:destroy-bitmap orb-fill)
     (al:destroy-bitmap orb-flare)
@@ -114,7 +123,8 @@
 (defmethod system-draw ((system player-system) renderer)
   (block nil
     (with-system-config-options ((display-width display-height))
-      (with-system-slots ((entity orb orb-fill orb-flare orb-tmp) player-system system)
+      (with-system-slots ((entity orb orb-fill orb-flare orb-tmp)
+                          player-system system)
         (unless (entity-valid-p entity) (return))
         (with-hp entity ()
           (with-mana entity ()
@@ -126,23 +136,33 @@
                         (fill-height (al:get-bitmap-height orb-fill))
                         (orb-width (al:get-bitmap-width orb))
                         (orb-height (al:get-bitmap-height orb))
-                        (fill-shift (+ fill-height (ceiling (- orb-height fill-height) 2))))
+                        (fill-shift (+ fill-height (ceiling
+                                                    (- orb-height fill-height)
+                                                    2))))
                    ;; TODO : draw those in hp-system and mana-system?..
                    (flet ((fill-orb (color)
                             (al:set-target-bitmap orb-tmp)
                             (al:draw-bitmap orb-fill 0 0 0)
                             (al:set-blender
-                             (cffi:foreign-enum-value 'al::blend-operations :dest-minus-src)
-                             (cffi:foreign-enum-value 'al::blend-mode :one)
-                             (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha))
-                            (al:draw-filled-rectangle 0 0 fill-width fill-height color)
+                             (cffi:foreign-enum-value 'al::blend-operations
+                                                      :dest-minus-src)
+                             (cffi:foreign-enum-value 'al::blend-mode
+                                                      :one)
+                             (cffi:foreign-enum-value 'al::blend-mode
+                                                      :inverse-alpha))
+                            (al:draw-filled-rectangle 0 0 fill-width fill-height
+                                                      color)
                             (al:set-target-backbuffer (al:get-current-display))
                             (al:set-blender
-                             (cffi:foreign-enum-value 'al::blend-operations :add)
-                             (cffi:foreign-enum-value 'al::blend-mode :one)
-                             (cffi:foreign-enum-value 'al::blend-mode :inverse-alpha)))
+                             (cffi:foreign-enum-value 'al::blend-operations
+                                                      :add)
+                             (cffi:foreign-enum-value 'al::blend-mode
+                                                      :one)
+                             (cffi:foreign-enum-value 'al::blend-mode
+                                                      :inverse-alpha)))
                           (draw-filling (fraction dx)
-                            (let ((shift (floor (* fill-shift (- 1d0 fraction)))))
+                            (let ((shift
+                                    (floor (* fill-shift (- 1d0 fraction)))))
                               (al:draw-bitmap-region
                                orb-tmp
                                (floor (- fill-width orb-width) 2)
@@ -152,14 +172,16 @@
                                0))))
                      (al:hold-bitmap-drawing t)
                      (al:draw-bitmap orb 0 (- display-height orb-height) 0)
-                     (al:draw-bitmap orb (- display-width orb-width) (- display-height orb-height) 0)
+                     (al:draw-bitmap orb (- display-width orb-width)
+                                     (- display-height orb-height) 0)
                      (al:hold-bitmap-drawing nil)
                      ;; hp orb
                      (fill-orb (al:map-rgba 30 255 255 30))
                      (draw-filling (/ current-hp maximum-hp) 0)
                      ;; mana orb
                      (fill-orb (al:map-rgba 255 255 30 30))
-                     (draw-filling (/ current-mana maximum-mana) (- display-width orb-width))
+                     (draw-filling (/ current-mana maximum-mana)
+                                   (- display-width orb-width))
                      (al:hold-bitmap-drawing t)
                      (al:draw-bitmap orb-flare
                                      0 (- display-height orb-height) 0)
@@ -181,7 +203,8 @@
               (unless (deadp last-target)
                 (draw-mob-health-bar last-target renderer))
               (unless mouse-pressed-p
-                (when-let (target (character-under-cursor cursor-map-x cursor-map-y))
+                (when-let (target
+                           (character-under-cursor cursor-map-x cursor-map-y))
                   (unless (= target (player-entity))
                     (draw-mob-health-bar target renderer))))))
 
@@ -189,8 +212,9 @@
           (when debug-cursor
             (multiple-value-bind (x y)
                 (multiple-value-call #'absolute->viewport
-                  (orthogonal->screen (coerce (truncate cursor-map-x) 'double-float)
-                                      (coerce (truncate cursor-map-y) 'double-float)))
+                  (orthogonal->screen
+                   (coerce (truncate cursor-map-x) 'double-float)
+                   (coerce (truncate cursor-map-y) 'double-float)))
               (add-debug-rectangle
                (player-system-debug-entity system)
                x y *tile-width* *tile-height* debug-cursor))))))))

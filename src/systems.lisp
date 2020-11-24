@@ -11,7 +11,8 @@
   (components nil)
   (order 0 :type fixnum))
 
-(declaim (inline system-name system-components-index system-components system-order))
+(declaim
+ (inline system-name system-components-index system-components system-order))
 
 (setf (documentation #'system-name 'function)
       "Symbol that denotes the system."
@@ -28,9 +29,9 @@
 (global-vars:define-global-var *system-initializers* nil)
 
 (defmacro defsystem (name slots (&key documentation (order 0)))
-  "Defines an ECS system structure named NAME with SLOTS and docstring DOCUMENTATION,
-along with global system instance variable.
-ORDER is fixnum specifying the order for system initialization and WITH-SYTEMS macro.
+  "Defines an ECS system structure named NAME with SLOTS and docstring
+DOCUMENTATION, along with global system instance variable. ORDER is fixnum
+specifying the order for system initialization and WITH-SYTEMS macro.
 
 See INITIALIZE-SYSTEMS
 See WITH-SYSTEMS"
@@ -46,10 +47,11 @@ See WITH-SYSTEMS"
                                     'function)
                                    ,doc)))
                      slots))
-         (slot-names (mapcar #'(lambda (s) (symbolicate system-name '- (car s))) slots))
-         (slot-descriptions (mapcar
-                             #'(lambda (slot) (remove-from-plist slot :documentation))
-                             slots)))
+         (slot-names (mapcar #'(lambda (s) (symbolicate system-name '- (car s)))
+                             slots))
+         (slot-descriptions
+           (mapcar #'(lambda (slot) (remove-from-plist slot :documentation))
+                   slots)))
     `(progn
        (defun ,printer-name (object stream)
          (print-unreadable-object (object stream :type t :identity t)))
@@ -72,7 +74,8 @@ See WITH-SYSTEMS"
        (defmethod system-finalize :after ((system ,system-name))
          (setf ,variable-name nil))
        (setf *system-initializers*
-             (merge 'list (list (cons ,order #',ctor-name)) *system-initializers*
+             (merge 'list (list (cons ,order #',ctor-name))
+                    *system-initializers*
                     #'(lambda (s1 s2) (> (car s1) (car s2))))))))
 
 (defun initialize-systems ()
@@ -97,11 +100,13 @@ See DEFSYSTEM"
 (defmacro with-system-slots ((slots system-type &optional (system-instance nil)
                               &key (read-only t)) &body body)
   "Executes BODY with bindings for slots of a system specified by SYSTEM-TYPE.
-If SYSTEM-INSTANCE is NIL (the default), global system instance of type SYSTEM-TYPE is used.
-If READ-ONLY is T (the default), slots are not SETF-able."
+If SYSTEM-INSTANCE is NIL (the default), global system instance of type
+SYSTEM-TYPE is used.  If READ-ONLY is T (the default), slots are not
+SETF-able."
   (with-gensyms (system)
-    (let* ((instance (if system-instance system-instance (symbolicate '* system-type '*)))
-           (accessors (mapcar #'(lambda (s) (symbolicate system-type '- s)) slots))
+    (let* ((instance (or system-instance (symbolicate '* system-type '*)))
+           (accessors (mapcar #'(lambda (s) (symbolicate system-type '- s))
+                              slots))
            (accessor-calls (mapcar #'(lambda (a) (list a system)) accessors))
            (let-clauses (mapcar #'list slots accessor-calls)))
       (dolist (a accessors)
@@ -112,7 +117,8 @@ If READ-ONLY is T (the default), slots are not SETF-able."
           ,@body)))))
 
 (defgeneric system-create (system) ;; TODO use CLOS optimization
-  (:documentation "Low-level method to properly initialize SYSTEM. Not meant to be redefined."))
+  (:documentation "Low-level method to properly initialize SYSTEM. Not meant
+to be redefined."))
 
 (defmethod system-create ((system system))
   (declare (ignore system)))
@@ -130,8 +136,10 @@ If READ-ONLY is T (the default), slots are not SETF-able."
 (defmethod system-finalize ((system system))
   (declare (ignore system)))
 
-(defgeneric system-update (system) ;; TODO think about optimizing calling that in loop
-  (:documentation "Updates system SYSTEM for time step DT (usually fixed by liballegro around 1/60 of second)."))
+;; TODO think about optimizing calling that in loop
+(defgeneric system-update (system)
+  (:documentation "Updates system SYSTEM for time step DT (usually fixed by
+liballegro around 1/60 of second)."))
 
 (defmethod system-update ((system system))
   (declare (ignore system)))
@@ -145,7 +153,8 @@ See RENDER"))
   (declare (ignore system) (ignore renderer)))
 
 (defmacro with-systems (var &body body)
-  "Executes BODY in loop for each system, binding system instance to variable VAR."
+  "Executes BODY in loop for each system, binding system instance to variable
+VAR."
   `(loop :for ,var :being :the :hash-value :of *systems*
          :do ,@body))
 

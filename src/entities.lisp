@@ -22,7 +22,8 @@
                           :initial-allocated-size *entities-allocated*))
 
 (defunl make-entity (&optional parent)
-  "Allocates new entity. When PARENT is set, deleting parent entity automatically deletes it.
+  "Allocates new entity. When PARENT is set, deleting parent entity
+automatically deletes it.
 
 See DELETE-ENTITY"
   (let ((new-entity
@@ -30,8 +31,10 @@ See DELETE-ENTITY"
               (let ((res *entities-count*))
                 (incf *entities-count*)
                 (when (= *entities-count* *entities-allocated*)
-                  (setf *entities-allocated* (round (* *entities-allocated* +array-growth-factor+)))
-                  (log-debug "Adjusting component allocated size to ~a" *entities-allocated*)
+                  (setf *entities-allocated*
+                        (round (* *entities-allocated* +array-growth-factor+)))
+                  (log-debug "Adjusting component allocated size to ~a"
+                             *entities-allocated*)
                   (with-systems system
                     (system-adjust-components system *entities-allocated*))
                   (growable-vector-grow *current-action* *entities-allocated*))
@@ -50,7 +53,8 @@ See MAKE-ENTITY"
         (delete child (the list (gethash parent *entities-children* nil)))))
 
 (defun delete-entity (entity)
-  "Deletes entity ENTITY. Do NOT call this when entity has parent (call DELETE-CHILD first).
+  "Deletes entity ENTITY. Do NOT call this when entity has parent (call
+DELETE-CHILD first).
 
 See MAKE-ENTITY
 See DELETE-CHILD"
@@ -64,7 +68,9 @@ See DELETE-CHILD"
       (delete-component system entity)))
   (growable-vector-push *deleted-entities* entity))
 
-(declaim (inline entity-valid-p) (ftype (function (fixnum) boolean) entity-valid-p))
+(declaim
+ (inline entity-valid-p)
+ (ftype (function (fixnum) boolean) entity-valid-p))
 (defun entity-valid-p (entity)
   "Return T if entity is valid."
   (not (minusp entity)))
@@ -72,8 +78,9 @@ See DELETE-CHILD"
 (defun finalize-entities ()
   (setf *entities-count* 0
         *entities-allocated* 144
-        *current-action* (make-growable-vector :initial-element +invalid-index+
-                                               :initial-allocated-size *entities-allocated*))
+        *current-action* (make-growable-vector
+                          :initial-element +invalid-index+
+                          :initial-allocated-size *entities-allocated*))
   (clrhash *entities-children*)
   (growable-vector-clear *deleted-entities*))
 
@@ -85,7 +92,8 @@ See DELETE-CHILD"
   "Dumps entities tree starting from ROOT node to the STREAM."
   (let ((components (loop :for system :being :the :hash-key
                           :using (hash-value system-instance) :of *systems*
-                          :when (%has-component-p system-instance root) :collect system)))
+                          :when (%has-component-p system-instance root)
+                          :collect system)))
     (format stream "~vT~d[~{~a~^  ~}]~%" offset root components)
     (dolist (child (reverse (gethash root *entities-children*)))
       (dump-entities child stream (+ offset 4)))))

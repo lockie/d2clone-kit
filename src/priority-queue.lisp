@@ -16,7 +16,8 @@ Note: keys are expected to be DOUBLE-FLOATs."
 
 (declaim
  (inline binary-search)
- (ftype (function ((function (t) double-float) double-float simple-vector) array-index)
+ (ftype (function ((function (t) double-float) double-float simple-vector)
+                  array-index)
         binary-search))
 (defun binary-search (key-fn key array)
   (if (zerop (length array))
@@ -43,7 +44,8 @@ O(log N) complexity."
   (let* ((array (priority-queue-array queue))
          (key-fn (priority-queue-key queue))
          (position (binary-search key-fn (funcall key-fn element) array)))
-    (when (and (< position (length array)) (equal element (aref array position)))
+    (when (and (< position (length array))
+               (equal element (aref array position)))
       position)))
 
 (declaim
@@ -137,7 +139,8 @@ in appropriate order."
 (defun priority-queue-remove (queue index)
   "Removes element from QUEUE denoted by INDEX."
   (let ((array (priority-queue-array queue)))
-    (replace (priority-queue-array queue) array :start1 index :start2 (1+ index))
+    (replace (priority-queue-array queue) array :start1 index
+                                                :start2 (1+ index))
     (setf (priority-queue-array queue)
           (adjust-array (priority-queue-array queue) (1- (length array)))))
   nil)

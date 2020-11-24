@@ -2,9 +2,11 @@
 
 
 (defgeneric make-component (system entity &rest parameters)
-  (:documentation "Creates new component using PARAMETERS within system SYSTEM for entity ENTITY.
+  (:documentation "Creates new component using PARAMETERS within system SYSTEM
+  for entity ENTITY.
 
-PARAMETERS could include `:PREFAB` key, in which case component is constructed using corresponding prefab.
+PARAMETERS could include `:PREFAB` key, in which case component is constructed
+using corresponding prefab.
 
 See MAKE-PREFAB-COMPONENT"))
 
@@ -49,21 +51,34 @@ See MAKE-PREFAB-COMPONENT"))
          (slot-docs (mapcar
                      #'(lambda (s)
                          (when-let (doc (getf s :documentation))
-                           `(setf (documentation #',(symbolicate name '- (car s)) 'function) ,doc)))
+                           `(setf (documentation
+                                   #',(symbolicate name '- (car s))
+                                   'function)
+                                  ,doc)))
                      slots))
          (soa-slots (mapcar #'(lambda (name default)
-                                `(,name (make-growable-vector :initial-element ,default)
+                                `(,name (make-growable-vector
+                                         :initial-element ,default)
                                         :type growable-vector :read-only t))
                             slot-names slot-defaults))
-         (slot-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref*))) slot-names))
+         (slot-accessors (mapcar
+                          #'(lambda (s) `(,(symbolicate name '- s '-aref*)))
+                          slot-names))
          (unsafe-slot-accessors
-           (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref))) slot-names))
-         (array-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s))) slot-names))
+           (mapcar
+            #'(lambda (s) `(,(symbolicate name '- s '-aref)))
+            slot-names))
+         (array-accessors (mapcar
+                           #'(lambda (s) `(,(symbolicate name '- s)))
+                           slot-names))
          (getter-decls (mapcan
                         #'(lambda (s a type)
                             `((declaim
                                (inline ,@s)
-                               (ftype (function (,name (integer 0 ,array-dimension-limit)) ,type)
+                               (ftype
+                                (function (,name
+                                           (integer 0 ,array-dimension-limit))
+                                          ,type)
                                       ,@s))
                               (defun ,@s (objects index)
                                 (growable-vector-ref (,@a objects) index))))
@@ -73,11 +88,16 @@ See MAKE-PREFAB-COMPONENT"))
                             (unless ro
                               `((declaim
                                  (inline (setf ,@s))
-                                 (ftype (function
-                                         (,type ,name (integer 0 ,array-dimension-limit)) ,type)
-                                        (setf ,@s)))
+                                 (ftype
+                                  (function
+                                   (,type ,name
+                                          (integer 0 ,array-dimension-limit))
+                                   ,type)
+                                  (setf ,@s)))
                                 (defun (setf ,@s) (new-value objects index)
-                                  (setf (growable-vector-ref* (,@a objects) index) new-value)))))
+                                  (setf
+                                   (growable-vector-ref* (,@a objects) index)
+                                   new-value)))))
                         slot-ro slot-accessors array-accessors slot-types))
          (unsafe-setter-decls
            (mapcan
@@ -85,14 +105,18 @@ See MAKE-PREFAB-COMPONENT"))
                 (unless ro
                   `((declaim
                      (inline (setf ,@s))
-                     (ftype (function (,type ,name (integer 0 ,array-dimension-limit)) ,type)
+                     (ftype (function (,type ,name
+                                             (integer 0 ,array-dimension-limit))
+                                      ,type)
                             (setf ,@s)))
                     (defun (setf ,@s) (new-value objects index)
-                      (setf (growable-vector-ref (,@a objects) index) new-value)))))
+                      (setf (growable-vector-ref (,@a objects) index)
+                            new-value)))))
             slot-ro unsafe-slot-accessors array-accessors slot-types)))
     `(progn
        (defstruct (,name
-                   (:constructor ,(symbolicate 'make- plural-name)) (:copier nil) (:predicate nil))
+                   (:constructor ,(symbolicate 'make- plural-name))
+                   (:copier nil) (:predicate nil))
          ,@soa-slots)
        (declaim (inline ,@(mapcar #'car array-accessors)))
        ,@slot-docs ,@getter-decls ,@setter-decls ,@unsafe-setter-decls)))
@@ -104,49 +128,63 @@ See MAKE-PREFAB-COMPONENT"))
          (plural-name (string-upcase (plural-of name)))
          (slot-names (mapcar #'car slots))
          (slot-defaults (mapcar #'cadr slots))
-         (slot-accessors (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref*))) slot-names))
+         (slot-accessors (mapcar
+                          #'(lambda (s) `(,(symbolicate name '- s '-aref*)))
+                          slot-names))
          (unsafe-slot-accessors
-           (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref))) slot-names)))
+           (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref)))
+                   slot-names)))
     `(progn
        (defsoa ,name ,@slots)
        (defmacro ,(symbolicate 'with- name) (entity bindings &body body)
          (with-gensyms (index system components)
            (let ((component-exps (mapcar #'list
                                          (if bindings bindings ',slot-names)
-                                         (mapcar #'(lambda (a) `(,@a ,components ,index))
-                                                 ',unsafe-slot-accessors))))
+                                         (mapcar
+                                          #'(lambda (a)
+                                              `(,@a ,components ,index))
+                                          ',unsafe-slot-accessors))))
              `(let* ((,system ,',system-instance)
                      (,components (system-components ,system))
                      ;; TODO : check if index is valid in debug mode
                      ;;  also check if it was deleted
-                     (,index (sparse-array-index-ref (system-components-index ,system) ,entity)))
+                     (,index (sparse-array-index-ref
+                              (system-components-index ,system)
+                              ,entity)))
                 (symbol-macrolet (,@component-exps) ,@body)))))
        (defmacro ,(symbolicate 'with- plural-name) (&body body)
          (with-gensyms (index system components)
-           (let ((component-exps (mapcar #'(lambda (s a) `(,s (,@a ,components ,index)))
-                                         ',slot-names ',unsafe-slot-accessors)))
+           (let ((component-exps
+                   (mapcar #'(lambda (s a) `(,s (,@a ,components ,index)))
+                           ',slot-names ',unsafe-slot-accessors)))
              `(let* ((,system ,',system-instance)
                      (,components (system-components ,system)))
                 (declare (ignorable ,components))
-                (do-sparse-array (entity ,index (system-components-index ,system))
+                (do-sparse-array (entity ,index
+                                         (system-components-index ,system))
                   (symbol-macrolet (,@component-exps)
                     ,@body))))))
        (defmethod system-create ((system ,system-type))
          (setf (system-components-index system)
-               (make-sparse-array-index :initial-allocated-size *entities-allocated*)
+               (make-sparse-array-index
+                :initial-allocated-size *entities-allocated*)
                (system-components system)
                (,(symbolicate 'make- plural-name)))
          (preload-prefabs system))
        (defmethod delete-component ((system ,system-type) entity)
          (when-let ((components-index (system-components-index system)))
            (sparse-array-index-delete components-index entity)))
-       (defun ,(symbolicate 'make- name) (entity &key ,@(mapcar #'list slot-names slot-defaults))
+       (defun ,(symbolicate 'make- name) (entity &key ,@(mapcar #'list
+                                                                slot-names
+                                                                slot-defaults))
          (let* ((system ,system-instance)
                 (components (system-components system))
-                (index (sparse-array-index-push (system-components-index system) entity)))
+                (index (sparse-array-index-push (system-components-index system)
+                                                entity)))
            (declare (ignorable components index))
            (setf ,@(mapcan
                     #'(lambda (a s) `((,@a components index) ,s))
                     slot-accessors slot-names)))))))
 
-;; TODO : version of with- `plural` macro which goes over several systems' components?..
+;; TODO : version of with- `plural` macro which goes over several systems'
+;; components?..

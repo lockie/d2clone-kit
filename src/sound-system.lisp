@@ -16,7 +16,8 @@
   (sample (cffi:null-pointer) :type cffi:foreign-pointer))
 
 (defmethod make-prefab ((system sound-system) prefab-name)
-  (make-sound-prefab :sample (ensure-loaded #'al:load-sample (prefab-path system prefab-name))))
+  (make-sound-prefab
+   :sample (ensure-loaded #'al:load-sample (prefab-path system prefab-name))))
 
 (declaim
  (inline set-sound-position)
@@ -33,16 +34,21 @@
              (/ 1f0 (exp (* distance-factor
                             (euclidean-distance x y camera-x camera-y)))))
             (let ((iso-x (nth-value 0 (isometric->orthogonal x y)))
-                  (iso-camera-x (nth-value 0 (isometric->orthogonal camera-x camera-y))))
+                  (iso-camera-x (nth-value
+                                 0
+                                 (isometric->orthogonal camera-x camera-y))))
               (al:set-sample-instance-pan
                sample-instance
                (clamp (* pan-factor (- iso-x iso-camera-x)) -1f0 1f0)))))))))
 
-(defmethod make-prefab-component ((system sound-system) entity prefab parameters)
-  (let ((sample-instance (al::create-sample-instance (sound-prefab-sample prefab))))
+(defmethod make-prefab-component ((system sound-system) entity prefab
+                                  parameters)
+  (let ((sample-instance (al::create-sample-instance
+                          (sound-prefab-sample prefab))))
     (al:attach-sample-instance-to-mixer sample-instance (al:get-default-mixer))
     (al:set-sample-instance-playmode sample-instance :once)
-    (with-system-slots ((distance-factor pan-factor) sound-system system :read-only nil)
+    (with-system-slots ((distance-factor pan-factor) sound-system system
+                        :read-only nil)
       (when (zerop distance-factor)
         (with-system-config-options ((display-width display-height))
           (setf distance-factor

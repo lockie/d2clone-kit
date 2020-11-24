@@ -2,7 +2,8 @@
 
 
 (defsystem item
-  ;; TODO : by using this design, I can only have one item per tile. Do something about the coords
+  ;; TODO : by using this design, I can only have one item per tile. Do
+  ;; something about the coords
   ((map (make-sparse-matrix) :type sparse-matrix))
   (:documentation "Handles items."))
 
@@ -10,9 +11,11 @@
   (type nil :type keyword))
 
 ;; TODO : highlight an item when hovering -> need color changing mechanic
-;; TODO : periodically draw star thing (to alert a player there's an item on the ground)
+;; TODO : periodically draw star thing (to alert a player there's an item on
+;; the ground)
 
-(defconstant +item-pickup-range+ 1d0 "Maximum distance at which character could pick up an item.")
+(defconstant +item-pickup-range+ 1d0
+  "Maximum distance at which character could pick up an item.")
 
 (defaction item-pickup
     ((target +invalid-entity+ :type fixnum :documentation "Item entity."))
@@ -62,16 +65,20 @@
          (let ((type type) (x x) (y y))
            #'(lambda ()
                ;; TODO : prevent text overlap
-               (let* ((text (string-capitalize (substitute #\Space #\- (string type))))
+               (let* ((text (string-capitalize
+                             (substitute #\Space #\- (string type))))
                       (width (al:get-text-width (ui-font-large) text)))
                  (al:draw-filled-rectangle x y (+ x width) (+ y 20)
                                            (al:map-rgba 10 10 10 160))
                  (al:draw-text (ui-font-large)
                                (al:map-rgba 255 255 255 0) x y 0 text)))))))))
 
-(declaim (inline item-at) (ftype (function (fixnum fixnum) (or fixnum null)) item-at))
+(declaim
+ (inline item-at)
+ (ftype (function (fixnum fixnum) (or fixnum null)) item-at))
 (defun item-at (x y)
-  "Returns item entity at integer map coordinates X, Y or NIL if there's no character there."
+  "Returns item entity at integer map coordinates X, Y or NIL if there's no
+character there."
   (sparse-matrix-ref (item-system-map *item-system*) (cons x y)))
 
 (define-constant +item-neighbours+ '((1 . 1)
@@ -106,10 +113,12 @@
                                       (collidesp (car p) (cdr p)))
                             p))
                       positions))
-            (make-object `((:coordinate :x ,(- (coerce (car position) 'double-float) 0.49d0)
-                                        :y ,(- (coerce (cdr position) 'double-float) 0.49d0))
-                           (:item :type ,item))
-                         *session-entity*)))))))
+            (make-object
+             `((:coordinate
+                :x ,(- (coerce (car position) 'double-float) 0.49d0)
+                :y ,(- (coerce (cdr position) 'double-float) 0.49d0))
+               (:item :type ,item))
+             *session-entity*)))))))
 
   ;; TODO : unhardcode
 (define-constant +weapons+
