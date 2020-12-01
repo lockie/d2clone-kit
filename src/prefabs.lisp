@@ -45,13 +45,14 @@ template and optional extra parameters PARAMETERS within SYSTEM for ENTITY."))
   "Defines prefab structure with slots SLOTS and file name EXTENSION within
 SYSTEM."
   ;; TODO : add possibility to add field documentation
-  (let ((storage-name (symbolicate '* system '- 'prefabs '*))
-        (system-name (symbolicate system '- 'system))
-        (struct-name (symbolicate system '- 'prefab))
+  (let ((storage-name (symbolicate :* system :-prefabs*))
+        (system-name (symbolicate system :-system))
+        (struct-name (symbolicate system :-prefab))
         (path-format (format nil "~(~as/~~(~~a~~).~a~)" system extension))
         (ro-slots (mapcar #'(lambda (s) (append s '(:read-only t))) slots)))
     `(progn
-       (global-vars:define-global-var ,storage-name (make-hash-table :test 'eq))
+       (global-vars:define-global-var ,storage-name
+           (make-hash-table :test #'eq))
        (defmethod prefab ((system ,system-name) prefab-name)
          (values (gethash prefab-name ,storage-name)))
        (defmethod (setf prefab) (new-prefab (system ,system-name) prefab-name)

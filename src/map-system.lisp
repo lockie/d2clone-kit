@@ -86,9 +86,9 @@ Also only integer map coordinates allowed for map chunks, otherwise the screen
   (let ((tiled-map (load-tiled-map
                     (make-instance 'character-stream
                                    :path (prefab-path system prefab-name)))))
-    (unless (eq (tiled-map-orientation tiled-map) 'staggered)
+    (unless (eq (tiled-map-orientation tiled-map) :staggered)
       (error "only staggered maps supported"))
-    (unless (eq (tiled-map-stagger-axis tiled-map) 'y)
+    (unless (eq (tiled-map-stagger-axis tiled-map) :y)
       (error "only Y stagger axis supported"))
     (loop :for tileset :across (tiled-map-tilesets tiled-map)
           :for tile-width := (tiled-tileset-tile-width tileset)
@@ -137,7 +137,7 @@ Also only integer map coordinates allowed for map chunks, otherwise the screen
   "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground\"
   property)."
   (if-let (properties (tiled-layer-properties layer))
-    (gethash 'ground properties nil)
+    (gethash :ground properties nil)
     nil))
 
 (declaim
@@ -247,7 +247,7 @@ INDEX. Returns DEFAULT if there's no such property."
                                                        chunk-viewport-y
                                                        (tile-property
                                                         tiles-properties
-                                                        tile-index 'z 0)
+                                                        tile-index :z 0)
                                                        (*
                                                         display-width
                                                         (- layer-order

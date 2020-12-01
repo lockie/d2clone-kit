@@ -28,7 +28,7 @@ boolean property *collides* to *true* in Tiled tileset."))
                                        :below (tiled-layer-width layer)
                                        :for tile := (aref data y x)
                                        :do (when (tile-property tiles-properties
-                                                                tile 'collides)
+                                                                tile :collides)
                                              (multiple-value-bind (ortho-x
                                                                    ortho-y)
                                                  (isometric->orthogonal*

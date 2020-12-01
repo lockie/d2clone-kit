@@ -3,7 +3,7 @@
 
 (defsystem debug
   ((font (al:create-builtin-font) :type cffi:foreign-pointer)
-   (texts (make-hash-table :test 'eq) :type hash-table)
+   (texts (make-hash-table :test #'eq) :type hash-table)
    (text-designators nil :type list))
   (:documentation "Handles drawing of various debug information."
    :order 10))

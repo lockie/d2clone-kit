@@ -46,13 +46,13 @@ See MAKE-PREFAB-COMPONENT"))
   (let* ((plural-name (string-upcase (plural-of name)))
          (slot-names (mapcar #'car slots))
          (slot-defaults (mapcar #'cadr slots))
-         (slot-types (mapcar #'(lambda (s) (getf s :type 't)) slots))
+         (slot-types (mapcar #'(lambda (s) (getf s :type t)) slots))
          (slot-ro (mapcar #'(lambda (s) (getf s :read-only nil)) slots))
          (slot-docs (mapcar
                      #'(lambda (s)
                          (when-let (doc (getf s :documentation))
                            `(setf (documentation
-                                   #',(symbolicate name '- (car s))
+                                   #',(symbolicate name :- (car s))
                                    'function)
                                   ,doc)))
                      slots))
@@ -62,14 +62,14 @@ See MAKE-PREFAB-COMPONENT"))
                                         :type growable-vector :read-only t))
                             slot-names slot-defaults))
          (slot-accessors (mapcar
-                          #'(lambda (s) `(,(symbolicate name '- s '-aref*)))
+                          #'(lambda (s) `(,(symbolicate name :- s :-aref*)))
                           slot-names))
          (unsafe-slot-accessors
            (mapcar
-            #'(lambda (s) `(,(symbolicate name '- s '-aref)))
+            #'(lambda (s) `(,(symbolicate name :- s :-aref)))
             slot-names))
          (array-accessors (mapcar
-                           #'(lambda (s) `(,(symbolicate name '- s)))
+                           #'(lambda (s) `(,(symbolicate name :- s)))
                            slot-names))
          (getter-decls (mapcan
                         #'(lambda (s a type)
@@ -115,7 +115,7 @@ See MAKE-PREFAB-COMPONENT"))
             slot-ro unsafe-slot-accessors array-accessors slot-types)))
     `(progn
        (defstruct (,name
-                   (:constructor ,(symbolicate 'make- plural-name))
+                   (:constructor ,(symbolicate :make- plural-name))
                    (:copier nil) (:predicate nil))
          ,@soa-slots)
        (declaim (inline ,@(mapcar #'car array-accessors)))
@@ -123,20 +123,20 @@ See MAKE-PREFAB-COMPONENT"))
 
 (defmacro defcomponent ((system &optional (name system)) &rest slots)
   "Defines component structure with NAME and SLOTS within SYSTEM."
-  (let* ((system-type (symbolicate system '-system))
-         (system-instance (symbolicate '* system-type '*))
+  (let* ((system-type (symbolicate system :-system))
+         (system-instance (symbolicate :* system-type :*))
          (plural-name (string-upcase (plural-of name)))
          (slot-names (mapcar #'car slots))
          (slot-defaults (mapcar #'cadr slots))
          (slot-accessors (mapcar
-                          #'(lambda (s) `(,(symbolicate name '- s '-aref*)))
+                          #'(lambda (s) `(,(symbolicate name :- s :-aref*)))
                           slot-names))
          (unsafe-slot-accessors
-           (mapcar #'(lambda (s) `(,(symbolicate name '- s '-aref)))
+           (mapcar #'(lambda (s) `(,(symbolicate name :- s :-aref)))
                    slot-names)))
     `(progn
        (defsoa ,name ,@slots)
-       (defmacro ,(symbolicate 'with- name) (entity bindings &body body)
+       (defmacro ,(symbolicate :with- name) (entity bindings &body body)
          (with-gensyms (index system components)
            (let ((component-exps (mapcar #'list
                                          (if bindings bindings ',slot-names)
@@ -152,7 +152,7 @@ See MAKE-PREFAB-COMPONENT"))
                               (system-components-index ,system)
                               ,entity)))
                 (symbol-macrolet (,@component-exps) ,@body)))))
-       (defmacro ,(symbolicate 'with- plural-name) (&body body)
+       (defmacro ,(symbolicate :with- plural-name) (&body body)
          (with-gensyms (index system components)
            (let ((component-exps
                    (mapcar #'(lambda (s a) `(,s (,@a ,components ,index)))
@@ -169,12 +169,12 @@ See MAKE-PREFAB-COMPONENT"))
                (make-sparse-array-index
                 :initial-allocated-size *entities-allocated*)
                (system-components system)
-               (,(symbolicate 'make- plural-name)))
+               (,(symbolicate :make- plural-name)))
          (preload-prefabs system))
        (defmethod delete-component ((system ,system-type) entity)
          (when-let ((components-index (system-components-index system)))
            (sparse-array-index-delete components-index entity)))
-       (defun ,(symbolicate 'make- name) (entity &key ,@(mapcar #'list
+       (defun ,(symbolicate :make- name) (entity &key ,@(mapcar #'list
                                                                 slot-names
                                                                 slot-defaults))
          (let* ((system ,system-instance)

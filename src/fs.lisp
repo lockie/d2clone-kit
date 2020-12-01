@@ -272,5 +272,5 @@ See READ-BINARY"
        (defstruct ,name
          ,@(mapcar #'slot->struct-slot slots))
        (defmethod read-binary ((type (eql ',name)) stream)
-         (,(symbolicate 'make- name)
+         (,(symbolicate :make- name)
           ,@(mapcan #'slot->slot-ctor slots))))))

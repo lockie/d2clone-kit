@@ -136,7 +136,7 @@ ENTITY. Returns NIL of no such property exists."
    :start total-stance-length))
 
 (defun load-sprite-stances (ase-file)
-  (loop :with stances := (make-hash :size 4 :test 'eq)
+  (loop :with stances := (make-hash :size 4 :test #'eq)
         :for frame :across (ase-file-frames ase-file)
         :do (loop :for chunk :across (ase-frame-chunks frame)
                   :when (and chunk (ase-tags-chunk-p chunk))
@@ -232,7 +232,7 @@ ENTITY. Returns NIL of no such property exists."
 (defun load-sprite-frame-data (ase-file layer-names total-stance-length)
   ;; TODO : also support layer userdata
   (loop
-    :with result := (make-hash :test 'eq
+    :with result := (make-hash :test #'eq
                                :init-format :keychain
                                :initial-contents layer-names
                                :init-data (loop :repeat (length layer-names)
@@ -262,16 +262,17 @@ ENTITY. Returns NIL of no such property exists."
                         (plist-hash-table
                          (with-input-from-string (s text)
                            (read s))
-                         :test 'eq)))))
+                         :test #'eq)))))
     :finally (return result)))
 
 (defun load-sprite-layer-data (ase-file layer-names)
   (loop
-    :with result := (make-hash :test 'eq
+    :with result := (make-hash :test #'eq
                                :init-format :keychain
                                :initial-contents layer-names
                                :init-data (loop :repeat (length layer-names)
-                                                :collect (make-hash :test 'eq)))
+                                                :collect
+                                                   (make-hash :test #'eq)))
     :for frame :across (ase-file-frames ase-file)
     :when (ase-frame-chunks frame)
     :do (loop
@@ -286,7 +287,7 @@ ENTITY. Returns NIL of no such property exists."
                         (plist-hash-table
                          (with-input-from-string (s text)
                            (read s))
-                         :test 'eq)))))
+                         :test #'eq)))))
     :finally (return result)))
 
 (defmethod make-prefab ((system sprite-system) prefab-name)
@@ -306,7 +307,7 @@ ENTITY. Returns NIL of no such property exists."
                          ase-file layer-names total-stance-length directions))
          (layers (make-hash
                   ;; TODO do I need :size here?
-                  :size (length layer-names) :test 'eq :init-format :keychain
+                  :size (length layer-names) :test #'eq :init-format :keychain
                   :initial-contents layer-names :init-data layer-bitmaps)))
     (make-sprite-prefab
      :width (ase-file-width ase-file)
@@ -362,7 +363,7 @@ extra checks. Does not affect TIME-COUNTER of sprite."
        :layer-data (sprite-prefab-layer-data prefab)
        :layer-names (sprite-prefab-layer-names prefab)
        :layer-batches (make-hash
-                       :test 'eq
+                       :test #'eq
                        :initial-contents (sprite-prefab-layers prefab)
                        :init-data #'(lambda (k v)
                                       (values
@@ -374,7 +375,7 @@ extra checks. Does not affect TIME-COUNTER of sprite."
                                                     entity))))
        :layers-toggled (let ((layers-toggled
                                (make-hash
-                                :test 'eq
+                                :test #'eq
                                 :init-format :keys
                                 :initial-contents
                                 (sprite-prefab-layer-names prefab)

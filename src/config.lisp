@@ -58,7 +58,7 @@ See WITH-SYSTEM-CONFIG-OPTIONS"
                                                 ,d)))))
                        option-names section-names key-names
                        option-types option-defaults)))
-    `(defmacro ,(symbolicate 'with- name '-config-options) ((options
+    `(defmacro ,(symbolicate :with- name :-config-options) ((options
                                                              &key (read-only t))
                                                             &body body)
        "Executes BODY with bindings for config options OPTIONS. If READ-ONLY is

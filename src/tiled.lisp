@@ -56,7 +56,7 @@
 
 (defun load-tiled-map (stream)
   (labels
-      ((symbolize (val) (if val (intern (string-upcase val) :d2clone-kit) nil))
+      ((symbolize (val) (if val (make-keyword (string-upcase val)) nil))
        (xmlrep-integer-attrib-value (name tag)
          (if-let (val (xmlrep-attrib-value name tag nil))
                  (parse-integer val :junk-allowed t)
@@ -64,8 +64,8 @@
        (parse-property-value (type val)
          (declare (type string val))
          (case type
-           ((bool) (string= val "true"))
-           ((color)
+           ((:bool) (string= val "true"))
+           ((:color)
             (if (length= 7 val)
                 (vector
                  (parse-integer val :start 1 :end 3 :radix 16)
@@ -77,9 +77,9 @@
                  (parse-integer val :start 5 :end 7 :radix 16)
                  (parse-integer val :start 7 :end 9 :radix 16)
                  (parse-integer val :start 1 :end 3 :radix 16))))
-           ((file) (pathname val))
-           ((float) (parse-float val))
-           ((int) (parse-integer val))
+           ((:file) (pathname val))
+           ((:float) (parse-float val))
+           ((:int) (parse-integer val))
            (t val)))
        (tag-properties (tag)
          (let ((properties (make-hash-table :test #'eq))
@@ -174,12 +174,12 @@
                 :data
                 (let ((data (xmlrep-string-child data-tag nil)))
                   (case (symbolize (xmlrep-attrib-value "encoding" data-tag))
-                    (base64 (base64-layer-parser
+                    (:base64 (base64-layer-parser
                              data width height
                              :compression (xmlrep-attrib-value "compression"
                                                                data-tag "")))
-                    (csv (csv-layer-parser data))
-                    (otherwise (make-array '(0 0) :element-type 'fixnum)))))))))
+                    (:csv (csv-layer-parser data))
+                    (t (make-array '(0 0) :element-type 'fixnum)))))))))
        (parse-object (tag)
          (make-tiled-object
           :id (xmlrep-integer-attrib-value "id" tag)
@@ -208,7 +208,7 @@
                                                       map-tag nil))
        :background-color (if-let (tag (xmlrep-attrib-value "backgroundcolor"
                                                            map-tag nil))
-                           (parse-property-value 'color tag)
+                           (parse-property-value :color tag)
                            nil)
        :tilesets (map 'vector #'parse-tileset (xmlrep-find-child-tags "tileset"
                                                                       map-tag))

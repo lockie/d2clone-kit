@@ -36,7 +36,7 @@
   "Shorthand macro to allow more convenient issuing of events. If ASYNC is
 NIL, process the event immediately."
   `(progn
-     (let ((event (,(symbolicate 'make- event-class) ,@args)))
+     (let ((event (,(symbolicate :make- event-class) ,@args)))
        ,(if async
             '(%issue event)
             '(with-systems system
