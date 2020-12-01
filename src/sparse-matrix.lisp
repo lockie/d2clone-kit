@@ -16,7 +16,7 @@
   "Creates new sparse matrix."
   (let ((initial-size 8))
     (%make-sparse-matrix
-     :indices (make-hash-table :test 'equal :size initial-size)
+     :indices (make-hash-table :test #'equal :size initial-size)
      :array (make-growable-vector :initial-allocated-size initial-size)
      :deleted-indices (make-array 0
                                   :element-type 'array-index

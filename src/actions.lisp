@@ -153,15 +153,13 @@ See FINALIZE-ACTION"
   (declare (ignorable documentation))
   (with-gensyms (index storage)
     (let* ((type (make-keyword name))
-           ;; TODO: replace symbols with keywords in macroses to prevent
-           ;;  unwanted interning
            (struct (symbolicate name :-action))
            (storage-variable (symbolicate :* name :-actions*))
            (deleted-indices (symbolicate :* name :-action-deleted-indices*))
            (length-helper (symbolicate struct :s-length))
            (slot-names (mapcar #'car slots))
            (slot-defaults (mapcar #'cadr slots))
-           (slot-types (mapcar #'(lambda (s) (getf s :type 't)) slots))
+           (slot-types (mapcar #'(lambda (s) (getf s :type t)) slots))
            (slot-accessors
              (mapcar
               #'(lambda (s) `(,(symbolicate name :-action- s :-aref*)
@@ -263,7 +261,7 @@ list of names of action type slots, except for the first element, which is the
 name of global index of action being processed."
   (let ((type (make-keyword action)))
     `(defmethod execute-action-type ((type (eql ,type)))
-       (,(symbolicate 'with- action '-actions) ,bindings
+       (,(symbolicate :with- action :-actions) ,bindings
         ,@body))))
 
 (defun process-actions ()

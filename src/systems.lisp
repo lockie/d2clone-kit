@@ -24,7 +24,7 @@
       "Fixnum representing system's update order.")
 
 (declaim (type hash-table *systems*))
-(global-vars:define-global-var *systems* (make-hash-table :test 'eq))
+(global-vars:define-global-var *systems* (make-hash-table :test #'eq))
 (declaim (type list *system-initializers*))
 (global-vars:define-global-var *system-initializers* nil)
 
@@ -35,19 +35,19 @@ specifying the order for system initialization and WITH-SYTEMS macro.
 
 See INITIALIZE-SYSTEMS
 See WITH-SYSTEMS"
-  (let* ((system-name (symbolicate name '-system))
-         (printer-name (symbolicate system-name '-print))
-         (variable-name (symbolicate '* system-name '*))
-         (ctor-name (symbolicate 'make- system-name))
+  (let* ((system-name (symbolicate name :-system))
+         (printer-name (symbolicate system-name :-print))
+         (variable-name (symbolicate :* system-name :*))
+         (ctor-name (symbolicate :make- system-name))
          (slot-docs (mapcar
                      #'(lambda (slot)
                          (when-let (doc (getf slot :documentation))
                            `(setf (documentation
-                                    #',(symbolicate system-name '- (car slot))
+                                    #',(symbolicate system-name :- (car slot))
                                     'function)
                                    ,doc)))
                      slots))
-         (slot-names (mapcar #'(lambda (s) (symbolicate system-name '- (car s)))
+         (slot-names (mapcar #'(lambda (s) (symbolicate system-name :- (car s)))
                              slots))
          (slot-descriptions
            (mapcar #'(lambda (slot) (remove-from-plist slot :documentation))
@@ -57,7 +57,7 @@ See WITH-SYSTEMS"
          (print-unreadable-object (object stream :type t :identity t)))
        (defstruct (,system-name
                    (:include system (order ,order) (name ',name))
-                   (:constructor ,(symbolicate '%make- system-name))
+                   (:constructor ,(symbolicate :%make- system-name))
                    (:print-object ,printer-name)
                    (:copier nil)
                    (:predicate nil))
@@ -68,7 +68,7 @@ See WITH-SYSTEMS"
        (global-vars:define-global-var ,variable-name nil)
        (declaim (type (or null ,system-name) ,variable-name))
        (defun ,ctor-name ()
-         (let ((system (,(symbolicate '%make- system-name))))
+         (let ((system (,(symbolicate :%make- system-name))))
            (system-create system)
            (setf ,variable-name system)))
        (defmethod system-finalize :after ((system ,system-name))
@@ -104,8 +104,8 @@ If SYSTEM-INSTANCE is NIL (the default), global system instance of type
 SYSTEM-TYPE is used.  If READ-ONLY is T (the default), slots are not
 SETF-able."
   (with-gensyms (system)
-    (let* ((instance (or system-instance (symbolicate '* system-type '*)))
-           (accessors (mapcar #'(lambda (s) (symbolicate system-type '- s))
+    (let* ((instance (or system-instance (symbolicate :* system-type :*)))
+           (accessors (mapcar #'(lambda (s) (symbolicate system-type :- s))
                               slots))
            (accessor-calls (mapcar #'(lambda (a) (list a system)) accessors))
            (let-clauses (mapcar #'list slots accessor-calls)))
