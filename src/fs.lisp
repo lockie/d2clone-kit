@@ -189,6 +189,14 @@ Lines are expected to be shorter than 4k chars."
       (let ((pointer (cffi:inc-pointer buffer start)))
         (+ start (al:fread al-file pointer (- end start)))))))
 
+(defun stream-size (stream)
+  "Returns the file size of BINARY-STREAM and CHARACTER-STREAM.
+
+See BINARY-STREAM
+See CHARACTER-STREAM"
+  (with-slots (al-file) stream
+    (al:fsize al-file)))
+
 (defclass virtual-binary-stream
     (trivial-gray-streams:fundamental-binary-input-stream)
   ((buffer :initarg :buffer :initform (error "missing buffer"))

@@ -71,6 +71,7 @@
 (defvar *game-name*)
 (defvar *new-game-object-specs*)
 (defvar *config-options*)
+(defvar *table-indices*)
 
 (defun new-game ()
   "Starts new game."
@@ -155,6 +156,13 @@
 
         (setf *random-state* (make-random-state t))
 
+        (setf *data-tables*
+              (build-data-tables
+               (load-castledb-tables
+                (make-instance 'character-stream
+                               :path (format nil "tables/~a.cdb" *game-name*)))
+               *table-indices*))
+
         (unwind-protect
              (progn
                (initialize-systems)
@@ -187,14 +195,17 @@
           (close-fs)))))
   0)
 
-(defunl start-engine (game-name new-game-object-specs &rest config)
+(defunl start-engine (game-name new-game-object-specs table-indices
+                                &rest config)
   "Initializes and starts engine to run the game named by GAME-NAME.
 NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when
- the new game is started.  CONFIG plist is used to override variables read
- from config file."
+ the new game is started. TABLE-INDICES, if non-nil, specifies the columns in
+ indices to build from a data tables read from .cdb file. CONFIG plist is used
+ to override variables read from config file."
   (let ((*game-name* game-name)
         (*new-game-object-specs* new-game-object-specs)
-        (*config-options* config))
+        (*config-options* config)
+        (*table-indices* table-indices))
     (float-features:with-float-traps-masked
         (:divide-by-zero :invalid :inexact :overflow :underflow)
       (al:run-main 0 (cffi:null-pointer) (cffi:callback run-engine)))))
@@ -229,4 +240,5 @@ NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when
      ;;  (:character :speed 1d0)
      ;;  (:hp :current 50d0 :maximum 50d0))
      ((:coordinate :x 0d0 :y 0d0)
-      (:map :prefab :map)))))
+      (:map :prefab :map)))
+   nil))

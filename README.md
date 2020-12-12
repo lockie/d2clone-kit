@@ -6,6 +6,7 @@ programming language and related techniques.
 
 * Support for [Tiled](https://www.mapeditor.org) map format.
 * Support for [Aseprite](https://aseprite.org) sprite format.
+* Support for [CastleDB](http://castledb.org) database format.
 * Entity-Component-System implementation.
 * Simple yet powerful events subsystem.
 * 2D renderer with functional interface.

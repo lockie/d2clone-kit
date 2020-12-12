@@ -13,6 +13,7 @@
                :cl-ppcre
                :float-features
                :global-vars
+               :jonathan
                :livesupport
                :make-hash
                :net.mfiano.lisp.golden-utils
@@ -33,6 +34,8 @@
                 :depends-on ("fs"))
                (:file "camera-system"
                 :depends-on ("entities" "systems" "config" "coordinate-system"))
+               (:file "castledb"
+                :depends-on ("fs"))
                (:file "character-system"
                 :depends-on ("components" "systems" "config" "event-queue"
                                           "actions" "collision-system"
@@ -56,8 +59,11 @@
                 :depends-on ("entities" "systems"))
                (:file "d2clone-kit"
                 :depends-on ("entities" "systems" "renderer" "log" "config" "fs"
-                                        "event-queue" "actions" "player-system"
+                                        "event-queue" "actions" "castledb"
+                                        "data-tables" "player-system"
                                         "ui-system"))
+               (:file "data-tables"
+                :depends-on ("log"))
                (:file "debug-system"
                 :depends-on ("components" "systems" "renderer"
                                           "growable-vector"))
