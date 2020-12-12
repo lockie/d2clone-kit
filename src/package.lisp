@@ -92,6 +92,13 @@
     #:game-started-p
     #:start-engine
     #:demo)
+   ;; data-tables.lisp
+   (:export
+    #:*data-tables*
+    #:+table-indices+
+    #:build-data-tables
+    #:table-value-ref
+    #:table-value-ref*)
    ;; debug-system.lisp
    (:export
     #:debug-system
@@ -130,6 +137,7 @@
     #:read-file-into-list
     #:character-stream
     #:binary-stream
+    #:stream-size
     #:virtual-binary-stream
     #:read-binary
     #:define-binary-struct)
