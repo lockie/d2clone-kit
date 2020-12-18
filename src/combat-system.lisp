@@ -69,6 +69,14 @@
                         ;; being attacked. Get it from a table (weapon class,
                         ;; armor class) -> sound prefab. Get armor class from
                         ;; call to layer-property?..
+                        (make-component
+                         *sound-system* entity
+                         :prefab (table-value-ref
+                                  :impact-sounds
+                                  `(:armor-class
+                                    ,(layer-property target :armor-class)
+                                    :weapon-class
+                                    ,(equipped-weapon-class entity))))
                         (set-hp target (- target-current-hp damage))
                         (when (> damage (* target-max-hp +stun-threshold+))
                           (unless (zerop target-current-hp)
