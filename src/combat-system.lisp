@@ -29,6 +29,18 @@
 
 (defconstant +stun-threshold+ 0.08d0)
 
+(declaim
+ (inline equipped-weapon-class)
+ (ftype (function (fixnum) keyword) equipped-weapon-class))
+(defun equipped-weapon-class (entity)
+  (with-sprite entity ()
+    (loop :for layer :being :the :hash-key :of layers-toggled
+          :using (hash-value on)
+          :when on
+          :do (when-let (weapon-class (layer-property entity :weapon-class))
+                (return weapon-class))
+          :finally (return :fists))))
+
 (defperformer swing (action target)
   (let* ((entity (action-entity action)))
     (with-combat entity ()
