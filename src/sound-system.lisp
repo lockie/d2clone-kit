@@ -15,6 +15,20 @@
 (defprefab sound "ogg"
   (sample (cffi:null-pointer) :type cffi:foreign-pointer))
 
+(defmethod make-component :around ((system sound-system) entity
+                                   &rest parameters)
+  (apply #'call-next-method
+         system entity
+         ;; TODO : optimize by performing getf and remove-from-plist in one loop
+         (if-let (prefab (getf parameters :prefab))
+           (append
+            (remove-from-plist parameters :prefab)
+            `(:prefab
+              ,(etypecase prefab
+                 (keyword prefab)
+                 (list (random-elt prefab)))))
+           parameters)))
+
 (defmethod make-prefab ((system sound-system) prefab-name)
   (make-sound-prefab
    :sample (ensure-loaded #'al:load-sample (prefab-path system prefab-name))))
