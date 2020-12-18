@@ -28,18 +28,16 @@ degradations."))
 template and optional extra parameters PARAMETERS within SYSTEM for ENTITY."))
 
 (defmethod make-component :around (system entity &rest parameters)
-  (destructuring-bind (&rest rest-parameters &key (prefab nil)
-                       &allow-other-keys) parameters
-    (if prefab
-        (make-prefab-component system entity
-                               (if-let (prefab-instance (prefab system prefab))
-                                 prefab-instance
-                                 (make-prefab system prefab))
-                               rest-parameters)
-        (call-next-method))
-    (issue (component-created)
-           :entity entity
-           :system-name (system-name system))))
+  (if-let (prefab (getf parameters :prefab))
+    (make-prefab-component system entity
+                           (if-let (prefab-instance (prefab system prefab))
+                             prefab-instance
+                             (make-prefab system prefab))
+                           parameters)
+    (call-next-method))
+  (issue (component-created)
+         :entity entity
+         :system-name (system-name system)))
 
 (defmacro defprefab (system extension &rest slots)
   "Defines prefab structure with slots SLOTS and file name EXTENSION within
