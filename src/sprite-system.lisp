@@ -332,13 +332,20 @@ ENTITY. Returns NIL of no such property exists."
  (ftype (function (fixnum)) emit-frame-sound))
 (defun emit-frame-sound (entity)
   "Emits sound associated with frame through :SOUND property, if any."
-  (with-sprite entity ()
-    (loop :for layer
-          :being :the :hash-key
-          :using (hash-value toggled) :of layers-toggled
-          :when toggled :do
-             (when-let (sound (frame-property entity :sound :layer layer))
-               (make-component *sound-system* entity :prefab sound)))))
+  (flet ((emit-layer-sound (layer)
+           (when-let (sound (frame-property entity :sound :layer layer))
+             (and (make-component *sound-system* entity :prefab sound) t))))
+    (with-sprite entity ()
+      (loop :with default-layer :of-type keyword := (default-layer entity)
+            :with non-default-layer-emitted-sound-p :of-type boolean := nil
+            :for layer :of-type keyword
+            :being :the :hash-key
+            :using (hash-value toggled) :of layers-toggled
+            :when (and toggled (not (eq layer default-layer))) :do
+               (when (emit-layer-sound layer)
+                 (setf non-default-layer-emitted-sound-p t))
+            :finally (unless non-default-layer-emitted-sound-p
+                       (emit-layer-sound default-layer))))))
 
 (declaim
  (inline %switch-stance)
