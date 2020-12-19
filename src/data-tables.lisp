@@ -34,7 +34,7 @@
 See +TABLE-INDICES+"
   (loop :with indices := (append +table-indices+ table-indices)
         :with result := (make-hash :test #'eq)
-        :for count fixnum :from 0
+        :for count :of-type fixnum :from 0
         :for designator :being :the :hash-key
         :using (hash-value table) :of data
         :for (index-columns value-columns) := (getf indices designator)

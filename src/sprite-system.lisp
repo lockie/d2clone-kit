@@ -79,6 +79,13 @@ animation stance")
         (setf (gethash layer layers-toggled) value)))))
 
 (declaim
+ (inline default-layer)
+ (ftype (function (fixnum) keyword) default-layer))
+(defun default-layer (entity)
+  (with-sprite entity ()
+    (first layer-names)))
+
+(declaim
  (inline frame-property)
  (ftype (function (fixnum keyword &key (:layer keyword))) frame-property))
 (defun frame-property (entity property-name &key layer)
@@ -93,7 +100,7 @@ NIL if no such property exists."
      (aref
       (the simple-vector
            (gethash
-            (or layer (first layer-names))
+            (or layer (default-layer entity))
             frame-data))
       frame))))
 
@@ -106,7 +113,7 @@ ENTITY. Returns NIL of no such property exists."
     (gethash
      property-name
      (gethash
-      (or layer (first layer-names))
+      (or layer (default-layer entity))
       layer-data))))
 
 (cffi:defcfun memcpy :pointer
