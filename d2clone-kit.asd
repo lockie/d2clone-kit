@@ -16,7 +16,7 @@
                :jonathan
                :livesupport
                :make-hash
-               :net.mfiano.lisp.golden-utils
+               :golden-utils
                :parse-float
                :qbase64
                :static-dispatch
