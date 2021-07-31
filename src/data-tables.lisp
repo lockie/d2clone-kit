@@ -45,8 +45,9 @@ See +TABLE-INDICES+"
 
 (declaim
  (inline table-value-ref)
- (ftype (function (keyword list &key (:default t) (:column keyword)) t)
-        table-value-ref))
+ (ftype
+  (function (keyword list &key (:default t) (:column (or keyword null))) t)
+  table-value-ref))
 (defun table-value-ref (table-designator predicates
                         &key (default nil) (column nil))
   "References the data table designated by TABLE-DESIGNATOR by plist
