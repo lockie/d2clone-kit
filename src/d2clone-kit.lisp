@@ -69,6 +69,7 @@
           (al:flip-display))))))
 
 (defvar *game-name*)
+(defvar *sanitized-game-name*)
 (defvar *new-game-object-specs*)
 (defvar *config-options*)
 (defvar *table-indices*)
@@ -93,16 +94,15 @@
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))
   (with-condition-reporter
-    (let* ((dir-name (sanitize-filename *game-name*))
-           (data-dir
-             (merge-pathnames
-              (make-pathname :directory `(:relative ,dir-name))
-              (uiop:xdg-data-home))))
+    (let ((data-dir
+            (merge-pathnames
+             (make-pathname :directory `(:relative ,*sanitized-game-name*))
+             (uiop:xdg-data-home))))
       (ensure-directories-exist data-dir)
       (init-log data-dir)
-      (al:set-app-name dir-name)
+      (al:set-app-name *sanitized-game-name*)
       (al:init)
-      (init-fs dir-name data-dir)
+      (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
     ;; TODO : proper recover from those errors
@@ -160,7 +160,8 @@
               (build-data-tables
                (load-castledb-tables
                 (make-instance 'character-stream
-                               :path (format nil "tables/~a.cdb" *game-name*)))
+                               :path (format nil "tables/~a.cdb"
+                                             *sanitized-game-name*)))
                *table-indices*))
 
         (unwind-protect
@@ -203,6 +204,7 @@ NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when
  indices to build from a data tables read from .cdb file. CONFIG plist is used
  to override variables read from config file."
   (let ((*game-name* game-name)
+        (*sanitized-game-name* (sanitize-filename game-name))
         (*new-game-object-specs* new-game-object-specs)
         (*config-options* config)
         (*table-indices* table-indices))
