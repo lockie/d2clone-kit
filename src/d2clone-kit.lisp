@@ -91,6 +91,9 @@
   ;; HACK
   (entity-valid-p (player-system-entity *player-system*)))
 
+(defconstant +engine-version+
+  (slot-value (asdf:find-system :d2clone-kit) 'asdf:version))
+
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))
   (with-condition-reporter
@@ -100,6 +103,7 @@
              (uiop:xdg-data-home))))
       (ensure-directories-exist data-dir)
       (init-log data-dir)
+      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (al:set-app-name *sanitized-game-name*)
       (al:init)
       (init-fs *sanitized-game-name* data-dir)
