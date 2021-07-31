@@ -232,6 +232,9 @@ See CHARACTER-STREAM"
 (defmethod read-binary ((type (eql 'byte)) stream)
   (read-byte stream))
 
+;; TODO : use Zach Beane's trick: (logand x #xFFFFFFFF) removes the need
+;;  of declaring x to be fixnum
+
 (defmethod read-binary ((type (eql 'word)) stream)
   (let ((word 0))
     (setf (ldb (byte 8 0) word) (read-byte stream))
