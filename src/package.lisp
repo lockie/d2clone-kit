@@ -56,6 +56,7 @@
    ;; combat-system
    (:export
     #:combat-system
+    #:equipped-weapon
     #:equipped-weapon-class
     #:attack)
    ;; components.lisp

@@ -148,7 +148,7 @@ character there."
           (delete-child *session-entity* item-entity)
           (delete-entity item-entity))
         (let* ((player-entity (player-entity))
-               (weapon (equipped-weapon-class player-entity)))
+               (weapon (equipped-weapon player-entity)))
           (unless (eq weapon :fists)
             (drop-item player-entity weapon)
             (toggle-layer player-entity weapon nil))
