@@ -1,7 +1,5 @@
 (in-package :cl-user)
 
-#+(and sbcl (not windows)) (require :sb-sprof)
-
 (cl-environments:enable-hook)
 
 (defpackage :d2clone-kit
@@ -178,8 +176,7 @@
     #:log-info
     #:log-warn
     #:log-error
-    #:with-condition-reporter
-    #:with-profiling)
+    #:with-condition-reporter)
    ;; mana-system.lisp
    (:export
     #:mana-system)

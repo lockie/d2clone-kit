@@ -171,10 +171,7 @@
         (unwind-protect
              (progn
                (initialize-systems)
-               (with-system-config-options ((debug-profiling))
-                 (with-profiling debug-profiling
-                   "game loop"
-                   (game-loop event-queue))))
+               (game-loop event-queue))
           (log-info "Shutting engine down")
           (when (entity-valid-p *session-entity*)
             (delete-entity *session-entity*))

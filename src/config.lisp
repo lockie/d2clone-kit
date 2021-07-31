@@ -78,7 +78,6 @@ T (the default), options are not SETF-able."
   (display fps :type boolean :default nil)
   (display multisampling :type fixnum :default 0)
   (display font :type string :default "")
-  (debug profiling :type boolean :default nil)
   (debug grid :type list :default nil)
   (debug sprite :type list :default nil)
   (debug cursor :type list :default nil)

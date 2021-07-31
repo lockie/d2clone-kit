@@ -8,7 +8,6 @@ and this project adheres to
 ## [Unreleased]
 ### Added
 - MacOS support.
-- Ability to do function call profiling by merely setting config variable.
 - Helper function to do proper error checking on liballegro file loading.
 - Proper collision map clearing on map chunks deletion.
 - System initialization method.

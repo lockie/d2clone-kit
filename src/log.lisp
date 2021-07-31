@@ -94,35 +94,3 @@ messagebox when not in debugger."
                       "We got a big error here :(" (format nil "~a" e)
                       (cffi:null-pointer) :error)))))
      ,@body))
-
-(defmacro with-profiling (on marker &body body)
-  "On SBCL, when the variable denoted by symbol ON is T, executes BODY with
-[statistical profiler](http://www.sbcl.org/manual/#Statistical-Profiler)
-turned on and then prints its results into liballegro log along with MARKER
-string used to identify this profiling run among others.
-
-Otherwise, just executes BODY."
-  (let ((on-variable (symbolicate on)))
-    `(if ,on-variable
-         #+(or (not sbcl) windows)
-         (progn
-           (log-warn "Profiling is not supported with ~a on ~a"
-                     (lisp-implementation-type)
-                     (software-type))
-           ,@body)
-         #+(and sbcl (not windows))
-         ;; TODO : silence "deleting unreachable code" warning
-         (progn
-           (let ((was-profiling sb-sprof::*profiling*))
-             (sb-sprof:start-profiling)
-             (unwind-protect
-                  (progn ,@body)
-               (sb-sprof:stop-profiling)
-               (log-info "Profiling report for ~a:~%~a~%"
-                         ,marker
-                         (with-output-to-string (s)
-                           (sb-sprof:report  :stream s)))
-               (sb-sprof:reset)
-               (when was-profiling
-                 (sb-sprof:start-profiling)))))
-         (progn ,@body))))
