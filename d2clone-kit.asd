@@ -19,7 +19,6 @@
                :golden-utils
                :parse-float
                :qbase64
-               :static-dispatch
                :trivial-features
                :trivial-garbage
                :trivial-gray-streams
