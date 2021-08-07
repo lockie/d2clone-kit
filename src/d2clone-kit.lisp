@@ -201,9 +201,13 @@
                                 &rest config)
   "Initializes and starts engine to run the game named by GAME-NAME.
 NEW-GAME-OBJECT-SPECS is list of game object specifications to be created when
- the new game is started. TABLE-INDICES, if non-nil, specifies the columns in
- indices to build from a data tables read from .cdb file. CONFIG plist is used
- to override variables read from config file."
+ the new game is started with MAKE-OBJECT. TABLE-INDICES, if non-nil,
+ specifies the columns in indices to build from a data tables read from .cdb
+ file with BUILD-DATA-TABLES. CONFIG plist is used to override variables read
+ from config file.
+
+See MAKE-OBJECT
+See BUILD-DATA-TABLES"
   (let ((*game-name* game-name)
         (*sanitized-game-name* (sanitize-filename game-name))
         (*new-game-object-specs* new-game-object-specs)

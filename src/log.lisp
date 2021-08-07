@@ -80,7 +80,7 @@ functions."
   liballegro error channel.")
 
 (defmacro with-condition-reporter (&body body)
-  "Executes body BODY with generic error handler which puts full error
+  "Executes BODY with generic error handler which puts full error
 condition info including backtrace to liballegro log and displays error
 messagebox when not in debugger."
   `(handler-bind

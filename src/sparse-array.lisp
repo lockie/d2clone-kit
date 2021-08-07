@@ -7,7 +7,9 @@
  (inline index-valid-p)
  (ftype (function (fixnum) boolean)))
 (defun index-valid-p (index)
-  "Return T if index is valid."
+  "Return T if index is valid.
+
+See +INVALID-INDEX+"
   (not (minusp index)))
 
 (defstruct (sparse-array-index
@@ -21,9 +23,8 @@
   (deleted-indices (make-growable-vector :initial-element +invalid-index+)
    :type growable-vector))
 
-;; TODO : document!
-
 (defun make-sparse-array-index (&key (initial-allocated-size 1))
+  "Creates new sparse array index."
   (%make-sparse-array-index
    :indices (make-growable-vector
              :initial-element +invalid-index+
@@ -33,6 +34,7 @@
  (inline sparse-array-index-grow)
  (ftype (function (sparse-array-index array-length)) sparse-array-index-grow))
 (defun sparse-array-index-grow (sparse-array-index new-allocated-size)
+  "Adjusts SPARSE-ARRAY-INDEX to have allocated size of NEW-ALLOCATED-SIZE."
   (growable-vector-grow (%sparse-array-index-indices sparse-array-index)
                         new-allocated-size))
 
@@ -41,6 +43,7 @@
  (ftype (function (sparse-array-index array-index) fixnum)
         sparse-array-index-ref))
 (defun sparse-array-index-ref (sparse-array-index subscript)
+  "Access SPARSE-ARRAY-INDEX by SUBSCRIPT."
   (growable-vector-ref (%sparse-array-index-indices sparse-array-index)
                        subscript))
 
@@ -49,6 +52,7 @@
  (ftype (function (sparse-array-index array-index) array-index)
         sparse-array-index-push))
 (defun sparse-array-index-push (sparse-array-index subscript)
+  "Appends new element denoted by SUBSCRIPT to the end of SPARSE-ARRAY-INDEX."
   (let ((deleted-indices
           (%sparse-array-index-deleted-indices sparse-array-index)))
     (setf (growable-vector-ref* (%sparse-array-index-indices sparse-array-index)
@@ -62,6 +66,7 @@
  (inline sparse-array-index-delete)
  (ftype (function (sparse-array-index array-index)) sparse-array-index-delete))
 (defun sparse-array-index-delete (sparse-array-index subscript)
+  "Marks element denoted by SUBSCRIPT as deleted in SPARSE-ARRAY-INDEX."
   (growable-vector-push
    (%sparse-array-index-deleted-indices sparse-array-index)
    (growable-vector-ref (%sparse-array-index-indices sparse-array-index)
@@ -71,6 +76,8 @@
         +invalid-index+))
 
 (defmacro do-sparse-array ((subscript index sparse-array-index) &body body)
+  "Executes BODY several times with SUBSCRIPT and INDEX variables set to
+corresponding values in SPARSE-ARRAY-INDEX."
   (with-gensyms (indices)
     `(let ((,indices (%sparse-array-index-indices ,sparse-array-index)))
        (loop :for ,subscript :from 0 :to (growable-vector-length ,indices)

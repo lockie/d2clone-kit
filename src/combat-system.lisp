@@ -33,6 +33,7 @@
  (inline equipped-weapon)
  (ftype (function (fixnum) keyword) equipped-weapon))
 (defun equipped-weapon (entity)
+  "Returns keyword corresponding to ENTITY's currently equipped weapon."
   ;; TODO : deduplictate code
   (with-sprite entity ()
     (loop :for layer :being :the :hash-key :of layers-toggled
@@ -47,6 +48,8 @@
  (inline equipped-weapon-class)
  (ftype (function (fixnum) keyword) equipped-weapon-class))
 (defun equipped-weapon-class (entity)
+  "Returns keyword corresponding to weapon class of ENTITY's currently equipped
+weapon."
   (with-sprite entity ()
     (loop :for layer :being :the :hash-key :of layers-toggled
           :using (hash-value on)

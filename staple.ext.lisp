@@ -29,6 +29,14 @@
       (staple:markup-code-snippets-ignoring-errors
        (staple:compile-source docstring :markdown)))))
 
+(defmethod staple:definition-wanted-p :around ((definition
+                                                definitions:definition)
+                                               (__ my-page))
+  (if (or (typep definition 'definitions:transform)
+          (typep definition 'definitions:source-transform))
+      nil
+      (call-next-method)))
+
 (defmethod staple:definition-wanted-p ((definition definitions:method)
                                        (__ my-page))
   (let* ((designator (definitions:designator definition))

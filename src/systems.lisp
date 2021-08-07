@@ -185,6 +185,7 @@ system instance to variable VAR."
 
 (defun make-object (spec &optional parent)
   "Creates a new game object following specification SPEC structured as follows:
+
 ```
 '((:system-name1 :component-parameter1 \"value1\" :component-parameter2 2.0)
   (:system-name2 :prefab :prefab-name)

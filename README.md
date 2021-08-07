@@ -7,16 +7,24 @@ programming language and related techniques.
 * Support for [Tiled](https://www.mapeditor.org) map format.
 * Support for [Aseprite](https://aseprite.org) sprite format.
 * Support for [CastleDB](http://castledb.org) database format.
-* Entity-Component-System implementation.
+* Performant Entity-Component-System implementation supporting
+  parent-child entitiy relationships.
+* Prefab subsystem allowing creation of new components using
+  predefined file-backed template.
 * Simple yet powerful events subsystem.
+* Full-blown game character subsystem.
+* Simple actions subsystem, providing building blocks for complex
+  character behaviour.
+* Basic game session utilities.
 * 2D renderer with functional interface.
 * Sprite batching subsystem.
 * Simple DSL for creating GUI windows by
   [Nuklear library](https://gitlab.com/lockie/cl-liballegro-nuklear).
 * Naïve implementation of A* pathfinding algorithm.
-* Powerful debugging facilities, including visual debugging.
+* Powerful debugging facilities, including entity tree dumping and
+  visual debugging.
 * Loading assets from zip files.
-* Simple yet powerful configuration subsystem.
+* Simple yet versatile configuration subsystem.
 * Logging subsystem.
 
 ## Installation
@@ -36,7 +44,7 @@ d2clone-kit:
 * [SBCL](http://sbcl.org)
 * [CCL](https://ccl.clozure.com)
 
-You can run it on x86_64 Linux, OS X, and Windows, while SBCL on Linux is the
+You can run it on x86_64 Linux, macOS, and Windows, while SBCL on Linux is the
 recommended platform.
 
 To install d2clone-kit, clone the repository to your Quicklisp's
