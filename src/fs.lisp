@@ -109,6 +109,7 @@ Otherwise, it is returned."
 (defun read-file-into-list (pathname)
   "Reads text file specified by PATHNAME into a list line-by-line.
 Lines are expected to be shorter than 4k chars."
+  ;; TODO : specify max length as defaulted keyword parameter
   (cffi:with-foreign-object (buffer :char 4096)
     (loop
       :with file := (al:fopen (namestring pathname) "r")

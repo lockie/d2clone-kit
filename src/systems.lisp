@@ -171,6 +171,7 @@ system instance to variable VAR."
 (defmacro with-systems** (var &body body)
   "Executes BODY in loop for each system in reverse systems order, binding
 system instance to variable VAR."
+  ;; TODO : combine that with above?
   `(dolist (,var (sort (hash-table-values *systems*)
                        #'(lambda (a b)
                            (declare (type fixnum a b))
