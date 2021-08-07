@@ -7,6 +7,12 @@ and this project adheres to
 
 ## [Unreleased]
 ### Added
+### Changed
+### Removed
+### Fixed
+
+## [0.1.1] - 2021-08-07
+### Added
 - MacOS support.
 - Helper function to do proper error checking on liballegro file loading.
 - Proper collision map clearing on map chunks deletion.
@@ -17,6 +23,19 @@ and this project adheres to
 - Main menu.
 - Credits screen.
 - Parent-child relationship in ECS entities.
+- Actions subsystem.
+- DUMP-ENTITIES debug helper.
+- Ability to synchronously process issued event.
+- NON-INTERRUPTIBLE property for sounds.
+- Loading screen.
+- Support for sprite per-layer frame properties.
+- Support for sound effects on frames different than first animation frame.
+- Support for sprite layer properties.
+- CastleDB database support and simple data tables API.
+- EQUIPPED-WEAPON-CLASS and EQUIPPED-WEAPON helpers.
+- Random sound effect variablility.
+- Attack impact sounds.
+- Mention of engine version in the log.
 
 ### Changed
 - Removed ubiquitous mana system component.
@@ -25,12 +44,19 @@ and this project adheres to
 - Removed ubiquitous coordinates component.
 - Removed ubiquitous sprite batch system component.
 - Refactored new game object initialization to avoid runtime code generation.
-- DEFPREFAB macro now also defines necessary empty make-component method.
-- ECS systems refactored to defstructs for performance reasons.
+- DEFPREFAB macro now also defines necessary empty MAKE-COMPONENT method.
+- ECS systems refactored to use DEFSTRUCTs for performance reasons.
 - Refactored invalid entity mechanics.
 - ECS components refactored to sparse SoA arrays for performance and memory
   consumption reasons.
 - Radically simplified events subsystem.
+- Delta time between frames is now a global variable.
+- Mob health bar and item text drawing refactored out of player system.
+- Refactored sprite frame time calculation.
+- Comply with ECS system order when initializing component in MAKE-OBJECT.
+- Comply with ECS system order when finalizing systems.
+- Forced the 80 columns limit on all source code files.
+- Prevented unwanted symbol interning.
 
 ### Removed
 - Obsolete console-system stub.
@@ -59,7 +85,13 @@ and this project adheres to
 - Fixed bug causing corpse sprites to be incorrectly rendered on top of other
   ones.
 - Fixed several memory leaks on exit.
-
+- Fixed off-by-one error in growable vector implementation.
+- Fixed crash on creating new game with items present on the ground.
+- Fixed bug with attack landing animation.
+- Minor performance improvement when creating components.
+- Fixed bug with trying to drop fists weapon.
+- Fixed the import name of golden-utils library.
+- Fixed the bug causing crash on weapon change.
 
 ## [0.1.0] - 2020-04-20
 ### Added
