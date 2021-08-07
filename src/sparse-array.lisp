@@ -5,7 +5,7 @@
 
 (declaim
  (inline index-valid-p)
- (ftype (function (fixnum) boolean)))
+ (ftype (function (fixnum) boolean) index-valid-p))
 (defun index-valid-p (index)
   "Return T if index is valid.
 

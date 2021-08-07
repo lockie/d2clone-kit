@@ -57,7 +57,7 @@
 
 (defmethod make-prefab-component ((system sound-system) entity prefab
                                   parameters)
-  (let ((sample-instance (al::create-sample-instance
+  (let ((sample-instance (al:create-sample-instance
                           (sound-prefab-sample prefab))))
     (al:attach-sample-instance-to-mixer sample-instance (al:get-default-mixer))
     (al:set-sample-instance-playmode sample-instance :once)
