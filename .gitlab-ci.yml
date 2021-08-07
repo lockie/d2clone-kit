@@ -11,8 +11,10 @@ before_script:
 
 pages:
   stage: deploy
+  only:
+    - master
   script:
-    - ./doc.lisp
+    - ./doc.lisp -p
   artifacts:
     paths:
       - public
