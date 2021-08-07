@@ -1,12 +1,35 @@
 (in-package :cl-user)
 
+(cl-environments:enable-hook)
+
 (defpackage :d2clone-kit
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
-  (:use :cl :alexandria :trivial-garbage :parse-float :xmls)
+  ;; TODO : don't use :use, see https://git.io/Jfc8D
+  (:use #+docs :cl #-docs :static-dispatch-cl :golden-utils
+   :trivial-garbage :parse-float :xmls)
   (:import-from :make-hash :make-hash)
   (:import-from :cl-inflector :plural-of)
   (:shadow character)
+   ;; actions.lisp
+   (:export
+    #:current-action
+    #:current-action-of
+    #:has-action-p
+    #:action-type
+    #:action-entity
+    #:action-parent
+    #:action-child
+    #:actions-length
+    #:action-print
+    #:initialize-action
+    #:finalize-action
+    #:delete-action
+    #:delete-entity-actions
+    #:defaction
+    #:defperformer
+    #:process-actions
+    #:finalize-actions)
    ;; camera-system.lisp
    (:export
     #:camera-system
@@ -22,18 +45,24 @@
     #:character-system
     #:a*
     #:face-target
-    #:set-character-target
-    #:stop-entity)
+    #:move)
    ;; collision-system.lisp
    (:export
     #:collision-system
     #:character-at
-    #:collides
     #:collidesp)
    ;; combat-system
    (:export
     #:combat-system
+    #:equipped-weapon
+    #:equipped-weapon-class
     #:attack)
+   ;; components.lisp
+   (:export
+    #:make-component
+    #:delete-component
+    #:has-component-p
+    #:defcomponent)
    ;; config.lisp
    (:export
     #:defoptions
@@ -41,14 +70,35 @@
    ;; coordinate-system.lisp
    (:export
     #:coordinate-system
-    #:world->screen
+    #:orthogonal->isometric
+    #:isometric->orthogonal
+    #:isometric->orthogonal*
+    #:isometric->screen
+    #:isometric->screen*
+    #:screen->isometric*
+    #:orthogonal->screen
+    #:screen->orthogonal*
     #:with-screen-coordinate)
+   ;; credits-system.lisp
+   (:export
+    #:credits-system
+    #:credits-screen)
    ;; d2clone-kit.lisp
    (:export
     #:handle-event
+    #:*delta-time*
     #:game-loop
+    #:new-game
+    #:game-started-p
     #:start-engine
     #:demo)
+   ;; data-tables.lisp
+   (:export
+    #:*data-tables*
+    #:+table-indices+
+    #:build-data-tables
+    #:table-value-ref
+    #:table-value-ref*)
    ;; debug-system.lisp
    (:export
     #:debug-system
@@ -56,23 +106,38 @@
     #:add-debug-rectangle
     #:add-debug-tile-rhomb
     #:add-debug-text)
-   ;; event-loop.lisp
+   ;; entities.lisp
    (:export
-    #:event-loop
-    #:defevent
+    #:make-entity
+    #:delete-child
+    #:delete-entity
+    #:+invalid-entity+
+    #:entity-valid-p
+    #:dump-entities)
+   ;; event-queue.lisp
+   (:export
+    #:event
+    #:process-event
+    #:process-events
     #:issue
+    #:defevent
     #:defhandler)
    ;; events.lisp
    (:export
     #:allegro-event
-    #:quit
+    #:exit
     #:component-created
+    #:entity-deleted
+    #:sprite-stance-changed
     #:character-moved
     #:entity-died)
    ;; fs.lisp
    (:export
+    #:ensure-loaded
+    #:read-file-into-list
     #:character-stream
     #:binary-stream
+    #:stream-size
     #:virtual-binary-stream
     #:read-binary
     #:define-binary-struct)
@@ -81,8 +146,13 @@
     #:growable-vector
     #:make-growable-vector
     #:growable-vector-ref
-    #:%growable-vector-ref
+    #:growable-vector-grow
+    #:growable-vector-ref*
     #:growable-vector-length
+    #:growable-vector-emptyp
+    #:growable-vector-push
+    #:growable-vector-pop
+    #:growable-vector-add
     #:growable-vector-clear
     #:growable-vector-freeze)
     ;; hp-system.lisp
@@ -90,6 +160,15 @@
     #:hp-system
     #:set-hp
     #:deadp)
+   ;; item-system.lisp
+   (:export
+    #:item-system
+    #:+item-pickup-range+
+    #:make-item-pickup-action
+    #:draw-item-text
+    #:item-at
+    #:drop-item
+    #:pickup-item)
    ;; log.lisp
    (:export
     #:defunl
@@ -104,20 +183,30 @@
    ;; map-system.lisp
    (:export
     #:map-system
-    #:tile-index
-    #:map->screen
-    #:screen->map
-    #:screen->map*
     #:ground-layer-p
     #:tile-property)
+   ;; menu-system.lisp
    (:export
-    #:mob-system)
+    #:menu-system
+    #:main-menu)
+   ;; mob-system.lisp
+   (:export
+    #:mob-system
+    #:draw-mob-health-bar)
    ;; player-system.lisp
    (:export
     #:player-system
     #:player-entity
     #:mouse-position
     #:target-player)
+   ;; prefabs.lisp
+   (:export
+    #:prefab
+    #:prefab-path
+    #:make-prefab
+    #:preload-prefabs
+    #:make-prefab-component
+    #:defprefab)
    ;; priority-queue.lisp
    (:export
     #:priority-queue
@@ -137,12 +226,25 @@
    ;; sound-system.lisp
    (:export
     #:sound-system)
+   ;; sparse-array.lisp
+   (:export
+    #:+invalid-index+
+    #:index-valid-p
+    #:sparse-array-index
+    #:make-sparse-array-index
+    #:sparse-array-index-grow
+    #:sparse-array-index-ref
+    #:sparse-array-index-push
+    #:sparse-array-index-delete
+    #:do-sparse-array)
    ;; sparse-matrix.lisp
    (:export
     #:sparse-matrix
     #:make-sparse-matrix
     #:sparse-matrix-ref
-    #:sparse-matrix-remove)
+    #:sparse-matrix-remove
+    #:sparse-matrix-traverse
+    #:sparse-matrix-clear)
    ;; sprite-batch-system.lisp
    (:export
     #:sprite-batch-system
@@ -153,26 +255,36 @@
     #:sprite-system
     #:angle
     #:toggle-layer
+    #:frame-property
+    #:layer-property
     #:stance-interruptible-p
     #:switch-stance
+    #:frame-finished-p
+    #:stance-finished-p
     #:sprite-direction)
    ;; systems.lisp
    (:export
     #:system
+    #:system-name
+    #:system-components
+    #:system-order
+    #:defsystem
+    #:initialize-systems
+    #:with-system-slots
+    #:system-create
+    #:system-initialize
+    #:system-finalize
     #:system-update
     #:system-draw
-    #:system-ref
     #:with-systems
-    #:make-component
-    #:delete-component
-    #:has-component-p
-    #:make-entity
-    #:delete-entity
-    #:make-entity-initializer
-    #:defcomponent
-    #:prefab
-    #:prefab-path
-    #:make-prefab
-    #:preload-prefabs
-    #:make-prefab-component
-    #:defprefab))
+    #:make-object)
+   ;; ui-system.lisp
+   (:export
+    #:ui-system
+    #:ui-font-small
+    #:ui-font-medium
+    #:ui-font-large
+    #:ui-context
+    #:toggle-ui
+    #:ui-on-p
+    #:make-button-press-sound))

@@ -16,14 +16,15 @@ Note: keys are expected to be DOUBLE-FLOATs."
 
 (declaim
  (inline binary-search)
- (ftype (function ((function (t) double-float) double-float simple-vector) array-index)
+ (ftype (function ((function (t) double-float) double-float simple-vector)
+                  array-index)
         binary-search))
 (defun binary-search (key-fn key array)
   (if (zerop (length array))
       0
       (flet
           ((mid (first last)
-             (declare (fixnum first last))
+             (declare (type fixnum first last))
              (the array-index (+ first (truncate (- last first) 2)))))
         (declare (inline mid))
         (do* ((l 0)
@@ -43,7 +44,8 @@ O(log N) complexity."
   (let* ((array (priority-queue-array queue))
          (key-fn (priority-queue-key queue))
          (position (binary-search key-fn (funcall key-fn element) array)))
-    (when (and (< position (length array)) (equal element (aref array position)))
+    (when (and (< position (length array))
+               (equal element (aref array position)))
       position)))
 
 (declaim
@@ -74,23 +76,25 @@ O(log N) complexity."
 
 A bit more performance-friendly than calling PRIORITY-QUEUE-PUSH many times
 (but complexity is still O(N log N))."
-  (let* ((array (priority-queue-array queue))
-         (old-length (length array)))
-    (setf (priority-queue-array queue)
-          (adjust-array array (+ old-length (length elements))))
-    (let ((array (priority-queue-array queue)))
-      (replace
-       array
-       elements
-       :start1 old-length)
-      ;; TODO : try optimizing assuming elements vector is sorted
-      (sort
-       array
-       #'(lambda (a b)
-           (declare (double-float a b))
-           (> a b))
-       :key (priority-queue-key queue))))
-  nil)
+  (unless (length= 0 elements)
+    ;; TODO : also optimize (length= 1 elements) case?..
+    (let* ((array (priority-queue-array queue))
+           (old-length (length array)))
+      (setf (priority-queue-array queue)
+            (adjust-array array (+ old-length (length elements))))
+      (let ((array (priority-queue-array queue)))
+        (replace
+         array
+         elements
+         :start1 old-length)
+        ;; TODO : try optimizing assuming elements vector is sorted
+        (sort
+         array
+         #'(lambda (a b)
+             (declare (type double-float a b))
+             (> a b))
+         :key (priority-queue-key queue))))
+    nil))
 
 (declaim
  (inline priority-queue-traverse)
@@ -135,7 +139,8 @@ in appropriate order."
 (defun priority-queue-remove (queue index)
   "Removes element from QUEUE denoted by INDEX."
   (let ((array (priority-queue-array queue)))
-    (replace (priority-queue-array queue) array :start1 index :start2 (1+ index))
+    (replace (priority-queue-array queue) array :start1 index
+                                                :start2 (1+ index))
     (setf (priority-queue-array queue)
           (adjust-array (priority-queue-array queue) (1- (length array)))))
   nil)

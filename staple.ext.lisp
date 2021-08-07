@@ -5,6 +5,9 @@
 (defmethod staple:page-type ((system (eql (asdf:find-system :d2clone-kit))))
   'my-page)
 
+(defmethod staple:packages ((system (eql (asdf:find-system :d2clone-kit))))
+  (mapcar #'find-package '(:d2clone-kit)))
+
 (defmethod staple:format-documentation ((docstring string) (page my-page))
   (flet ((replace-see (string start end mstart mend rstart rend)
            (declare (ignore start end))
@@ -20,12 +23,22 @@
                    (T
                     (subseq string mstart mend))))))
     (let* ((docstring (plump:encode-entities docstring))
-           (docstring (cl-ppcre:regex-replace-all "[sS]ee (.*)" docstring #'replace-see))
+           (docstring (cl-ppcre:regex-replace-all "[sS]ee (.*)" docstring
+                                                  #'replace-see))
            (*package* (first (staple:packages page))))
       (staple:markup-code-snippets-ignoring-errors
        (staple:compile-source docstring :markdown)))))
 
-(defmethod staple:definition-wanted-p ((definition definitions:method) (__ my-page))
+(defmethod staple:definition-wanted-p :around ((definition
+                                                definitions:definition)
+                                               (__ my-page))
+  (if (or (typep definition 'definitions:transform)
+          (typep definition 'definitions:source-transform))
+      nil
+      (call-next-method)))
+
+(defmethod staple:definition-wanted-p ((definition definitions:method)
+                                       (__ my-page))
   (let* ((designator (definitions:designator definition))
          (symbol (etypecase designator
                    (cons (cadr designator))

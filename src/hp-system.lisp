@@ -1,19 +1,17 @@
 (in-package :d2clone-kit)
 
 
-(defclass hp-system (system)
-  ((name :initform 'hp))
+(defsystem hp
+  ()
   (:documentation "Handles hit points."))
 
-(defcomponent hp hp
+(defcomponent (hp)
   (maximum-hp nil :type double-float)
   (current-hp nil :type double-float))
 
 (defmethod make-component ((system hp-system) entity &rest parameters)
   (destructuring-bind (&key current maximum) parameters
-    (with-hp entity ()
-      (setf current-hp current
-            maximum-hp maximum))))
+    (make-hp entity :current-hp current :maximum-hp maximum)))
 
 (declaim
  (inline set-hp)
@@ -27,7 +25,8 @@
       ((<= new-hp 0d0)
        (let ((damage-fraction (/ (- current-hp new-hp) maximum-hp)))
          (setf current-hp 0d0)
-         (issue entity-died :entity entity :damage-fraction damage-fraction)))
+         (delete-entity-actions entity)
+         (issue (entity-died) :entity entity :damage-fraction damage-fraction)))
       (t
        (setf current-hp new-hp)))))
 

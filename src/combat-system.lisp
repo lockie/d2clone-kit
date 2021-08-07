@@ -1,72 +1,119 @@
 (in-package :d2clone-kit)
 
 
-(defclass combat-system (system)
-  ((name :initform 'combat)
-   (order :initform 1))
-  (:documentation "Handles close combat."))
+(defsystem combat
+  ()
+  (:documentation "Handles close combat."
+   :order 1))
 
-(defcomponent combat combat
-  (target -1 :type fixnum)
-  (attack-range 1.5d0 :type double-float)
-  (min-damage 1d0 :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
+(defcomponent (combat)
+  (attack-range nil :type double-float)
+  (min-damage nil :type double-float)  ;; TODO : use rl-pcg dice rolls here?..
   (max-damage nil :type double-float))
 
-(defmethod make-component ((system combat-system) entity &rest parameters)
-  (declare (ignore system entity parameters))
-  (destructuring-bind (&key (attack-range 1.5d0) (min-damage 1d0) max-damage) parameters
-    (with-combat entity (target entity-attack-range entity-min-damage entity-max-damage)
-      (setf entity-attack-range attack-range
-            entity-min-damage min-damage
-            entity-max-damage max-damage))))
+(defaction swing
+    ((target +invalid-entity+ :type fixnum))
+    (:documentation "Close combat attack action.")
 
-(defun attack (attacker-entity target-entity)
-  "Initiates a close combat attack of TARGET-ENTITY by ATTACKER-ENTITY."
-  (unless (= attacker-entity target-entity)  ;; prevent self-harm lol
-    (with-sprite attacker-entity ()
-      (unless (eq stance :swing)
-        (with-combat attacker-entity ()
-          (setf target target-entity))))))
+  (defmethod initialize-action ((type (eql :swing)) action)
+    (let ((entity (action-entity action)))
+      (with-swing-action action ()
+        (with-combat entity ()
+          (make-track-action entity
+                             :parent action
+                             :target target
+                             :target-distance attack-range)))))
+
+  (defmethod finalize-action ((type (eql :swing)) action)
+    (switch-stance (action-entity action) :idle)))
 
 (defconstant +stun-threshold+ 0.08d0)
 
-(defmethod system-update ((system combat-system) dt)
-  (with-combats
-      (unless (or (minusp target) (deadp entity))
-        (with-sprite entity ()
-          (with-coordinate entity (current-x current-y)
-            (with-coordinate target (attack-target-x attack-target-y)
-              (with-character entity ()
-                (cond
-                  ;; track target
-                  ((> (euclidean-distance attack-target-x attack-target-y current-x current-y)
-                      attack-range)
-                   (destructuring-bind (final-target-x . final-target-y)
-                       (if (length= 0 path)
-                           (cons current-x current-y)
-                           (simple-vector-peek path))
-                     (unless (and (= final-target-x attack-target-x)
-                                  (= final-target-y attack-target-y))
-                       (set-character-target entity attack-target-x attack-target-y)
-                       (when (length= 0 path)
-                         (setf target -1)))))
-                  ;; start the blow
-                  (t
-                   (stop-entity entity)
-                   (setf angle (face-target current-x current-y attack-target-x attack-target-y))
-                   (switch-stance entity :swing)))
-                ;; land the blow
-                (when (and (not (minusp target))  ;; zero-length path case
-                           (eq stance :swing)
-                           (= frame (car (last (gethash :swing stances)))))
-                  (when (<= (euclidean-distance target-x target-y current-x current-y)
-                            attack-range)
-                    (with-hp target (target-max-hp target-current-hp)
-                      (let ((damage (+ min-damage (random (- max-damage min-damage)))))
+(declaim
+ (inline equipped-weapon)
+ (ftype (function (fixnum) keyword) equipped-weapon))
+(defun equipped-weapon (entity)
+  "Returns keyword corresponding to ENTITY's currently equipped weapon."
+  ;; TODO : deduplictate code
+  (with-sprite entity ()
+    (loop :for layer :being :the :hash-key :of layers-toggled
+          :using (hash-value on)
+          :when on
+          :do (when-let (weapon-class (layer-property entity :weapon-class
+                                                      :layer layer))
+                (return layer))
+          :finally (return :fists))))
+
+(declaim
+ (inline equipped-weapon-class)
+ (ftype (function (fixnum) keyword) equipped-weapon-class))
+(defun equipped-weapon-class (entity)
+  "Returns keyword corresponding to weapon class of ENTITY's currently equipped
+weapon."
+  (with-sprite entity ()
+    (loop :for layer :being :the :hash-key :of layers-toggled
+          :using (hash-value on)
+          :when on
+          :do (when-let (weapon-class (layer-property entity :weapon-class
+                                                      :layer layer))
+                (return weapon-class))
+          :finally (return :fists))))
+
+(defperformer swing (action target)
+  (let* ((entity (action-entity action)))
+    (with-combat entity ()
+      (with-coordinate entity (current-x current-y)
+        (with-coordinate target (attack-target-x attack-target-y)
+          (if (> (euclidean-distance attack-target-x attack-target-y
+                                     current-x current-y)
+                 attack-range)
+              (when (and (not (index-valid-p (action-child action)))
+                         (or (not (eq (current-stance entity) :swing))
+                             (stance-finished-p entity)))
+                (delete-action action))
+              (with-sprite entity ()
+                (unless (eq (current-stance entity) :swing)
+                  (setf angle (face-target current-x current-y
+                                           attack-target-x attack-target-y)))
+                (switch-stance entity :swing)
+                (when (and (eq (current-stance entity) :swing)
+                           (stance-finished-p entity))
+                  (with-hp target (target-max-hp target-current-hp)
+                    ;; TODO : refactor out damage / stuns
+                    (with-combat entity ()
+                      (let ((damage (+ min-damage
+                                       (random (- max-damage min-damage)))))
+                        ;; TODO (#49): add impact sound component on entity
+                        ;; being attacked. Get it from a table (weapon class,
+                        ;; armor class) -> sound prefab. Get armor class from
+                        ;; call to layer-property?..
+                        (make-component
+                         *sound-system* entity
+                         :prefab (table-value-ref
+                                  :impact-sounds
+                                  `(:armor-class
+                                    ,(layer-property target :armor-class)
+                                    :weapon-class
+                                    ,(equipped-weapon-class entity))))
                         (set-hp target (- target-current-hp damage))
                         (when (> damage (* target-max-hp +stun-threshold+))
                           (unless (zerop target-current-hp)
                             (switch-stance target :hit))
-                          (with-combat target (targets-target)
-                            (setf targets-target -1))))))
-                  (setf target -1)))))))))
+                          (delete-entity-actions target))))
+                    (delete-action action))))))))))
+
+(defmethod make-component ((system combat-system) entity &rest parameters)
+  (destructuring-bind (&key (attack-range 2d0) (min-damage 1d0) max-damage)
+      parameters
+    (make-combat entity
+                 :attack-range attack-range
+                 :min-damage min-damage
+                 :max-damage max-damage)))
+
+(declaim (ftype (function (fixnum fixnum)) attack))
+(defun attack (attacker-entity target-entity)
+  "Initiates a close combat attack of TARGET-ENTITY by ATTACKER-ENTITY."
+  (if-let (swing-action (has-action-p attacker-entity :swing))
+    (with-swing-action swing-action ()
+      (setf target target-entity))
+    (make-swing-action attacker-entity :target target-entity)))
