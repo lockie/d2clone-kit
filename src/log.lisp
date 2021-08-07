@@ -27,7 +27,7 @@ functions."
          ,@body))))
 
 (declaim (string *last-message*)
-         (fixnum *last-message-repetitions))
+         (fixnum *last-message-repetitions*))
 (global-vars:define-global-var *last-message* "")
 (global-vars:define-global-var *last-message-repetitions* 0)
 
