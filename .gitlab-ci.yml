@@ -2,18 +2,17 @@ image: debian:testing-slim
 
 before_script:
   - apt-get update
-  - apt-get install -y --no-install-recommends ca-certificates curl gcc git liballegro-acodec5.2 liballegro-audio5.2 liballegro-image5.2 liballegro-dialog5.2 liballegro-ttf5.2 liballegro-physfs5.2 liballegro-video5.2 libffi-dev libc-dev pkg-config sbcl
+  - apt-get install -y --no-install-recommends ca-certificates curl gcc git
+    liballegro-acodec5-dev liballegro-audio5-dev liballegro-image5-dev
+    liballegro-dialog5-dev liballegro-ttf5-dev liballegro-physfs5-dev
+    liballegro-video5-dev libffi-dev libc-dev make pkg-config sbcl
   - curl -sO https://beta.quicklisp.org/quicklisp.lisp
   - echo "(quicklisp-quickstart:install) (ql-util:without-prompting (ql:add-to-init-file))" | sbcl --load quicklisp.lisp
-  - git clone --depth=1 https://github.com/resttime/cl-liballegro /root/quicklisp/local-projects/cl-liballegro
-  - git clone --depth=1 https://github.com/lockie/staple /root/quicklisp/local-projects/staple
 
 pages:
   stage: deploy
-  only:
-    - master
   script:
-    - printf "(push (truename \".\") asdf:*central-registry*) (ql:quickload (list :staple :staple-markdown :d2clone-kit)) (staple:generate :d2clone-kit :output-directory \x23P\"public/\" :images (list \x23P\"d2clone.png\"))" | sbcl
+    - ./doc.lisp
   artifacts:
     paths:
       - public
