@@ -1,5 +1,5 @@
 (asdf:defsystem :d2clone-kit
-  :version "0.1.0"
+  :version "0.1.1"
   :description "Generic Diablo 2 clone game engine."
   :homepage "https://lockie.gitlab.io/d2clone-kit"
   :author "Andrew Kravchuk <awkravchuk@gmail.com>"
