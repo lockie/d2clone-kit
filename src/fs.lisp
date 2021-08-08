@@ -1,11 +1,11 @@
 (in-package :d2clone-kit)
 
-(cffi:define-foreign-library libphysfs
-  (:windows nil)
-  (:darwin (:or "libphysfs.3.0.2.dylib" "libphysfs.1.dylib"))
-  (:unix (:or "libphysfs.so.3.0.2" "libphysfs.so.1"))
-  (t (:default "libphysfs")))
-(cffi:use-foreign-library libphysfs)
+#-windows (progn
+            (cffi:define-foreign-library libphysfs
+              (:darwin (:or "libphysfs.3.0.2.dylib" "libphysfs.1.dylib"))
+              (:unix (:or "libphysfs.so.3.0.2" "libphysfs.so.1"))
+              (t (:default "libphysfs")))
+            (cffi:use-foreign-library libphysfs))
 
 (cffi:defcfun ("PHYSFS_init" physfs-init) :int (argv0 :string))
 (cffi:defcfun ("PHYSFS_deinit" physfs-deinit) :int)
