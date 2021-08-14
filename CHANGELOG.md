@@ -62,6 +62,7 @@ and this project adheres to
 - Obsolete console-system stub.
 - QUIT event in favour of plain SYSTEM-FINALIZE method.
 - SYSTEM-REF replaced with global-vars for performance reasons.
+- Removed cl-static-dispatch library usage.
 
 ### Fixed
 - Fixed compilation on CCL.
@@ -92,6 +93,7 @@ and this project adheres to
 - Fixed bug with trying to drop fists weapon.
 - Fixed the import name of golden-utils library.
 - Fixed the bug causing crash on weapon change.
+- Fixed compilation under MinGW.
 
 ## [0.1.0] - 2020-04-20
 ### Added
