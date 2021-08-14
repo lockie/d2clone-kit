@@ -1,6 +1,7 @@
 image: debian:testing-slim
 
 before_script:
+  - export DEBIAN_FRONTEND="noninteractive"
   - apt-get update
   - apt-get install -y --no-install-recommends ca-certificates curl gcc git
     liballegro-acodec5-dev liballegro-audio5-dev liballegro-image5-dev
