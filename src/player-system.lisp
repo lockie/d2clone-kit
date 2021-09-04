@@ -57,9 +57,11 @@ by calling [al_get_mouse_state
 (defun target-player (&optional (mouse-event nil))
   "Set new player character target according to MOUSE-EVENT or current mouse
 cursor position."
+  (declare (notinline item-at)) ;; NOTE : avoiding circular dependency
   (let ((player-entity (player-entity)))
     (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
-      (with-system-slots ((mouse-pressed-p last-target) player-system nil
+      (with-system-slots ((mouse-pressed-p last-target)
+                          :of player-system
                           :read-only nil)
         (if (entity-valid-p last-target)
             (attack player-entity last-target)
@@ -93,7 +95,7 @@ cursor position."
 (defmethod system-initialize ((system player-system))
   (with-system-config-options ((debug-cursor))
     (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity)
-                        player-system system :read-only nil)
+                        :of player-system :instance system :read-only nil)
       (setf orb (ensure-loaded #'al:load-bitmap "images/orb.png")
             orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
             orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
@@ -105,7 +107,7 @@ cursor position."
 
 (defmethod system-finalize ((system player-system))
   (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity)
-                      player-system system)
+                      :of player-system :instance system)
     (al:destroy-bitmap orb)
     (al:destroy-bitmap orb-fill)
     (al:destroy-bitmap orb-flare)
@@ -114,17 +116,19 @@ cursor position."
       (delete-entity debug-entity))))
 
 (defmethod system-update ((system player-system))
-  (with-system-slots ((mouse-pressed-p last-target) player-system system)
+  (with-system-slots ((mouse-pressed-p last-target)
+                      :of player-system :instance system)
     (unless (and (entity-valid-p last-target)
                  (deadp last-target))
       (when mouse-pressed-p
         (target-player)))))
 
 (defmethod system-draw ((system player-system) renderer)
+  (declare (notinline item-at)) ;; NOTE : avoiding circular dependency
   (block nil
     (with-system-config-options ((display-width display-height))
       (with-system-slots ((entity orb orb-fill orb-flare orb-tmp)
-                          player-system system)
+                          :of player-system :instance system)
         (unless (entity-valid-p entity) (return))
         (with-hp entity ()
           (with-mana entity ()
@@ -198,7 +202,8 @@ cursor position."
         (when-let (item (item-at (round cursor-map-x) (round cursor-map-y)))
           (draw-item-text item renderer))
 
-        (with-system-slots ((mouse-pressed-p last-target) player-system system)
+        (with-system-slots ((mouse-pressed-p last-target)
+                            :of player-system :instance system)
           (if (entity-valid-p last-target)
               (unless (deadp last-target)
                 (draw-mob-health-bar last-target renderer))

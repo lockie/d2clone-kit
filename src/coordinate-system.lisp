@@ -130,3 +130,16 @@ and Y."
        (multiple-value-bind (,screen-x ,screen-y)
            (orthogonal->screen ,map-x ,map-y)
          ,@body))))
+
+(declaim
+ (inline euclidean-distance)
+ (ftype (function (double-float double-float double-float double-float)
+                  double-float)
+        euclidean-distance))
+(defun euclidean-distance (x1 y1 x2 y2)
+  (flet ((sqr (x) (the double-float (* x x))))
+    ;; TODO : use Carmack's fast sqrt here
+    (sqrt
+     (+
+      (sqr (- x1 x2))
+      (sqr (- y1 y2))))))

@@ -13,16 +13,11 @@
 (defun systems-handle-event (event)
   (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
          (allegro-event (make-allegro-event :type type :struct event)))
-    (declare (dynamic-extent allegro-event))
     ;; NOTE : processing allegro event without queueing, because event struct
     ;; is stack allocated
     (with-systems system
       (process-event system allegro-event))
     (not (eq type :display-close))))
-
-(declaim (type double-float *delta-time*))
-(global-vars:define-global-var *delta-time* 0d0
-  "Delta time between current frame and the previous one, in seconds.")
 
 (defunl game-loop (event-queue &key (repl-update-interval 0.3))
   "Runs game loop."

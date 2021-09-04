@@ -74,7 +74,8 @@ different windows."
  (ftype (function (fixnum)) make-button-press-sound))
 (defun make-button-press-sound (entity)
   "Adds button press sound component to ENTITY."
-  (make-component *sound-system* entity
+  (make-component (system-ref :sound)
+                  entity
                   :prefab :button-press
                   :non-interruptible t))
 
@@ -114,7 +115,9 @@ different windows."
 
 (defmethod system-create :after ((system ui-system))
   (with-system-slots ((font-small font-medium font-large nuklear-font
-                                  nuklear-context) ui-system system
+                                  nuklear-context)
+                      :of ui-system
+                      :instance system
                       :read-only nil)
       (with-system-config-options ((display-font display-width display-height))
       ;; TODO : better error message
@@ -133,7 +136,7 @@ different windows."
 
 (defmethod system-finalize ((system ui-system))
   (with-system-slots ((font-small font-medium font-large nuklear-font)
-                      ui-system system)
+                      :of ui-system :instance system)
     (nk:allegro-font-del nuklear-font)
     (nk:allegro-shutdown)
     (al:destroy-font font-small)
@@ -141,7 +144,7 @@ different windows."
     (al:destroy-font font-large)))
 
 (defmethod system-update ((system ui-system))
-  (with-system-slots ((nuklear-context) ui-system system)
+  (with-system-slots ((nuklear-context) :of ui-system :instance system)
     (with-uis
         (when on
           (apply function nuklear-context entity

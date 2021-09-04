@@ -21,6 +21,30 @@
      (path (make-array 0) :type simple-vector))
     (:documentation "The movement action.")
 
+(declaim
+ (inline face-target)
+ (ftype (function (double-float double-float double-float double-float)
+                  double-float)
+        face-target))
+(defun face-target (character-x character-y target-x target-y)
+  "Returns the angle that the character at CHARACTER-X, CHARACTER-Y should be
+facing to look at point TARGET-X, TARGET-Y."
+  (atan (- target-y character-y)
+        (- target-x character-x)))
+
+(declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
+(defun follow-path (move-action-index)
+  (let ((entity (action-entity move-action-index)))
+    (with-coordinate entity ()
+      (with-sprite entity ()
+        (with-move-action move-action-index ()
+          (multiple-value-bind (target new-path)
+              (simple-vector-pop path)
+            (setf path new-path
+                  target-x (car target)
+                  target-y (cdr target)
+                  angle (face-target x y target-x target-y))))))))
+
   (defmethod initialize-action ((type (eql :move)) action)
     (let ((entity (action-entity action)))
       (with-move-action action ()
@@ -43,6 +67,13 @@
 
   (defmethod finalize-action ((type (eql :move)) action)
     (switch-stance (action-entity action) :idle)))
+
+(declaim
+ (inline approx-equal)
+ (ftype (function (double-float double-float &optional double-float) boolean)
+        approx-equal))
+(defun approx-equal (a b &optional (epsilon 0.05d0))
+  (< (abs (- a b)) epsilon))
 
 (defperformer move (action target-x target-y path)
   (let ((entity (action-entity action)))
@@ -132,19 +163,6 @@
                                         (make-object '((:debug :order 1050d0))
                                                      entity)
                                         +invalid-entity+)))))
-
-(declaim
- (inline euclidean-distance)
- (ftype (function (double-float double-float double-float double-float)
-                  double-float)
-        euclidean-distance))
-(defun euclidean-distance (x1 y1 x2 y2)
-  (flet ((sqr (x) (the double-float (* x x))))
-    ;; TODO : use Carmack's fast sqrt here
-    (sqrt
-     (+
-      (sqr (- x1 x2))
-      (sqr (- y1 y2))))))
 
 (defstruct (path-node
             (:constructor make-path-node (x y))
@@ -291,30 +309,6 @@ Note: if goal point is not walkable, this function will stuck."
                                      :initial-contents result))))))
 
 (declaim
- (inline face-target)
- (ftype (function (double-float double-float double-float double-float)
-                  double-float)
-        face-target))
-(defun face-target (character-x character-y target-x target-y)
-  "Returns the angle that the character at CHARACTER-X, CHARACTER-Y should be
-facing to look at point TARGET-X, TARGET-Y."
-  (atan (- target-y character-y)
-        (- target-x character-x)))
-
-(declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
-(defun follow-path (move-action-index)
-  (let ((entity (action-entity move-action-index)))
-    (with-coordinate entity ()
-      (with-sprite entity ()
-        (with-move-action move-action-index ()
-          (multiple-value-bind (target new-path)
-              (simple-vector-pop path)
-            (setf path new-path
-                  target-x (car target)
-                  target-y (cdr target)
-                  angle (face-target x y target-x target-y))))))))
-
-(declaim
  (ftype (function
          ((or null fixnum) double-float double-float double-float double-float)
          (values double-float double-float)) closest-walkable-point))
@@ -351,14 +345,8 @@ TARGET-Y."
         (make-move-action entity :target-x new-target-x
                                  :target-y new-target-y))))
 
-(declaim
- (inline approx-equal)
- (ftype (function (double-float double-float &optional double-float) boolean)
-        approx-equal))
-(defun approx-equal (a b &optional (epsilon 0.05d0))
-  (< (abs (- a b)) epsilon))
-
 (defmethod system-draw ((system character-system) renderer)
+  (declare (notinline player-entity)) ;; NOTE : avoiding circular dependency
   (flet ((path-node-pos (x y)
            (multiple-value-bind (screen-x screen-y)
                (multiple-value-call #'absolute->viewport
@@ -368,27 +356,28 @@ TARGET-Y."
               (+ screen-y (floor *tile-height* 2))))))
     (with-system-config-options ((debug-path))
       (when debug-path
-        (with-move-actions (action target-x target-y path)
-          (let ((entity (action-entity action)))
-            (with-character entity ()
-              (unless (= entity (player-entity))
-                (multiple-value-bind (x y)
-                    (multiple-value-call #'absolute->viewport
-                      (orthogonal->screen
-                       (coerce target-x 'double-float)
-                       (coerce target-y 'double-float)))
-                  (add-debug-tile-rhomb debug-entity x y debug-path nil)))
-              (loop
-                :with r := (first debug-path)
-                :with g := (second debug-path)
-                :with b := (third debug-path)
-                :with a := (fourth debug-path)
-                :for path-node :across path
-                :for start := t :then nil
-                :for node-x := (car path-node)
-                :for node-y := (cdr path-node)
-                :for (x y) := (multiple-value-list
-                               (path-node-pos node-x node-y))
-                :do (unless start
-                      (add-debug-point debug-entity x y r g b a))
-                    (add-debug-point debug-entity x y r g b a)))))))))
+        (let ((player-entity (player-entity)))
+          (with-move-actions (action target-x target-y path)
+            (let ((entity (action-entity action)))
+              (with-character entity ()
+                (unless (= entity player-entity)
+                  (multiple-value-bind (x y)
+                      (multiple-value-call #'absolute->viewport
+                        (orthogonal->screen
+                         (coerce target-x 'double-float)
+                         (coerce target-y 'double-float)))
+                    (add-debug-tile-rhomb debug-entity x y debug-path nil)))
+                (loop
+                  :with r := (first debug-path)
+                  :with g := (second debug-path)
+                  :with b := (third debug-path)
+                  :with a := (fourth debug-path)
+                  :for path-node :across path
+                  :for start := t :then nil
+                  :for node-x := (car path-node)
+                  :for node-y := (cdr path-node)
+                  :for (x y) := (multiple-value-list
+                                 (path-node-pos node-x node-y))
+                  :do (unless start
+                        (add-debug-point debug-entity x y r g b a))
+                      (add-debug-point debug-entity x y r g b a))))))))))

@@ -16,6 +16,6 @@
         (make-object '((:ui :prefab :credits)))))
 
 (defmethod system-finalize ((system credits-system))
-  (with-system-slots ((ui-entity) credits-system system)
+  (with-system-slots ((ui-entity) :of credits-system :instance system)
     (when (entity-valid-p ui-entity)
       (delete-entity ui-entity))))

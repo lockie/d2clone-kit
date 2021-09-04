@@ -173,8 +173,8 @@ INDEX. Returns DEFAULT if there's no such property."
 
 (defmethod system-draw ((system map-system) renderer)
   (with-system-config-options ((display-width display-height debug-grid))
-    (with-system-slots ((last-camera-x last-camera-y) map-system system
-                        :read-only nil)
+    (with-system-slots ((last-camera-x last-camera-y)
+                        :of map-system :instance system :read-only nil)
       (with-camera (camera-x camera-y)
         (when (or debug-grid
                   (not (= camera-x last-camera-x))

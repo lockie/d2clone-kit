@@ -62,7 +62,7 @@ SYSTEM."
          (enumerate-directory ,(format nil "~(~as~)" system)
            (when (uiop:string-suffix-p file
                                        ,(concatenate 'string "." extension))
-             (when *loading-screen-system*
+             (when (system-ref :loading-screen)
                (set-loading-screen-text file))
              (make-prefab system (make-keyword (string-upcase
                                                 (pathname-name file)))))))

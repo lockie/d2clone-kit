@@ -37,7 +37,8 @@
                 :depends-on ("fs"))
                (:file "character-system"
                 :depends-on ("components" "systems" "config" "event-queue"
-                                          "actions" "collision-system"
+                                          "actions" "renderer"
+                                          "collision-system"
                                           "coordinate-system" "sprite-system"
                                           "priority-queue"))
                (:file "collision-system"
@@ -45,7 +46,7 @@
                                         "event-queue" "events"
                                         "coordinate-system" "map-system"))
                (:file "combat-system"
-                :depends-on ("entities" "components" "systems"
+                :depends-on ("entities" "components" "systems" "data-tables"
                                         "character-system"
                                         "coordinate-system" "hp-system"
                                         "sprite-system"))
@@ -58,8 +59,8 @@
                 :depends-on ("entities" "systems"))
                (:file "d2clone-kit"
                 :depends-on ("entities" "systems" "renderer" "log" "config" "fs"
-                                        "event-queue" "actions" "castledb"
-                                        "data-tables" "player-system"
+                                        "event-queue" "actions" "renderer"
+                                        "castledb" "data-tables" "player-system"
                                         "ui-system"))
                (:file "data-tables"
                 :depends-on ("log"))
@@ -98,11 +99,13 @@
                (:file "mob-system"
                 :depends-on ("entities" "components" "systems"
                                         "character-system"
-                                        "coordinate-system" "hp-system"))
+                                        "coordinate-system" "hp-system"
+                                        "ui-system"))
                (:file "player-system"
                 :depends-on ("entities" "components" "systems" "config"
                                         "renderer"
-                                        "event-queue" "events" "combat-system"
+                                        "event-queue" "events"
+                                        "coordinate-system" "combat-system"
                                         "hp-system" "mana-system" "mob-system"
                                         "ui-system"))
                (:file "prefabs"
@@ -113,7 +116,7 @@
                (:file "sound-system"
                 :depends-on ("components" "systems" "prefabs" "config"
                                           "event-queue" "events" "camera-system"
-                                          "coordinate-system" "sprite-system"))
+                                          "coordinate-system"))
                (:file "sparse-array"
                 :depends-on ("growable-vector"))
                (:file "sparse-matrix"
@@ -122,10 +125,12 @@
                 :depends-on ("components" "systems" "renderer"))
                (:file "sprite-system"
                 :depends-on ("entities" "components" "systems" "prefabs"
-                                        "event-queue" "events" "aseprite"
-                                        "hp-system" "sprite-batch-system"))
+                                        "event-queue" "events"
+                                        "renderer" "aseprite"
+                                        "hp-system" "sprite-batch-system"
+                                        "sound-system"))
                (:file "systems")
                (:file "tiled"
                 :depends-on ("fs"))
                (:file "ui-system"
-                :depends-on ("components" "systems" "prefabs" "sound-system"))))
+                :depends-on ("components" "systems" "prefabs"))))

@@ -42,7 +42,7 @@
     (with-sound entity ()
       (with-coordinate entity ()
         (with-camera (camera-x camera-y)
-          (with-system-slots ((distance-factor pan-factor) sound-system)
+          (with-system-slots ((distance-factor pan-factor) :of sound-system)
             (al:set-sample-instance-gain
              sample-instance
              (/ 1f0 (exp (* distance-factor
@@ -61,7 +61,9 @@
                           (sound-prefab-sample prefab))))
     (al:attach-sample-instance-to-mixer sample-instance (al:get-default-mixer))
     (al:set-sample-instance-playmode sample-instance :once)
-    (with-system-slots ((distance-factor pan-factor) sound-system system
+    (with-system-slots ((distance-factor pan-factor)
+                        :of sound-system
+                        :instance system
                         :read-only nil)
       (when (zerop distance-factor)
         (with-system-config-options ((display-width display-height))

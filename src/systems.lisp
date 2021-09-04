@@ -78,6 +78,14 @@ See WITH-SYSTEMS"
                     *system-initializers*
                     #'(lambda (s1 s2) (> (car s1) (car s2))))))))
 
+(declaim
+ (inline system-ref)
+ (ftype (function (keyword)) system-ref))
+(defun system-ref (name)
+  "Returns system instance by its NAME. Slightly slower than accessing global
+variable with the system instance, but allows for loose coupling."
+  (values (gethash name *systems*)))
+
 (defun initialize-systems ()
   "Initializes defined ECS systems in specified order.
 
@@ -88,7 +96,7 @@ See DEFSYSTEM"
              :for i :of-type array-index :from 0
              :for initializer :in *system-initializers*
              :for system := (funcall (the function (cdr initializer)))
-             :do (when *loading-screen-system*
+             :do (when (system-ref :loading-screen)
                    (set-loading-screen-progress (coerce (/ i n) 'double-float)))
              :collect
                 (setf (gethash (make-keyword (system-name system)) *systems*)
@@ -97,14 +105,14 @@ See DEFSYSTEM"
   (toggle-loading-screen nil))
 
 
-(defmacro with-system-slots ((slots system-type &optional (system-instance nil)
-                              &key (read-only t)) &body body)
-  "Executes BODY with bindings for slots of a system specified by SYSTEM-TYPE.
-If SYSTEM-INSTANCE is NIL (the default), global system instance of type
-SYSTEM-TYPE is used.  If READ-ONLY is T (the default), slots are not
-SETF-able."
+(defmacro with-system-slots ((slots 
+                              &key of (instance nil) (read-only t)) &body body)
+  "Executes BODY with bindings for slots of a system specified by type OF.
+If INSTANCE is NIL (the default), global system instance of requested type is
+used. If READ-ONLY is T (the default), slots are not SETF-able."
   (with-gensyms (system)
-    (let* ((instance (or system-instance (symbolicate :* system-type :*)))
+    (let* ((system-type of)
+           (system-instance (or instance (symbolicate :* system-type :*)))
            (accessors (mapcar #'(lambda (s) (symbolicate system-type :- s))
                               slots))
            (accessor-calls (mapcar #'(lambda (a) (list a system)) accessors))
@@ -112,7 +120,7 @@ SETF-able."
       (dolist (a accessors)
         (unless (find-symbol (string a))
           (error "No such slot ~s in ~s" a system-type)))
-      `(let ((,system ,instance))
+      `(let ((,system ,system-instance))
          (,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
           ,@body)))))
 
@@ -197,19 +205,20 @@ system instance to variable VAR."
 The components are initialized in the order specified by system's order.
 
 See SYSTEM-ORDER"
-  (let ((components (mapcar
-                     #'(lambda (component)
-                         (if-let (system (gethash (car component) *systems*))
-                           (cons system (cdr component))
-                           (error "No such system: ~s" (car component))))
-                     spec)))
-    (sort components
-          #'(lambda (a b)
-              (declare (type fixnum a b))
-              (< a b))
-          :key #'(lambda (c) (system-order (car c))))
+  (let* ((components (mapcar
+                      #'(lambda (component)
+                          (if-let (system (gethash (car component) *systems*))
+                            (cons system (cdr component))
+                            (error "No such system: ~s" (car component))))
+                      spec))
+         (sorted-components
+           (sort components
+                 #'(lambda (a b)
+                     (declare (type fixnum a b))
+                     (< a b))
+                 :key #'(lambda (c) (system-order (car c))))))
     (loop :with entity := (make-entity parent)
-          :for component :in components
+          :for component :in sorted-components
           :for system := (car component)
           :for parameters := (cdr component)
           :do (apply #'make-component system entity parameters)

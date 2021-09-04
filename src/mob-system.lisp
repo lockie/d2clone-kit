@@ -14,6 +14,7 @@
     (make-mob entity :name name :vision-range vision-range)))
 
 (defmethod system-update ((system mob-system))
+  (declare (notinline player-entity))  ;; NOTE : avoiding circular dependency
   (let ((player-entity (player-entity)))
     (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
       (with-coordinate player-entity (player-x player-y)

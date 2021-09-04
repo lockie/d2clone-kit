@@ -54,7 +54,7 @@ boolean property *collides* to *true* in Tiled tileset."))
   (let ((entity (entity-deleted-entity event)))
     (cond
       ((has-component-p :map entity)
-       (with-system-slots ((map) collision-system system)
+       (with-system-slots ((map) :of collision-system :instance system)
          (sparse-matrix-traverse
           map
           #'(lambda (position value)
@@ -74,7 +74,8 @@ boolean property *collides* to *true* in Tiled tileset."))
         (new-int-x (round (character-moved-new-x event)))
         (new-int-y (round (character-moved-new-y event))))
     (unless (and (= old-int-x new-int-x) (= old-int-y new-int-y))
-      (with-system-slots ((characters-map) collision-system system)
+      (with-system-slots ((characters-map)
+                          :of collision-system :instance system)
         (sparse-matrix-remove characters-map (cons old-int-x old-int-y))
         (setf (sparse-matrix-ref characters-map (cons new-int-x new-int-y))
               (character-moved-entity event))))))
@@ -102,7 +103,7 @@ no character there."
   "Returns whether tile located at integer map coordinates X, Y does collide
 with other objects. CHARACTER, when non-NIL, specifies character entity to
 check for collisions with other characters."
-  (with-system-slots ((map characters-map) collision-system)
+  (with-system-slots ((map characters-map) :of collision-system)
     (let ((point (cons x y)))
       (or
        (not (null (sparse-matrix-ref map point)))
@@ -118,14 +119,15 @@ check for collisions with other characters."
             (make-object '((:debug :order 2000d0)))))))
 
 (defmethod system-finalize ((system collision-system))
-  (with-system-slots ((debug-entity) collision-system system)
+  (with-system-slots ((debug-entity) :of collision-system :instance system)
     (when (entity-valid-p debug-entity)
       (delete-entity debug-entity))))
 
 (defmethod system-draw ((system collision-system) renderer)
   (with-system-config-options ((debug-collisions))
     (when debug-collisions
-      (with-system-slots ((debug-entity map) collision-system system)
+      (with-system-slots ((debug-entity map)
+                          :of collision-system :instance system)
         (sparse-matrix-traverse
          map
          #'(lambda (position value)

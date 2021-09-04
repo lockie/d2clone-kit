@@ -84,7 +84,7 @@ buffer ENTITY. If MARK is T, then rhomb is drawn crossed out."
   "Adds debug text TEXT using FORMAT-like arguments ARGS to display on top
 left corner of the screen. To identify same text line each frame, set keyword
 DESIGNATOR to same value."
-  (with-system-slots ((texts text-designators) debug-system nil :read-only nil)
+  (with-system-slots ((texts text-designators) :of debug-system :read-only nil)
     (pushnew designator text-designators)
     (setf (gethash designator texts) (apply #'format nil text args))))
 
@@ -114,7 +114,8 @@ DESIGNATOR to same value."
                                               :element-type 'single-float))
                (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
                              (ceiling (growable-vector-length points) 9) 0))))))
-  (with-system-slots ((font texts text-designators) debug-system system)
+  (with-system-slots ((font texts text-designators)
+                      :of debug-system :instance system)
     (loop
       :with color := (al:map-rgb 255 255 255)
       :for designator :in (reverse text-designators)

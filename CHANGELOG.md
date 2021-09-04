@@ -7,9 +7,15 @@ and this project adheres to
 
 ## [Unreleased]
 ### Added
+- SYSTEM-REF helper re-added for loose coupling reasons.
+
 ### Changed
+- Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.
+
 ### Removed
+
 ### Fixed
+- Fixed compilation warnings, slightly improving performance.
 
 ## [0.1.1] - 2021-08-07
 ### Added

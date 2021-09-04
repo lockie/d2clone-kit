@@ -44,7 +44,7 @@
 (defmethod make-component ((system item-system) entity &rest parameters)
   (destructuring-bind (&key type) parameters
     (when (has-component-p :coordinate entity)
-      (with-system-slots ((map) item-system system)
+      (with-system-slots ((map) :of item-system :instance system)
         (with-coordinate entity ()
           ;; TODO : consider character size (#21)
           (setf (sparse-matrix-ref map (cons (round x) (round y))) entity))))
@@ -132,7 +132,7 @@ character there."
   "Does an actual picking up of ITEM-ENTITY by player."
   ;; TODO : add picking up sound
   ;; TODO : unhardcode
-  (with-system-slots ((map) item-system)
+  (with-system-slots ((map) :of item-system)
     (with-coordinate item-entity ()
       ;; TODO : consider character size (#21)
       (setf (sparse-matrix-ref map (cons (round x) (round y))) nil)))
@@ -187,7 +187,7 @@ character there."
 (defhandler (item-system entity-deleted)
   (let ((entity (entity-deleted-entity event)))
     (when (%has-component-p system entity)
-      (with-system-slots ((map) item-system system)
+      (with-system-slots ((map) :of item-system :instance system)
         (with-coordinate entity ()
           (sparse-matrix-remove map (cons (the fixnum (round x))
                                           (the fixnum (round y)))))))))

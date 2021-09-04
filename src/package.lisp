@@ -83,7 +83,6 @@
    ;; d2clone-kit.lisp
    (:export
     #:handle-event
-    #:*delta-time*
     #:game-loop
     #:new-game
     #:game-started-p
@@ -217,6 +216,7 @@
     #:priority-queue-clear)
    ;; renderer.lisp
    (:export
+    #:*delta-time*
     #:make-renderer
     #:render
     #:do-draw)

@@ -16,7 +16,7 @@
         (make-object '((:ui :prefab :main-menu :on t)))))
 
 (defmethod system-finalize ((system menu-system))
-  (with-system-slots ((ui-entity) menu-system system)
+  (with-system-slots ((ui-entity) :of menu-system :instance system)
     (when (entity-valid-p ui-entity)
       (delete-entity ui-entity))))
 

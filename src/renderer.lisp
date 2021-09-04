@@ -1,5 +1,10 @@
 (in-package :d2clone-kit)
 
+
+(declaim (type double-float *delta-time*))
+(global-vars:define-global-var *delta-time* 0d0
+  "Delta time between current frame and the previous one, in seconds.")
+
 (declaim (inline make-renderer))
 (defun make-renderer ()
   "Creates functional renderer instance.

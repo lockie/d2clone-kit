@@ -1,40 +1,6 @@
 (in-package :d2clone-kit)
 
 
-(declaim
- (inline current-action)
- (ftype (function (fixnum) fixnum) current-action))
-(defun current-action (entity)
-  "Returns current action for ENTITY."
-  (growable-vector-ref *current-action* entity))
-
-(declaim
- (inline (setf current-action))
- (ftype (function (fixnum array-index) fixnum) (setf current-action)))
-(defun (setf current-action) (action entity)
-  "Sets ACTION to be current action for ENTITY."
-  (setf (growable-vector-ref *current-action* entity) action))
-
-(declaim
- (inline current-action-of)
- (ftype (function (fixnum &key (:is keyword)) boolean) current-action-of))
-(defun current-action-of (entity &key is)
-  "Returns whether current action of ENTITY has the type IS."
-  (let ((current-action (current-action entity)))
-    (and (index-valid-p current-action)
-         (eq (action-type current-action) is))))
-
-(declaim
- (inline has-action-p)
- (ftype (function (fixnum keyword) (or null fixnum)) has-action-p))
-(defun has-action-p (entity type)
-  "Returns generalized boolean indicating whether action chain of ENTITY
-contains action with TYPE. If it does, the return value is that action."
-  (loop :for current-action := (current-action entity)
-        :then (action-parent current-action)
-        :while (index-valid-p current-action)
-        :thereis (and (eq type (action-type current-action)) current-action)))
-
 (defsoa actions
   (index +invalid-index+ :type fixnum :documentation "")
   (type nil :type keyword :documentation "Keyword designating action type.")
@@ -97,13 +63,45 @@ contains action with TYPE. If it does, the return value is that action."
               (action-entity action) (action-parent action))
       (format stream "#<invalid action>")))
 
-(declaim (inline initialize-action))
+(declaim
+ (inline current-action)
+ (ftype (function (fixnum) fixnum) current-action))
+(defun current-action (entity)
+  "Returns current action for ENTITY."
+  (growable-vector-ref *current-action* entity))
+
+(declaim
+ (inline (setf current-action))
+ (ftype (function (fixnum array-index) fixnum) (setf current-action)))
+(defun (setf current-action) (action entity)
+  "Sets ACTION to be current action for ENTITY."
+  (setf (growable-vector-ref *current-action* entity) action))
+
+(declaim
+ (inline current-action-of)
+ (ftype (function (fixnum &key (:is keyword)) boolean) current-action-of))
+(defun current-action-of (entity &key is)
+  "Returns whether current action of ENTITY has the type IS."
+  (let ((current-action (current-action entity)))
+    (and (index-valid-p current-action)
+         (eq (action-type current-action) is))))
+
+(declaim
+ (inline has-action-p)
+ (ftype (function (fixnum keyword) (or null fixnum)) has-action-p))
+(defun has-action-p (entity type)
+  "Returns generalized boolean indicating whether action chain of ENTITY
+contains action with TYPE. If it does, the return value is that action."
+  (loop :for current-action := (current-action entity)
+        :then (action-parent current-action)
+        :while (index-valid-p current-action)
+        :thereis (and (eq type (action-type current-action)) current-action)))
+
 (defgeneric initialize-action (type index)
   (:documentation "Initializes action with given TYPE and global INDEX."))
 
 (defmethod initialize-action ((type t) index))
 
-(declaim (inline finalize-action))
 (defgeneric finalize-action (type index)
   (:documentation "Finalizes action with given TYPE and global INDEX."))
 
