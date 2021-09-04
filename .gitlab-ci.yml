@@ -14,6 +14,8 @@ compile_sbcl:
   stage: test
   script:
     - sbcl --load compile.lisp
+  only:
+    - merge_requests
 
 compile_ccl:
   stage: test
@@ -23,11 +25,15 @@ compile_ccl:
     - tar -xf /tmp/linuxx86.tar.gz -C /usr/local/ccl
     - ln -s /usr/local/ccl/lx86cl64 /usr/local/bin/ccl
     - ccl --load compile.lisp
+  only:
+    - merge_requests
 
 compile_ecl:
   stage: test
   script:
     - ecl --load compile.lisp
+  only:
+    - merge_requests
 
 sblint:
   stage: test
@@ -35,18 +41,13 @@ sblint:
     - curl -Ls --output roswell.deb --output-dir /tmp https://github.com/roswell/roswell/releases/download/v21.05.14.109/roswell_21.05.14.109-1_amd64.deb
     - dpkg -i /tmp/roswell.deb
     - ros install cxxxr/sblint lockie/d2clone-kit
-    - echo -e "\e[0Ksection_start:`date +%s`:lint\r\e[0KLint output"
-    - /root/.roswell/bin/sblint .
-    - echo -e "\e[0Ksection_end:`date +%s`:lint\r\e[0K"
-  allow_failure: true
+    - bash -c "{ /root/.roswell/bin/sblint . || :; } | python3 sblint2codeclimate.py"
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
+  only:
+    - merge_requests
 
-critic:
-  stage: test
-  script:
-    - echo -e "\e[0Ksection_start:`date +%s`:critic\r\e[0KLint output"
-    - ./lint.lisp
-    - echo -e "\e[0Ksection_end:`date +%s`:critic\r\e[0K"
-  allow_failure: true
 
 pages:
   stage: deploy
