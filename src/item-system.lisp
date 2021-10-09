@@ -74,7 +74,7 @@
                                (al:map-rgba 255 255 255 0) x y 0 text)))))))))
 
 (declaim
- (inline item-at)
+ #-d2c-debug (inline item-at)
  (ftype (function (fixnum fixnum) (or fixnum null)) item-at))
 (defun item-at (x y)
   "Returns item entity at integer map coordinates X, Y or NIL if there's no

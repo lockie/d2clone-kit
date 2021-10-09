@@ -25,7 +25,7 @@
   (apply #'make-coordinate entity parameters))
 
 (declaim
- (inline orthogonal->isometric)
+ #-d2c-debug (inline orthogonal->isometric)
  (ftype (function (double-float double-float)
                   (values double-float double-float))
         orthogonal->isometric))
@@ -36,7 +36,7 @@
    (* (+ x y) 0.5d0)))
 
 (declaim
- (inline isometric->orthogonal)
+ #-d2c-debug (inline isometric->orthogonal)
  (ftype (function (double-float double-float)
                   (values double-float double-float))
         isometric->orthogonal))
@@ -47,7 +47,7 @@
    (- y (* 0.5d0 x))))
 
 (declaim
- (inline isometric->orthogonal*)
+ #-d2c-debug (inline isometric->orthogonal*)
  (ftype (function (double-float double-float)
                   (values double-float double-float))
         isometric->orthogonal*))
@@ -59,7 +59,7 @@ tile staggering into account."
             (- (* 0.5d0 y) x stagger))))
 
 (declaim
- (inline isometric->screen)
+ #-d2c-debug (inline isometric->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum))
         isometric->screen))
 (defun isometric->screen (x y)
@@ -69,7 +69,7 @@ tile staggering into account."
    (floor (* y *tile-height*))))
 
 (declaim
- (inline isometric->screen*)
+ #-d2c-debug (inline isometric->screen*)
  (ftype (function (double-float double-float) (values fixnum fixnum))
         isometric->screen*))
 (defun isometric->screen* (x y)
@@ -82,7 +82,7 @@ staggering into account."
    (floor (* y *tile-height*))))
 
 (declaim
- (inline screen->isometric*)
+ #-d2c-debug (inline screen->isometric*)
  (ftype (function (fixnum fixnum) (values double-float double-float))
         screen->isometric*))
 (defun screen->isometric* (x y)
@@ -97,7 +97,7 @@ staggering into account."
      iso-y)))
 
 (declaim
- (inline orthogonal->screen)
+ #-d2c-debug (inline orthogonal->screen)
  (ftype (function (double-float double-float) (values fixnum fixnum))
         orthogonal->screen))
 (defun orthogonal->screen (x y)
@@ -107,7 +107,7 @@ staggering into account."
     (orthogonal->isometric x y)))
 
 (declaim
- (inline screen->orthogonal*)
+ #-d2c-debug (inline screen->orthogonal*)
  (ftype (function (fixnum fixnum) (values double-float double-float))
         screen->orthogonal*))
 (defun screen->orthogonal* (x y)
@@ -132,7 +132,7 @@ and Y."
          ,@body))))
 
 (declaim
- (inline euclidean-distance)
+ #-d2c-debug (inline euclidean-distance)
  (ftype (function (double-float double-float double-float double-float)
                   double-float)
         euclidean-distance))

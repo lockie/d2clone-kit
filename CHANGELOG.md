@@ -11,6 +11,7 @@ and this project adheres to
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.
+- Changed inlined functions to be uninlined in debug mode.
 
 ### Removed
 

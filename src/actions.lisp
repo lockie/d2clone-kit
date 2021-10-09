@@ -19,34 +19,34 @@
   "The storage of deleted action indices, for reuse purposes.")
 
 (declaim
- (inline action-type)
+ #-d2c-debug (inline action-type)
  (ftype (function (fixnum) keyword) action-type))
 (defun action-type (action)
   "Returns keyword designating ACTION type."
   (actions-type-aref *actions* action))
 
 (declaim
- (inline action-entity)
+ #-d2c-debug (inline action-entity)
  (ftype (function (fixnum) fixnum) action-entity))
 (defun action-entity (action)
   "Returns the entity ACTION belongs to."
   (actions-entity-aref *actions* action))
 
 (declaim
- (inline action-parent)
+ #-d2c-debug (inline action-parent)
  (ftype (function (fixnum) fixnum) action-parent))
 (defun action-parent (action)
   "Returns ACTION's parent action."
   (actions-parent-aref *actions* action))
 
 (declaim
- (inline action-child)
+ #-d2c-debug (inline action-child)
  (ftype (function (fixnum) fixnum) action-child))
 (defun action-child (action)
   "Returns ACTION's child action."
   (actions-child-aref *actions* action))
 
-(declaim (inline actions-length)
+(declaim #-d2c-debug (inline actions-length)
          (ftype (function () array-length) actions-length))
 (defun actions-length ()
   "Returns the total current count of actions."
@@ -64,21 +64,21 @@
       (format stream "#<invalid action>")))
 
 (declaim
- (inline current-action)
+ #-d2c-debug (inline current-action)
  (ftype (function (fixnum) fixnum) current-action))
 (defun current-action (entity)
   "Returns current action for ENTITY."
   (growable-vector-ref *current-action* entity))
 
 (declaim
- (inline (setf current-action))
+ #-d2c-debug (inline (setf current-action))
  (ftype (function (fixnum array-index) fixnum) (setf current-action)))
 (defun (setf current-action) (action entity)
   "Sets ACTION to be current action for ENTITY."
   (setf (growable-vector-ref *current-action* entity) action))
 
 (declaim
- (inline current-action-of)
+ #-d2c-debug (inline current-action-of)
  (ftype (function (fixnum &key (:is keyword)) boolean) current-action-of))
 (defun current-action-of (entity &key is)
   "Returns whether current action of ENTITY has the type IS."
@@ -87,7 +87,7 @@
          (eq (action-type current-action) is))))
 
 (declaim
- (inline has-action-p)
+ #-d2c-debug (inline has-action-p)
  (ftype (function (fixnum keyword) (or null fixnum)) has-action-p))
 (defun has-action-p (entity type)
   "Returns generalized boolean indicating whether action chain of ENTITY
@@ -177,7 +177,7 @@ See FINALIZE-ACTION"
          (declaim (type growable-vector ,deleted-indices))
          (global-vars:define-global-var* ,deleted-indices
              (make-growable-vector))
-         (declaim (inline ,length-helper)
+         (declaim #-d2c-debug (inline ,length-helper)
                   (ftype (function () array-length) ,length-helper))
          (defun ,length-helper ()
            (growable-vector-length

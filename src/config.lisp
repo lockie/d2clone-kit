@@ -9,7 +9,7 @@
   (when (cffi:null-pointer-p *config*)
     (setf *config* (al:create-config))))
 
-(declaim (inline save-config))
+(declaim #-d2c-debug (inline save-config))
 (defun save-config ()
   (al:save-config-file "config.ini" *config*))
 

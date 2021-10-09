@@ -21,14 +21,14 @@
           (player-system-entity system) entity))
 
 (declaim
- (inline player-entity)
+ #-d2c-debug (inline player-entity)
  (ftype (function () fixnum) player-entity))
 (defun player-entity ()
   "Returns current player entity."
   (player-system-entity *player-system*))
 
 (declaim
- (inline mouse-position)
+ #-d2c-debug (inline mouse-position)
  (ftype (function (&optional (or cffi:foreign-pointer null))
                   (values fixnum fixnum))
         mouse-position))

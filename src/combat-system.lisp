@@ -30,7 +30,7 @@
 (defconstant +stun-threshold+ 0.08d0)
 
 (declaim
- (inline equipped-weapon)
+ #-d2c-debug (inline equipped-weapon)
  (ftype (function (fixnum) keyword) equipped-weapon))
 (defun equipped-weapon (entity)
   "Returns keyword corresponding to ENTITY's currently equipped weapon."
@@ -45,7 +45,7 @@
           :finally (return :fists))))
 
 (declaim
- (inline equipped-weapon-class)
+ #-d2c-debug (inline equipped-weapon-class)
  (ftype (function (fixnum) keyword) equipped-weapon-class))
 (defun equipped-weapon-class (entity)
   "Returns keyword corresponding to weapon class of ENTITY's currently equipped

@@ -11,8 +11,8 @@
   (components nil)
   (order 0 :type fixnum))
 
-(declaim
- (inline system-name system-components-index system-components system-order))
+(declaim #-d2c-debug (inline system-name system-components-index
+                             system-components system-order))
 
 (setf (documentation #'system-name 'function)
       "Symbol that denotes the system."
@@ -63,7 +63,7 @@ See WITH-SYSTEMS"
                    (:predicate nil))
          ,documentation
          ,@slot-descriptions)
-       (declaim (inline ,@slot-names))
+       (declaim #-d2c-debug (inline ,@slot-names))
        ,@slot-docs
        (global-vars:define-global-var ,variable-name nil)
        (declaim (type (or null ,system-name) ,variable-name))
@@ -79,7 +79,7 @@ See WITH-SYSTEMS"
                     #'(lambda (s1 s2) (> (car s1) (car s2))))))))
 
 (declaim
- (inline system-ref)
+ #-d2c-debug (inline system-ref)
  (ftype (function (keyword)) system-ref))
 (defun system-ref (name)
   "Returns system instance by its NAME. Slightly slower than accessing global

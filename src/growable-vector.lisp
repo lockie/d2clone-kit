@@ -13,7 +13,7 @@
 
 (defconstant +array-growth-factor+ (* 0.5d0 (1+ (sqrt 5d0))))
 
-(declaim (inline make-growable-vector))
+(declaim #-d2c-debug (inline make-growable-vector))
 (defun make-growable-vector (&key (initial-element nil)
                                   (initial-allocated-size 1))
   "Creates new growable vector with initial allocated size
@@ -24,14 +24,14 @@ INITIAL-ELEMENT (NIL by default)."
    :initial-element initial-element))
 
 (declaim
- (inline growable-vector-ref)
+ #-d2c-debug (inline growable-vector-ref)
  (ftype (function (growable-vector array-index) t) growable-vector-ref))
 (defun growable-vector-ref (growable-vector index)
   "Access GROWABLE-VECTOR by INDEX."
   (aref (%growable-vector-vector growable-vector) index))
 
 (declaim
- (inline growable-vector-grow)
+ #-d2c-debug (inline growable-vector-grow)
  (ftype (function (growable-vector array-length)) growable-vector-grow))
 (defun growable-vector-grow (growable-vector new-allocated-size)
   "Adjusts GROWABLE-VECTOR to have allocated size of NEW-ALLOCATED-SIZE."
@@ -45,7 +45,7 @@ INITIAL-ELEMENT (NIL by default)."
              (%growable-vector-initial-element growable-vector))))))
 
 (declaim
- (inline (setf growable-vector-ref))
+ #-d2c-debug (inline (setf growable-vector-ref))
  (ftype (function (t growable-vector array-index) t)
         (setf growable-vector-ref)))
 (defun (setf growable-vector-ref) (value growable-vector index)
@@ -56,7 +56,7 @@ INITIAL-ELEMENT (NIL by default)."
         value))
 
 (declaim
- (inline (setf growable-vector-ref*))
+ #-d2c-debug (inline (setf growable-vector-ref*))
  (ftype (function (t growable-vector array-index) t)
         (setf growable-vector-ref*)))
 (defun (setf growable-vector-ref*) (value growable-vector index)
@@ -71,21 +71,21 @@ greater than current allocated size)."
     (setf (growable-vector-ref growable-vector index) value)))
 
 (declaim
- (inline growable-vector-length)
+ #-d2c-debug (inline growable-vector-length)
  (ftype (function (growable-vector) array-length) growable-vector-length))
 (defun growable-vector-length (growable-vector)
   "Returns GROWABLE-VECTOR length (i.e. current actual element count)."
   (%growable-vector-size growable-vector))
 
 (declaim
- (inline growable-vector-emptyp)
+ #-d2c-debug (inline growable-vector-emptyp)
  (ftype (function (growable-vector) boolean) growable-vector-emptyp))
 (defun growable-vector-emptyp (growable-vector)
   "Returns T if GROWABLE-VECTOR is empty."
   (zerop (growable-vector-length growable-vector)))
 
 (declaim
- (inline growable-vector-push)
+ #-d2c-debug (inline growable-vector-push)
  (ftype (function (growable-vector t)) growable-vector-push))
 (defun growable-vector-push (growable-vector value)
   "Appends VALUE to the end of GROWABLE-VECTOR."
@@ -94,7 +94,7 @@ greater than current allocated size)."
         value))
 
 (declaim
- (inline growable-vector-pop)
+ #-d2c-debug (inline growable-vector-pop)
  (ftype (function (growable-vector &optional array-index)) growable-vector-pop))
 (defun growable-vector-pop (growable-vector &optional index)
   "Removes and returns element with INDEX from GROWABLE-VECTOR.
@@ -107,7 +107,7 @@ If INDEX is not given, removes and returns last element."
     value))
 
 (declaim
- (inline growable-vector-add)
+ #-d2c-debug (inline growable-vector-add)
  (ftype (function (growable-vector vector)) growable-vector-add))
 (defun growable-vector-add (growable-vector vector)
   "Appends contents of given VECTOR to the end of GROWABLE-VECTOR."
@@ -126,14 +126,14 @@ If INDEX is not given, removes and returns last element."
     (incf (%growable-vector-size growable-vector) vector-length)))
 
 (declaim
- (inline growable-vector-clear)
+ #-d2c-debug (inline growable-vector-clear)
  (ftype (function (growable-vector)) growable-vector-clear))
 (defun growable-vector-clear (growable-vector)
   "Removes all elements from GROWABLE-VECTOR."
   (setf (%growable-vector-size growable-vector) 0))
 
 (declaim
- (inline growable-vector-freeze)
+ #-d2c-debug (inline growable-vector-freeze)
  (ftype (function (growable-vector &key (:element-type symbol)) simple-array)
         growable-vector-freeze))
 (defun growable-vector-freeze (growable-vector &key (element-type 't))

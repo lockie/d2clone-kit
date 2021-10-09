@@ -86,7 +86,7 @@ boolean property *collides* to *true* in Tiled tileset."))
                           (cons (round x) (round y)))))
 
 (declaim
- (inline character-at)
+ #-d2c-debug (inline character-at)
  (ftype (function (fixnum fixnum) fixnum) character-at))
 (defun character-at (x y)
   "Returns character entity at integer map coordinates X, Y or NIL if there's
@@ -96,7 +96,7 @@ no character there."
            (cons x y))))
 
 (declaim
- (inline collidesp)
+ #-d2c-debug (inline collidesp)
  (ftype (function (fixnum fixnum &key (:character (or fixnum null))) boolean)
         collidesp))
 (defun collidesp (x y &key (character nil))

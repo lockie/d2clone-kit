@@ -14,7 +14,7 @@
     (make-hp entity :current-hp current :maximum-hp maximum)))
 
 (declaim
- (inline set-hp)
+ #-d2c-debug (inline set-hp)
  (ftype (function (fixnum double-float)) set-hp))
 (defun set-hp (entity new-hp)
   "Sets current hit points of ENTITY to NEW-HP."
@@ -31,7 +31,7 @@
        (setf current-hp new-hp)))))
 
 (declaim
- (inline deadp)
+ #-d2c-debug (inline deadp)
  (ftype (function (fixnum) boolean) deadp))
 (defun deadp (entity)
   "Returns T when ENTITY is dead."

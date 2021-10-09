@@ -22,7 +22,7 @@
     (:documentation "The movement action.")
 
 (declaim
- (inline face-target)
+ #-d2c-debug (inline face-target)
  (ftype (function (double-float double-float double-float double-float)
                   double-float)
         face-target))
@@ -32,7 +32,9 @@ facing to look at point TARGET-X, TARGET-Y."
   (atan (- target-y character-y)
         (- target-x character-x)))
 
-(declaim (inline follow-path) (ftype (function (fixnum)) follow-path))
+(declaim
+ #-d2c-debug (inline follow-path)
+ (ftype (function (fixnum)) follow-path))
 (defun follow-path (move-action-index)
   (let ((entity (action-entity move-action-index)))
     (with-coordinate entity ()
@@ -69,7 +71,7 @@ facing to look at point TARGET-X, TARGET-Y."
     (switch-stance (action-entity action) :idle)))
 
 (declaim
- (inline approx-equal)
+ #-d2c-debug (inline approx-equal)
  (ftype (function (double-float double-float &optional double-float) boolean)
         approx-equal))
 (defun approx-equal (a b &optional (epsilon 0.05d0))
@@ -173,10 +175,10 @@ facing to look at point TARGET-X, TARGET-Y."
   (y 0 :type fixnum :read-only t)
   (parent nil :type (or path-node null)))
 
-(declaim (inline make-path-node))
+(declaim #-d2c-debug (inline make-path-node))
 
 (declaim
- (inline path-node-equal)
+ #-d2c-debug (inline path-node-equal)
  (ftype (function (path-node path-node) boolean) path-node-equal))
 (defun path-node-equal (node1 node2)
   (and (= (path-node-x node1)
@@ -185,7 +187,7 @@ facing to look at point TARGET-X, TARGET-Y."
           (path-node-y node2))))
 
 (declaim
- (inline remove-nth)
+ #-d2c-debug (inline remove-nth)
  (ftype (function (list array-index) list) remove-nth))
 (defun remove-nth (list n)
   (if (zerop n)

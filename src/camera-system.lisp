@@ -11,17 +11,17 @@
   (setf (camera-system-entity system) entity)
   nil)
 
-(declaim (inline camera-entity))
+(declaim #-d2c-debug (inline camera-entity))
 (defun camera-entity ()
   "Returns current camera entity."
   (camera-system-entity *camera-system*))
 
-(declaim (inline camera-target))
+(declaim #-d2c-debug (inline camera-target))
 (defun camera-target ()
   "Returns current camera target, i.e. the entity camera tracks."
   (camera-system-target *camera-system*))
 
-(declaim (inline (setf camera-target)))
+(declaim #-d2c-debug (inline (setf camera-target)))
 (defun (setf camera-target) (target)
   "Sets current camera target, i.e. the entity camera tracks. Set to NIL to
 stop camera tracking."
@@ -37,7 +37,7 @@ list."
            ,@body)))))
 
 (declaim
- (inline absolute->viewport)
+ #-d2c-debug (inline absolute->viewport)
  ;; (ftype (function (coordinate coordinate) (values fixnum fixnum))
  ;;  absolute->viewport)
  )
@@ -53,7 +53,7 @@ See VIEWPORT->ABSOLUTE"
        (+ (- y camera-y) (ceiling display-height 2))))))
 
 (declaim
- (inline viewport->absolute)
+ #-d2c-debug (inline viewport->absolute)
  )
 (defun viewport->absolute (x y)
   "Converts given integer viewport coordinates to absolute screen coordinates.
@@ -67,7 +67,7 @@ See ABSOLUTE->VIEWPORT"
        (+ y camera-y (- (ceiling display-height 2)))))))
 
 (declaim
- (inline visiblep)
+ #-d2c-debug (inline visiblep)
  (ftype (function (fixnum fixnum &optional fixnum) boolean) visiblep))
 (defun visiblep (x y &optional (delta 0))
   "Returns T if point with given viewport coordinates is visible on screeen."
@@ -79,7 +79,7 @@ See ABSOLUTE->VIEWPORT"
      (< y (+ delta display-height)))))
 
 (declaim
- (inline range-visible-p)
+ #-d2c-debug (inline range-visible-p)
  (ftype (function (fixnum fixnum fixnum fixnum) boolean) range-visible-p))
 (defun range-visible-p (x y width height)
   "Returns T if any part of rectangular range defined by given viewport

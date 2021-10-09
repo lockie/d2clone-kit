@@ -21,21 +21,21 @@ See MAKE-PREFAB-COMPONENT"))
 ;; TODO : automatically delete entities with no components?..
 
 (declaim
- (inline system-adjust-components)
+ #-d2c-debug (inline system-adjust-components)
  (ftype (function (system array-length)) system-adjust-components))
 (defun system-adjust-components (system new-size)
   (when-let ((components-index (system-components-index system)))
     (sparse-array-index-grow components-index new-size)))
 
 (declaim
- (inline %has-component-p)
+ #-d2c-debug (inline %has-component-p)
  (ftype (function (system fixnum) boolean) %has-component-p))
 (defun %has-component-p (system entity)
   (when-let ((components-index (system-components-index system)))
     (index-valid-p (sparse-array-index-ref components-index entity))))
 
 (declaim
- (inline has-component-p)
+ #-d2c-debug (inline has-component-p)
  (ftype (function (keyword fixnum) boolean) has-component-p))
 (defun has-component-p (system entity)
   "Returns T when ENTITY has the SYSTEM's component in it."
@@ -74,7 +74,7 @@ See MAKE-PREFAB-COMPONENT"))
          (getter-decls (mapcan
                         #'(lambda (s a type)
                             `((declaim
-                               (inline ,@s)
+                               #-d2c-debug (inline ,@s)
                                (ftype
                                 (function (,name
                                            (integer 0 ,array-dimension-limit))
@@ -87,7 +87,7 @@ See MAKE-PREFAB-COMPONENT"))
                         #'(lambda (ro s a type)
                             (unless ro
                               `((declaim
-                                 (inline (setf ,@s))
+                                 #-d2c-debug (inline (setf ,@s))
                                  (ftype
                                   (function
                                    (,type ,name
@@ -104,7 +104,7 @@ See MAKE-PREFAB-COMPONENT"))
             #'(lambda (ro s a type)
                 (unless ro
                   `((declaim
-                     (inline (setf ,@s))
+                     #-d2c-debug (inline (setf ,@s))
                      (ftype (function (,type ,name
                                              (integer 0 ,array-dimension-limit))
                                       ,type)
@@ -118,7 +118,7 @@ See MAKE-PREFAB-COMPONENT"))
                    (:constructor ,(symbolicate :make- plural-name))
                    (:copier nil) (:predicate nil))
          ,@soa-slots)
-       (declaim (inline ,@(mapcar #'car array-accessors)))
+       (declaim #-d2c-debug (inline ,@(mapcar #'car array-accessors)))
        ,@slot-docs ,@getter-decls ,@setter-decls ,@unsafe-setter-decls)))
 
 (defmacro defcomponent ((system &optional (name system)) &rest slots)

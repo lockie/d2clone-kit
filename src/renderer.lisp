@@ -5,7 +5,7 @@
 (global-vars:define-global-var *delta-time* 0d0
   "Delta time between current frame and the previous one, in seconds.")
 
-(declaim (inline make-renderer))
+(declaim #-d2c-debug (inline make-renderer))
 (defun make-renderer ()
   "Creates functional renderer instance.
 
@@ -14,7 +14,7 @@ See DO-DRAW"
   (make-priority-queue #'car))
 
 (declaim
- (inline render)
+ #-d2c-debug (inline render)
  (ftype (function (priority-queue double-float function)) render))
 (defun render (renderer z-order render-proc)
   "Schedules function RENDER-PROC to be called in accordance with specified
@@ -25,7 +25,7 @@ See DO-DRAW"
   (priority-queue-push renderer (cons z-order render-proc)))
 
 (declaim
- (inline do-draw)
+ #-d2c-debug (inline do-draw)
  (ftype (function (priority-queue)) do-draw))
 (defun do-draw (renderer)
   "Calls renderer functions scheduled within renderer instance RENDERER in

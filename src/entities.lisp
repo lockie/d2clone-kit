@@ -69,7 +69,7 @@ See DELETE-CHILD"
   (growable-vector-push *deleted-entities* entity))
 
 (declaim
- (inline entity-valid-p)
+ #-d2c-debug (inline entity-valid-p)
  (ftype (function (fixnum) boolean) entity-valid-p))
 (defun entity-valid-p (entity)
   "Return T if entity is valid."

@@ -132,7 +132,7 @@ Also only integer map coordinates allowed for map chunks, otherwise the screen
                                       (make-object '((:debug)) entity)
                                       +invalid-entity+))))
 
-(declaim (inline ground-layer-p))
+(declaim #-d2c-debug (inline ground-layer-p))
 (defun ground-layer-p (layer)
   "Returns T if map chunk layer LAYER is ground layer (i.e. has \"ground\"
   property)."
@@ -141,7 +141,7 @@ Also only integer map coordinates allowed for map chunks, otherwise the screen
     nil))
 
 (declaim
- (inline tile-property)
+ #-d2c-debug (inline tile-property)
  (ftype
   (function ((vector (or hash-table null)) array-index symbol &optional t))
   tile-property))

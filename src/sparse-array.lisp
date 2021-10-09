@@ -4,7 +4,7 @@
 (defconstant +invalid-index+ -2 "Invalid index marker for SPARSE-ARRAY-INDEX.")
 
 (declaim
- (inline index-valid-p)
+ #-d2c-debug (inline index-valid-p)
  (ftype (function (fixnum) boolean) index-valid-p))
 (defun index-valid-p (index)
   "Return T if index is valid.
@@ -31,7 +31,7 @@ See +INVALID-INDEX+"
              :initial-allocated-size initial-allocated-size)))
 
 (declaim
- (inline sparse-array-index-grow)
+ #-d2c-debug (inline sparse-array-index-grow)
  (ftype (function (sparse-array-index array-length)) sparse-array-index-grow))
 (defun sparse-array-index-grow (sparse-array-index new-allocated-size)
   "Adjusts SPARSE-ARRAY-INDEX to have allocated size of NEW-ALLOCATED-SIZE."
@@ -39,7 +39,7 @@ See +INVALID-INDEX+"
                         new-allocated-size))
 
 (declaim
- (inline sparse-array-index-ref)
+ #-d2c-debug (inline sparse-array-index-ref)
  (ftype (function (sparse-array-index array-index) fixnum)
         sparse-array-index-ref))
 (defun sparse-array-index-ref (sparse-array-index subscript)
@@ -48,7 +48,7 @@ See +INVALID-INDEX+"
                        subscript))
 
 (declaim
- (inline sparse-array-index-push)
+ #-d2c-debug (inline sparse-array-index-push)
  (ftype (function (sparse-array-index array-index) array-index)
         sparse-array-index-push))
 (defun sparse-array-index-push (sparse-array-index subscript)
@@ -63,7 +63,7 @@ See +INVALID-INDEX+"
               (growable-vector-pop deleted-indices 0)))))
 
 (declaim
- (inline sparse-array-index-delete)
+ #-d2c-debug (inline sparse-array-index-delete)
  (ftype (function (sparse-array-index array-index)) sparse-array-index-delete))
 (defun sparse-array-index-delete (sparse-array-index subscript)
   "Marks element denoted by SUBSCRIPT as deleted in SPARSE-ARRAY-INDEX."

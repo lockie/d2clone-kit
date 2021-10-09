@@ -15,7 +15,7 @@ Note: keys are expected to be DOUBLE-FLOATs."
   (%make-priority-queue :array (make-array 0) :key key-fn))
 
 (declaim
- (inline binary-search)
+ #-d2c-debug (inline binary-search)
  (ftype (function ((function (t) double-float) double-float simple-vector)
                   array-index)
         binary-search))
@@ -36,7 +36,7 @@ Note: keys are expected to be DOUBLE-FLOATs."
               (setf u (1- m)))))))
 
 (declaim
- (inline priority-queue-find)
+ #-d2c-debug (inline priority-queue-find)
  (ftype (function (priority-queue t)) priority-queue-find))
 (defun priority-queue-find (queue element)
   "Finds ELEMENT's position in QUEUE. Returns NIL if there's no such element.
@@ -49,7 +49,7 @@ O(log N) complexity."
       position)))
 
 (declaim
- (inline priority-queue-push)
+ #-d2c-debug (inline priority-queue-push)
  (ftype (function (priority-queue t)) priority-queue-push))
 (defun priority-queue-push (queue element)
   "Adds element ELEMENT to priority queue QUEUE."
@@ -69,7 +69,7 @@ O(log N) complexity."
   nil)
 
 (declaim
- (inline priority-queue-push-many)
+ #-d2c-debug (inline priority-queue-push-many)
  (ftype (function (priority-queue vector)) priority-queue-push-many))
 (defun priority-queue-push-many (queue elements)
   "Adds elements from vector ELEMENTS to priority queue QUEUE.
@@ -97,7 +97,7 @@ A bit more performance-friendly than calling PRIORITY-QUEUE-PUSH many times
     nil))
 
 (declaim
- (inline priority-queue-traverse)
+ #-d2c-debug (inline priority-queue-traverse)
  (ftype (function (priority-queue (function (t)))) priority-queue-traverse))
 (defun priority-queue-traverse (queue fn)
   "Calls one argument function FN on elements of priority queue QUEUE
@@ -109,13 +109,13 @@ in appropriate order."
       :do (funcall fn element))))
 
 (declaim
- (inline simple-vector-peek)
+ #-d2c-debug (inline simple-vector-peek)
  (ftype (function (simple-vector) t) simple-vector-peek))
 (defun simple-vector-peek (array)
   (aref array (1- (length array))))
 
 (declaim
- (inline simple-vector-pop)
+ #-d2c-debug (inline simple-vector-pop)
  (ftype (function (simple-vector) (values t simple-vector)) simple-vector-pop))
 (defun simple-vector-pop (array)
   (let* ((last-index (1- (length array)))
@@ -124,7 +124,7 @@ in appropriate order."
     (values element new-array)))
 
 (declaim
- (inline priority-queue-pop)
+ #-d2c-debug (inline priority-queue-pop)
  (ftype (function (priority-queue)) priority-queue-pop))
 (defun priority-queue-pop (queue)
   "Removes and returns the first (priority-wise) element in QUEUE."
@@ -134,7 +134,7 @@ in appropriate order."
     element))
 
 (declaim
- (inline priority-queue-remove)
+ #-d2c-debug (inline priority-queue-remove)
  (ftype (function (priority-queue array-index)) priority-queue-remove))
 (defun priority-queue-remove (queue index)
   "Removes element from QUEUE denoted by INDEX."
@@ -146,7 +146,7 @@ in appropriate order."
   nil)
 
 (declaim
- (inline priority-queue-clear)
+ #-d2c-debug (inline priority-queue-clear)
  (ftype (function (priority-queue)) priority-queue-clear))
 (defun priority-queue-clear (queue)
   "Clears priority queue QUEUE."

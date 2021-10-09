@@ -49,7 +49,7 @@
                                        sprite-width))))
 
 (declaim
- (inline add-sprite-to-batch)
+ #-d2c-debug (inline add-sprite-to-batch)
  (ftype (function (fixnum double-float fixnum fixnum fixnum fixnum))
         add-sprite-to-batch))
 (defun add-sprite-to-batch (entity order image-x image-y screen-x screen-y)
@@ -71,7 +71,7 @@ See ADD-SPRITE-INDEX-TO-BATCH"
      sprites)))
 
 (declaim
- (inline add-sprite-index-to-batch)
+ #-d2c-debug (inline add-sprite-index-to-batch)
  (ftype (function (fixnum double-float fixnum fixnum fixnum))
         add-sprite-index-to-batch))
 (defun add-sprite-index-to-batch (entity order index screen-x screen-y)
@@ -99,7 +99,7 @@ See ADD-SPRITE-TO-BATCH"
      sprites)))
 
 (declaim
- (inline clear-sprite-batch)
+ #-d2c-debug (inline clear-sprite-batch)
  (ftype (function (fixnum)) clear-sprite-batch))
 (defun clear-sprite-batch (entity)
   (with-sprite-batch entity ()

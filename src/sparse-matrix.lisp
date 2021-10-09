@@ -23,7 +23,7 @@
                                   :adjustable t :fill-pointer t))))
 
 (declaim
- (inline sparse-matrix-ref)
+ #-d2c-debug (inline sparse-matrix-ref)
  (ftype (function (sparse-matrix cons)) sparse-matrix-ref))
 (defun sparse-matrix-ref (sparse-matrix subscripts)
   "Returns SPARSE-MATRIX element identified by list SUBSCRIPTS or NIL if
@@ -33,7 +33,7 @@ there's no such element."
     nil))
 
 (declaim
- (inline (setf sparse-matrix-ref))
+ #-d2c-debug (inline (setf sparse-matrix-ref))
  (ftype (function (t sparse-matrix cons) t) (setf sparse-matrix-ref)))
 (defun (setf sparse-matrix-ref) (value sparse-matrix subscripts)
   "Sets SPARSE-MATRIX element identified by list SUBSCRIPTS to VALUE.
@@ -58,7 +58,7 @@ See SPARSE-MATRIX-REMOVE"
                   value))))))
 
 (declaim
- (inline sparse-matrix-remove)
+ #-d2c-debug (inline sparse-matrix-remove)
  (ftype (function (sparse-matrix cons)) sparse-matrix-remove))
 (defun sparse-matrix-remove (sparse-matrix subscripts)
   "Removes element identified by list SUBSCRIPTS from SPARSE-MATRIX.
@@ -68,7 +68,7 @@ Returns number of deleted elements or NIL if there's no such element in matrix."
     (vector-push-extend index (sparse-matrix-deleted-indices sparse-matrix))))
 
 (declaim
- (inline sparse-matrix-traverse)
+ #-d2c-debug (inline sparse-matrix-traverse)
  (ftype (function (sparse-matrix (function (cons t)))) sparse-matrix-traverse))
 (defun sparse-matrix-traverse (sparse-matrix fn)
   "Calls two argument function FN on elements of SPARSE-MATRIX in unpsecified
@@ -79,7 +79,7 @@ order. First argument to FN is subscript, second is the element itself."
           :do (funcall fn subscript (growable-vector-ref array index)))))
 
 (declaim
- (inline sparse-matrix-clear)
+ #-d2c-debug (inline sparse-matrix-clear)
  (ftype (function (sparse-matrix)) sparse-matrix-clear))
 (defun sparse-matrix-clear (sparse-matrix)
   "Removes all elements from SPARSE-MATRIX."

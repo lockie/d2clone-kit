@@ -79,14 +79,14 @@ animation stance")
         (setf (gethash layer layers-toggled) value)))))
 
 (declaim
- (inline default-layer)
+ #-d2c-debug (inline default-layer)
  (ftype (function (fixnum) keyword) default-layer))
 (defun default-layer (entity)
   (with-sprite entity ()
     (first layer-names)))
 
 (declaim
- (inline frame-property)
+ #-d2c-debug (inline frame-property)
  (ftype (function (fixnum keyword &key (:layer keyword))) frame-property))
 (defun frame-property (entity property-name &key layer)
   "Returns current frame's property called PROPERTY-NAME of a sprite component
@@ -128,7 +128,7 @@ ENTITY. Returns NIL of no such property exists."
   (pixel-size :int))
 
 (declaim
- (inline seconds)
+ #-d2c-debug (inline seconds)
  (ftype (function (fixnum) double-float) seconds))
 (defun seconds (milliseconds)
   (* milliseconds 0.001d0))
@@ -328,7 +328,7 @@ ENTITY. Returns NIL of no such property exists."
      :layer-data layer-data)))
 
 (declaim
- (inline emit-frame-sound)
+ #-d2c-debug (inline emit-frame-sound)
  (ftype (function (fixnum)) emit-frame-sound))
 (defun emit-frame-sound (entity)
   "Emits sound associated with frame through :SOUND property, if any."
@@ -348,7 +348,7 @@ ENTITY. Returns NIL of no such property exists."
                        (emit-layer-sound default-layer))))))
 
 (declaim
- (inline %switch-stance)
+ #-d2c-debug (inline %switch-stance)
  (ftype (function (fixnum keyword)) %switch-stance))
 (defun %switch-stance (entity new-stance)
   "Immediately switches stance of the sprite ENTITY to NEW-STANCE without any
@@ -407,21 +407,21 @@ extra checks. Does not affect TIME-COUNTER of sprite."
   (%switch-stance entity :idle))
 
 (declaim
- (inline stance-interruptible-p)
+ #-d2c-debug (inline stance-interruptible-p)
  (ftype (function (fixnum) boolean) stance-interruptible-p))
 (defun stance-interruptible-p (entity)
   "Returns whether current stance can be interrupted for ENTITY."
     (not (frame-property entity :non-interruptible)))
 
 (declaim
- (inline current-stance)
+ #-d2c-debug (inline current-stance)
  (ftype (function (fixnum) keyword) current-stance))
 (defun current-stance (entity)
   (with-sprite entity ()
     stance))
 
 (declaim
- (inline switch-stance)
+ #-d2c-debug (inline switch-stance)
  (ftype (function (fixnum keyword)) switch-stance))
 (defun switch-stance (entity new-stance)
   "Immediately switches stance of the sprite ENTITY to NEW-STANCE unless it is
@@ -433,7 +433,7 @@ already at that stance or the current stance is non-interruptible."
       (%switch-stance entity new-stance))))
 
 (declaim
- (inline frame-finished-p)
+ #-d2c-debug (inline frame-finished-p)
  (ftype (function (fixnum) (or null double-float)) frame-finished-p))
 (defun frame-finished-p (entity)
   "Returns generalized boolean indicating whether current animation frame of
@@ -448,7 +448,7 @@ it was."
           nil))))
 
 (declaim
- (inline stance-finished-p)
+ #-d2c-debug (inline stance-finished-p)
  (ftype (function (fixnum) boolean) stance-finished-p))
 (defun stance-finished-p (entity)
   "Returns whether current stance of animation of ENTITY is played through."
@@ -478,7 +478,7 @@ it was."
 (defconstant +isometric-angle+ (* pi (/ 45 180)))
 
 (declaim
- (inline sprite-direction)
+ #-d2c-debug (inline sprite-direction)
  (ftype (function (fixnum double-float) unsigned-byte) sprite-direction))
 (defun sprite-direction (directions angle)
   "Calculates sprite direction from angle value ANGLE assuming total sprite

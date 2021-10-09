@@ -6,7 +6,7 @@
   (:documentation "Handles main menu."
    :order 1))
 
-(declaim (inline main-menu) (ftype (function () fixnum) main-menu))
+(declaim #-d2c-debug (inline main-menu) (ftype (function () fixnum) main-menu))
 (defun main-menu ()
   "Returns main menu UI entity."
   (menu-system-ui-entity *menu-system*))

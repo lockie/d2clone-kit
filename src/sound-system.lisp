@@ -34,7 +34,7 @@
    :sample (ensure-loaded #'al:load-sample (prefab-path system prefab-name))))
 
 (declaim
- (inline set-sound-position)
+ #-d2c-debug (inline set-sound-position)
  (ftype (function (fixnum)) set-sound-position))
 (defun set-sound-position (entity)
   ;; TODO : use al_set_sample_instance_channel_matrix for 5.1 sound?..

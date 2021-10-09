@@ -44,7 +44,7 @@ See +TABLE-INDICES+"
         :finally (return result)))
 
 (declaim
- (inline table-value-ref)
+ #-d2c-debug (inline table-value-ref)
  (ftype
   (function (keyword list &key (:default t) (:column (or keyword null))) t)
   table-value-ref))
@@ -67,7 +67,7 @@ See TABLE-VALUE-REF*"
     default))
 
 (declaim
- (inline table-value-ref*)
+ #-d2c-debug (inline table-value-ref*)
  (ftype (function (keyword list &key (:default t) (:column keyword)) t)
         table-value-ref*))
 (defun table-value-ref* (table-designator predicates

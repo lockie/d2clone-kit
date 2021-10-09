@@ -1,14 +1,14 @@
 (in-package :d2clone-kit)
 
 (declaim
- (inline ui-handle-event)
+ #-d2c-debug (inline ui-handle-event)
  (ftype (function (cffi:foreign-pointer) boolean) ui-handle-event))
 (defun ui-handle-event (event)
   (and (ui-on-p)
        (positive-fixnum-p (the fixnum (nk:allegro-handle-event event)))))
 
 (declaim
- (inline systems-handle-event)
+ #-d2c-debug (inline systems-handle-event)
  (ftype (function (cffi:foreign-pointer) boolean) systems-handle-event))
 (defun systems-handle-event (event)
   (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
@@ -80,7 +80,9 @@
   (dolist (spec *new-game-object-specs*)
     (make-object spec *session-entity*)))
 
-(declaim (inline game-started-p) (ftype (function () boolean) game-started-p))
+(declaim
+ #-d2c-debug (inline game-started-p)
+ (ftype (function () boolean) game-started-p))
 (defun game-started-p ()
   "Returns boolean indicating whether the game session is currently running."
   ;; HACK

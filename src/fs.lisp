@@ -85,7 +85,7 @@ variables DIRECTORY and FILE bound."
   (when (zerop (physfs-deinit))
     (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
 
-(declaim (inline ensure-loaded))
+(declaim #-d2c-debug (inline ensure-loaded))
 (defun ensure-loaded (load-fn file-name &rest rest)
   "Calls LOAD-FN (which could be #'AL:LOAD-BITMAP, #'AL:LOAD-SAMPLE or
 similar) with the FILE-NAME argument and REST arguments, if any.  If the
@@ -98,7 +98,7 @@ Otherwise, it is returned."
         file)))
 
 (declaim
- (inline sanitize-filename)
+ #-d2c-debug (inline sanitize-filename)
  (ftype (function (string) string) sanitize-filename))
 (defun sanitize-filename (filename)
   (values (cl-ppcre:regex-replace-all

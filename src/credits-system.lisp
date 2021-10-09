@@ -6,7 +6,9 @@
   (:documentation "Handles credits screen."
    :order 2))
 
-(declaim (inline credits-screen) (ftype (function () fixnum) credits-screen))
+(declaim
+ #-d2c-debug (inline credits-screen)
+ (ftype (function () fixnum) credits-screen))
 (defun credits-screen ()
   "Returns credits screen UI entity."
   (credits-system-ui-entity *credits-system*))

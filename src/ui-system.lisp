@@ -20,35 +20,35 @@
   (parameters nil :type hash-table))
 
 (declaim
- (inline ui-font-small)
+ #-d2c-debug (inline ui-font-small)
  (ftype (function () cffi:foreign-pointer) ui-font-small))
 (defun ui-font-small ()
   "Returns small variation of UI font."
   (ui-system-font-small *ui-system*))
 
 (declaim
- (inline ui-font-medium)
+ #-d2c-debug (inline ui-font-medium)
  (ftype (function () cffi:foreign-pointer) ui-font-medium))
 (defun ui-font-medium ()
   "Returns medium variation of UI font."
   (ui-system-font-medium *ui-system*))
 
 (declaim
- (inline ui-font-large)
+ #-d2c-debug (inline ui-font-large)
  (ftype (function () cffi:foreign-pointer) ui-font-large))
 (defun ui-font-large ()
   "Returns large variation of UI font."
   (ui-system-font-large *ui-system*))
 
 (declaim
- (inline ui-context)
+ #-d2c-debug (inline ui-context)
  (ftype (function () cffi:foreign-pointer) ui-context))
 (defun ui-context ()
   "Returns Nuklear GUI library's context."
   (ui-system-nuklear-context *ui-system*))
 
 (declaim
- (inline toggle-ui)
+ #-d2c-debug (inline toggle-ui)
  (ftype (function (fixnum &optional boolean)) toggle-ui))
 (defun toggle-ui (entity &optional (on nil on-supplied-p))
   "Toogles UI window corresponding to ENTITY ON; flushes internal UI event
@@ -58,7 +58,7 @@ different windows."
   (with-ui entity (currently-on)
     (setf currently-on (if on-supplied-p on (not currently-on)))))
 
-(declaim (inline ui-on-p) (ftype (function () boolean) ui-on-p))
+(declaim #-d2c-debug (inline ui-on-p) (ftype (function () boolean) ui-on-p))
 (defun ui-on-p ()
   "Returns boolean indicating whether any UI window is currenty shown."
   ;; XXX maybe use nk:item-is-any-active ?
@@ -70,7 +70,7 @@ different windows."
     result))
 
 (declaim
- (inline make-button-press-sound)
+ #-d2c-debug (inline make-button-press-sound)
  (ftype (function (fixnum)) make-button-press-sound))
 (defun make-button-press-sound (entity)
   "Adds button press sound component to ENTITY."
