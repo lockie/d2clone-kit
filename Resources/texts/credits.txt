@@ -1,0 +1,23 @@
+PROGRAMMING AND GAME DESIGN                       ARTWORK
+Andrew Kravchuk                                   Clint Bellanger
+                                                  Juan Pablo del Peral
+SOFTWARE                                          Cleyton Kauffman
+d2clone-kit engine                                Simone Bruhn
+Steel Bank Common Lisp compiler                   Ben Wenzel
+Allegro game programming library                  Kenney Vleugels
+cl-liballegro bindings                            Hansjörg Malthaner
+libffi library                                    Morten Barfod Søegaard
+Deploy library by Nicolas Hafner                  Blender Foundation
+Golden-utils library by Michael Fiano             Sebastian Riedel
+Livesupport library by Chris Bagley               Philippe Groarke
+NSIS installer                                    Brandon Morris
+                                                  see http://tinyurl.com/dld-artwork for full list
+
+
+
+
+
+DARKNESS LOOMING: THE DAWN Copyright © 2020 Andrew Kravchuk
+This program comes with ABSOLUTELY NO WARRANTY; for details see http://tinyurl.com/dld-license
+This is free software, and you are welcome to redistribute it under certain conditions;
+see http://tinyurl.com/dld-license for details.
