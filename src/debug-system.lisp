@@ -88,6 +88,8 @@ DESIGNATOR to same value."
     (pushnew designator text-designators)
     (setf (gethash designator texts) (apply #'format nil text args))))
 
+;; TODO : helper function to clear the list of debug texts
+
 (defmethod make-component ((system debug-system) entity &rest parameters)
   (destructuring-bind (&key (size 144) (order 1000d0)) parameters
     (make-debug-buffer

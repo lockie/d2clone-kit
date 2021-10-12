@@ -43,6 +43,7 @@ d2clone-kit:
 
 * [SBCL](http://sbcl.org)
 * [CCL](https://ccl.clozure.com)
+* [ECL](https://common-lisp.net/project/ecl)
 
 You can run it on x86_64 Linux, macOS, and Windows, while SBCL on Linux is the
 recommended platform.

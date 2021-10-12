@@ -22,6 +22,8 @@
   (y nil :type double-float))
 
 (defmethod make-component ((system coordinate-system) entity &rest parameters)
+  ;; TODO : have a way of supplying isometric coordinates, smth like
+  ;;  :iso-x & :iso-y; or reverse the logic and have :ortho-x & :ortho-y
   (apply #'make-coordinate entity parameters))
 
 (declaim

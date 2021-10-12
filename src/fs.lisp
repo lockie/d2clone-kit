@@ -105,6 +105,7 @@ Otherwise, it is returned."
            "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename
            "")))
 
+;; TODO : try replacing with uiop:read-file-string
 (declaim (ftype (function (string) list) read-file-into-list))
 (defun read-file-into-list (pathname)
   "Reads text file specified by PATHNAME into a list line-by-line.

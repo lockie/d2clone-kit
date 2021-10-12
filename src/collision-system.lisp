@@ -17,6 +17,7 @@ boolean property *collides* to *true* in Tiled tileset."))
   (let ((entity (component-created-entity event)))
     (case (component-created-system-name event)
       (map
+       ;; put map's unwalkable tiles into collision map
        (with-coordinate entity ()
          (let ((start-x (truncate x))
                (start-y (truncate y)))

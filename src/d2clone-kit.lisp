@@ -88,6 +88,7 @@
   ;; HACK
   (entity-valid-p (player-system-entity *player-system*)))
 
+;; TODO : make this into exported macro (the same trick used in dld)
 (defconstant +engine-version+
   (slot-value (asdf:find-system :d2clone-kit) 'asdf:version))
 

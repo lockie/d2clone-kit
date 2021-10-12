@@ -4,6 +4,7 @@
 (defsystem item
   ;; TODO : by using this design, I can only have one item per tile. Do
   ;; something about the coords
+  ;; have a look at https://gameprogrammingpatterns.com/spatial-partition.html
   ((map (make-sparse-matrix) :type sparse-matrix))
   (:documentation "Handles items."))
 
