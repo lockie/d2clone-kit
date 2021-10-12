@@ -105,17 +105,17 @@ Otherwise, it is returned."
            "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename
            "")))
 
-;; TODO : try replacing with uiop:read-file-string
-(declaim (ftype (function (string) list) read-file-into-list))
-(defun read-file-into-list (pathname)
+(declaim
+ (ftype (function (string &key (:buffer-length fixnum)) list)
+        read-file-into-list))
+(defun read-file-into-list (pathname &key (buffer-length 4096))
   "Reads text file specified by PATHNAME into a list line-by-line.
-Lines are expected to be shorter than 4k chars."
-  ;; TODO : specify max length as defaulted keyword parameter
-  (cffi:with-foreign-object (buffer :char 4096)
+Lines are expected to be shorter than BUFFER-LENGTH chars."
+  (cffi:with-foreign-object (buffer :char buffer-length)
     (loop
       :with file := (al:fopen (namestring pathname) "r")
         :initially (when (cffi:null-pointer-p file) (return nil))
-      :for line := (al:fgets file buffer 4096)
+      :for line := (al:fgets file buffer buffer-length)
       :until (cffi:null-pointer-p line)
       :collecting
       (flet ((trim (str) (subseq str 0 (1- (length str)))))
