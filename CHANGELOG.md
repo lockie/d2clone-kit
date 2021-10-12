@@ -9,6 +9,7 @@ and this project adheres to
 ### Added
 - SYSTEM-REF helper re-added for loose coupling reasons.
 - Priorities of CastleDB tables.
+- Default value for font configuration variable.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.
