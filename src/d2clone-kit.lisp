@@ -158,10 +158,9 @@
 
         (setf *random-state* (make-random-state t))
 
-        (load-data-tables *table-indices*)
-
         (unwind-protect
              (progn
+               (load-data-tables *table-indices*)
                (initialize-systems)
                (game-loop event-queue))
           (log-info "Shutting engine down")
