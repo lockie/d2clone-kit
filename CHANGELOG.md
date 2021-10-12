@@ -8,10 +8,12 @@ and this project adheres to
 ## [Unreleased]
 ### Added
 - SYSTEM-REF helper re-added for loose coupling reasons.
+- Priorities of CastleDB tables.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.
 - Changed inlined functions to be uninlined in debug mode.
+- Load all CastleDB .cdb files instead of the one specific for the game.
 
 ### Removed
 

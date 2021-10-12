@@ -43,6 +43,36 @@ See +TABLE-INDICES+"
         :finally (log-info "~d data table(s) built" count)
         :finally (return result)))
 
+(defunl load-data-tables (table-indices)
+  "Loads all possible data from CastleDB files, considering table priorities.
+Afterwards, builds all the appropriate indices and sets *DATA-TABLES*
+accordingly.
+
+See *DATA-TABLES*"
+  (let ((all-tables (make-hash :test #'eq))
+        (all-priorities (make-hash :test #'eq)))
+    (enumerate-directory "tables"
+      (when (uiop:string-suffix-p file ".cdb")
+        (log-info "Loading ~a data table" file)
+        (multiple-value-bind (tables priorities)
+            (load-castledb-tables
+             (make-instance 'character-stream
+                            :path (namestring
+                                   (make-pathname
+                                    :defaults (pathname file)
+                                    :directory `(:relative ,directory)))))
+          (loop :for table-name :being :the :hash-key
+                :using (hash-value rows) :of tables
+                :for priority := (gethash table-name priorities)
+                :do (multiple-value-bind (old-priority existing)
+                        (gethash table-name all-priorities)
+                      (when (or (not existing)
+                                (< old-priority priority))
+                        (setf
+                         (gethash table-name all-tables) rows
+                         (gethash table-name all-priorities) priority)))))))
+    (setf *data-tables* (build-data-tables all-tables table-indices))))
+
 (declaim
  #-d2c-debug (inline table-value-ref)
  (ftype

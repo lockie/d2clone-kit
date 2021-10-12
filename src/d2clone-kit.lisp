@@ -158,13 +158,7 @@
 
         (setf *random-state* (make-random-state t))
 
-        (setf *data-tables*
-              (build-data-tables
-               (load-castledb-tables
-                (make-instance 'character-stream
-                               :path (format nil "tables/~a.cdb"
-                                             *sanitized-game-name*)))
-               *table-indices*))
+        (load-data-tables *table-indices*)
 
         (unwind-protect
              (progn

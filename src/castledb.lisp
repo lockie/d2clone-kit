@@ -13,8 +13,10 @@
                         :keyword-normalizer #'string-upcase
                         :normalize-all t))
                      :sheets)
+    :with priorities := (make-hash :test #'eq :size (length (the list sheets)))
     :with result := (make-hash :test #'eq :size (length (the list sheets)))
     :for sheet :in sheets
+    :for priority := (getf (getf sheet :props) :priority 0)
     :for columns := (getf sheet :columns)
     :for column-processors :=
        (loop :for column :in columns
@@ -29,15 +31,16 @@
                                     (with-input-from-string (s text)
                                       (read s)))))))
     :for lines := (getf sheet :lines)
-    :do (setf (gethash
-               (make-keyword
-                (string-upcase
-                 (substitute #\- #\_ (getf sheet :name))))
-               result)
+    :for sheet-name := (make-keyword
+                        (string-upcase
+                         (substitute #\- #\_ (getf sheet :name))))
+    :do (setf (gethash sheet-name result)
               (dolist (line lines lines)
                 (doplist (column value line)
                          (setf (getf line column)
                                (funcall
                                 (the function (getf column-processors column))
-                                value)))))
-    :finally (return result)))
+                                value))))
+              (gethash sheet-name priorities)
+              priority)
+    :finally (return (values result priorities))))

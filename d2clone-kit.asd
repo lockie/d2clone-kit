@@ -63,7 +63,7 @@
                                         "castledb" "data-tables" "player-system"
                                         "ui-system"))
                (:file "data-tables"
-                :depends-on ("log"))
+                :depends-on ("log" "fs"))
                (:file "debug-system"
                 :depends-on ("components" "systems" "renderer"
                                           "growable-vector"))

@@ -41,6 +41,7 @@
   (declare (ignore data))
   (funcall *enumerate-directory-callback* directory file))
 
+;; TODO : perhaps add required extension optional/keyword arg
 (defmacro enumerate-directory (dir &body body)
   "Enumerates directory DIR. Executes BODY for each file with corresponding
 variables DIRECTORY and FILE bound."
