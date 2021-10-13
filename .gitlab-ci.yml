@@ -6,7 +6,7 @@ before_script:
   - apt-get install -y --no-install-recommends ca-certificates bzip2 curl ecl
     gcc git liballegro-acodec5-dev liballegro-audio5-dev liballegro-image5-dev
     liballegro-dialog5-dev liballegro-ttf5-dev liballegro-physfs5-dev
-    liballegro-video5-dev libffi-dev libc-dev make netbase pkg-config sbcl
+    liballegro-video5-dev libffi7 libffi-dev libc-dev make netbase pkg-config sbcl
   - curl -sO https://beta.quicklisp.org/quicklisp.lisp
   - echo "(quicklisp-quickstart:install) (ql-util:without-prompting (ql:add-to-init-file))" | sbcl --load quicklisp.lisp
 
