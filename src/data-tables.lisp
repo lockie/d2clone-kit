@@ -53,7 +53,7 @@ See *DATA-TABLES*"
         (all-priorities (make-hash :test #'eq)))
     (enumerate-directory "tables"
       (when (uiop:string-suffix-p file ".cdb")
-        (log-info "Loading ~a data table" file)
+        (log-info "Loading data table ~a" file)
         (multiple-value-bind (tables priorities)
             (load-castledb-tables
              (make-instance 'character-stream
