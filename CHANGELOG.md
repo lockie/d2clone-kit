@@ -10,6 +10,8 @@ and this project adheres to
 - SYSTEM-REF helper re-added for loose coupling reasons.
 - Priorities of CastleDB tables.
 - Default value for font configuration variable.
+- Interactive restarts for ENSURE-LOADED to specify another file name
+  and retry loading.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.

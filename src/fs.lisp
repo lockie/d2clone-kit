@@ -86,17 +86,38 @@ variables DIRECTORY and FILE bound."
   (when (zerop (physfs-deinit))
     (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
 
-(declaim #-d2c-debug (inline ensure-loaded))
+(declaim (ftype (function (string) string) prompt-for-string))
+(defun prompt-for-string (prompt)
+  "Prompts for a string value from *QUERY-IO*. To be used with interactive
+restarts."
+  (format *query-io* prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
+
+(declaim (ftype (function (function string &rest t) cffi:foreign-pointer)
+                ensure-loaded))
 (defun ensure-loaded (load-fn file-name &rest rest)
   "Calls LOAD-FN (which could be #'AL:LOAD-BITMAP, #'AL:LOAD-SAMPLE or
 similar) with the FILE-NAME argument and REST arguments, if any.  If the
-result of calling of LOAD-FN is null pointer, then the error is raised.
-Otherwise, it is returned."
-  ;; TODO : restarts to get desired filename
-  (let ((file (apply load-fn file-name rest)))
-    (if (cffi:null-pointer-p file)
-        (error "failed to open '~a'" file-name)
-        file)))
+result of calling of LOAD-FN is not a null pointer, it is returned. Otherwise
+the error is raised, with interactive restart allowing to specify another
+filename."
+  (values
+   (restart-case
+       (let ((file (apply load-fn file-name rest)))
+         (if (cffi:null-pointer-p file)
+             (error "failed to load '~a'" file-name)
+             file))
+     (specify-filename (new-file-name)
+       :report "Specify another file name."
+       :interactive (lambda ()
+                      (list
+                       (prompt-for-string
+                        "Please specify another file name: ")))
+       (apply #'ensure-loaded load-fn new-file-name rest))
+     (retry-loading ()
+       :report "Retry loading."
+       (apply #'ensure-loaded load-fn file-name rest)))))
 
 (declaim
  #-d2c-debug (inline sanitize-filename)
