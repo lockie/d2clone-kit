@@ -83,10 +83,6 @@ weapon."
                     (with-combat entity ()
                       (let ((damage (+ min-damage
                                        (random (- max-damage min-damage)))))
-                        ;; TODO (#49): add impact sound component on entity
-                        ;; being attacked. Get it from a table (weapon class,
-                        ;; armor class) -> sound prefab. Get armor class from
-                        ;; call to layer-property?..
                         (make-component
                          *sound-system* entity
                          :prefab (table-value-ref

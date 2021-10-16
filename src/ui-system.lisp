@@ -120,7 +120,6 @@ different windows."
                       :instance system
                       :read-only nil)
       (with-system-config-options ((display-font display-width display-height))
-      ;; TODO : better error message
         (let ((font-name (format nil "fonts/~a" display-font)))
           (setf
            ;; TODO : unhardcode font sizes

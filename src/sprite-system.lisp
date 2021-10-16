@@ -237,7 +237,6 @@ ENTITY. Returns NIL of no such property exists."
        (return layer-bitmaps)))
 
 (defun load-sprite-frame-data (ase-file layer-names total-stance-length)
-  ;; TODO : also support layer userdata
   (loop
     :with result := (make-hash :test #'eq
                                :init-format :keychain
@@ -313,7 +312,6 @@ ENTITY. Returns NIL of no such property exists."
          (layer-bitmaps (load-sprite-layers
                          ase-file layer-names total-stance-length directions))
          (layers (make-hash
-                  ;; TODO do I need :size here?
                   :size (length layer-names) :test #'eq :init-format :keychain
                   :initial-contents layer-names :init-data layer-bitmaps)))
     (make-sprite-prefab
