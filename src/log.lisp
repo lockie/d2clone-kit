@@ -5,6 +5,8 @@
           (merge-pathnames
            (make-pathname :name "log" :type "txt")
            data-dir)))
+    ;; TODO : wait for liballegro 5.2.8 to release and then call
+    ;;  al_register_trace_handler to handle output to both stdout & logfile
     (setf (uiop:getenv "ALLEGRO_TRACE")
           (namestring log-file)))
   (al:set-config-value (al:get-system-config) "trace" "lines" "0")
