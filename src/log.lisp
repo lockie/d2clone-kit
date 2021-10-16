@@ -7,6 +7,7 @@
            data-dir)))
     (setf (uiop:getenv "ALLEGRO_TRACE")
           (namestring log-file)))
+  (al:set-config-value (al:get-system-config) "trace" "lines" "0")
   (al:set-config-value (al:get-system-config) "trace" "level" level))
 
 (cffi:defcfun ("_al_trace_prefix" trace-prefix) :boolean
@@ -34,9 +35,7 @@ functions."
 (defun %trace (level message args)
   (flet
       ((do-trace (level function-name message)
-         (when (trace-prefix
-                "d2clone-kit" level (file-namestring (or (uiop:argv0) "")) 0
-                function-name)
+         (when (trace-prefix "d2clone-kit" level "" 0 function-name)
            (loop :with finalized-message := (format nil "~a~%" message)
                  :with length := (length finalized-message)
                  :for i :of-type fixnum :from 0 :to length :by 1024

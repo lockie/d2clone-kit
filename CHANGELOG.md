@@ -16,6 +16,7 @@ and this project adheres to
 - Changed inlined functions to be uninlined in debug mode.
 - Load all CastleDB .cdb files instead of the one specific for the game.
 - Improved error handling of .cdb file loading.
+- Removed source file and line output from log.
 
 ### Removed
 

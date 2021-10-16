@@ -100,6 +100,8 @@
              (make-pathname :directory `(:relative ,*sanitized-game-name*))
              (uiop:xdg-data-home))))
       (ensure-directories-exist data-dir)
+      ;; TODO : ability to set level e.g. by command line variable
+      ;;  (it is not possible through config because of "deadlock")
       (init-log data-dir)
       (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (al:set-app-name *sanitized-game-name*)
