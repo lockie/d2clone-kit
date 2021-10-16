@@ -15,6 +15,7 @@
 (declaim (type growable-vector *event-queue*))
 (global-vars:define-global-var *event-queue* (make-growable-vector))
 
+;; TODO : better name, we already have allegro events
 (defun process-events ()
   "Processes events collected in event queue by systems."
   (loop :with i :of-type array-index := 0

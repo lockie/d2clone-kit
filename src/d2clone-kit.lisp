@@ -24,44 +24,49 @@
   (gc :full t)
   (log-info "Starting game loop")
   (livesupport:setup-lisp-repl)
-  (with-system-config-options ((display-vsync display-fps))
-    (let* ((vsync display-vsync)
-           (renderer (make-renderer))
-           (last-tick (al:get-time))
-           (last-repl-update last-tick))
-      (cffi:with-foreign-object (event '(:union al:event))
-        (sleep 0.016)
-        ;; TODO : restart to continue loop from the next iteration
-        (loop :do
-          (nk:with-input (ui-context)
-            (unless (loop :while (al:get-next-event event-queue event)
-                          :always (or (ui-handle-event event)
-                                      (systems-handle-event event)))
-              (loop-finish)))
-          (process-events)
-          (let ((current-tick (al:get-time)))
-            (when (> (- current-tick last-repl-update) repl-update-interval)
-              (livesupport:update-repl-link)
-              (setf last-repl-update current-tick))
-            (when display-fps
-              ;; TODO : smooth FPS counter, like in allegro examples
-              (add-debug-text :fps "FPS: ~d"
-                              (round 1 (- current-tick last-tick))))
-            (setf *delta-time* (- current-tick last-tick))
-            (process-actions)
-            (with-systems sys
-              ;; TODO : replace system-update with event?.. maybe even
-              ;; system-draw too?..
-              (system-update sys))
-            (with-systems sys
-              (system-draw sys renderer))
-            (al:clear-to-color (al:map-rgb 0 0 0))
-            (do-draw renderer)
-            (setf last-tick current-tick))
-          (when vsync
-            (setf vsync (al:wait-for-vsync)))
-          (nk:allegro-render)
-          (al:flip-display))))))
+  (uiop:nest
+   (with-system-config-options ((display-vsync display-fps)))
+   (let* ((vsync display-vsync)
+          (renderer (make-renderer))
+          (last-tick (al:get-time))
+          (last-repl-update last-tick)))
+   (cffi:with-foreign-object (event '(:union al:event))
+     (sleep 0.016)
+     (loop
+       :do (restart-case
+               (progn
+                 (nk:with-input (ui-context)
+                   (unless (loop :while (al:get-next-event event-queue event)
+                                 :always (or (ui-handle-event event)
+                                             (systems-handle-event event)))
+                     (loop-finish)))
+                 (process-events)
+                 (let ((current-tick (al:get-time)))
+                   (when (> (- current-tick last-repl-update)
+                            repl-update-interval)
+                     (livesupport:update-repl-link)
+                     (setf last-repl-update current-tick))
+                   (setf *delta-time* (- current-tick last-tick))
+                   (when display-fps
+                     ;; TODO : smooth FPS counter, like in allegro examples
+                     (add-debug-text :fps "FPS: ~d" (round 1 *delta-time*)))
+                   (process-actions)
+                   (with-systems sys
+                     ;; TODO : replace system-update with event?.. maybe even
+                     ;; system-draw too?..
+                     (system-update sys))
+                   (with-systems sys
+                     (system-draw sys renderer))
+                   (al:clear-to-color (al:map-rgb 0 0 0))
+                   (do-draw renderer)
+                   (setf last-tick current-tick))
+                 (when vsync
+                   (setf vsync (al:wait-for-vsync)))
+                 (nk:allegro-render)
+                 (al:flip-display))
+             (next-iteration ()
+               :report "Proceed to next game loop iteration."
+               nil))))))
 
 (defvar *game-name*)
 (defvar *sanitized-game-name*)

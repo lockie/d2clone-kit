@@ -12,6 +12,7 @@ and this project adheres to
 - Default value for font configuration variable.
 - Interactive restarts for ENSURE-LOADED to specify another file name
   and retry loading.
+- Interactive restart for game loop to proceed to next iteration.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.
