@@ -25,6 +25,7 @@ and this project adheres to
 
 ### Fixed
 - Fixed compilation warnings, slightly improving performance.
+- Minor performance improvements in game loop.
 
 ## [0.1.1] - 2021-08-07
 ### Added

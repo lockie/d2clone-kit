@@ -19,7 +19,11 @@
       (process-event system allegro-event))
     (not (eq type :display-close))))
 
-(defunl game-loop (event-queue &key (repl-update-interval 0.3))
+(declaim
+ (ftype
+  (function (cffi:foreign-pointer &key (:repl-update-interval double-float)))
+  game-loop))
+(defunl game-loop (event-queue &key (repl-update-interval 0.3d0))
   "Runs game loop."
   (gc :full t)
   (log-info "Starting game loop")
@@ -28,7 +32,7 @@
    (with-system-config-options ((display-vsync display-fps)))
    (let* ((vsync display-vsync)
           (renderer (make-renderer))
-          (last-tick (al:get-time))
+          (last-tick (the double-float (al:get-time)))
           (last-repl-update last-tick)))
    (cffi:with-foreign-object (event '(:union al:event))
      (sleep 0.016)
@@ -41,7 +45,7 @@
                                              (systems-handle-event event)))
                      (loop-finish)))
                  (process-events)
-                 (let ((current-tick (al:get-time)))
+                 (let ((current-tick (the double-float (al:get-time))))
                    (when (> (- current-tick last-repl-update)
                             repl-update-interval)
                      (livesupport:update-repl-link)
