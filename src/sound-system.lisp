@@ -38,7 +38,7 @@
  (ftype (function (fixnum)) set-sound-position))
 (defun set-sound-position (entity)
   ;; TODO : use al_set_sample_instance_channel_matrix for 5.1 sound?..
-  (when (has-component-p :coordinate entity)
+  (when (%has-component-p *coordinate-system* entity)
     (with-sound entity ()
       (with-coordinate entity ()
         (with-camera (camera-x camera-y)

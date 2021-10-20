@@ -510,7 +510,7 @@ clockwise."
                     (add-sprite-to-batch
                      (gethash layer layer-batches)
                      (+ y (truncate *tile-height* -2)
-                        (if (and (has-component-p :hp entity)
+                        (if (and (%has-component-p *hp-system* entity)
                                  (deadp entity))
                             (- (coerce (/ display-height *tile-height*)
                                        'double-float))

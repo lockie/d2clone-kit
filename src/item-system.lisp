@@ -44,7 +44,7 @@
 
 (defmethod make-component ((system item-system) entity &rest parameters)
   (destructuring-bind (&key type) parameters
-    (when (has-component-p :coordinate entity)
+    (when (%has-component-p *coordinate-system* entity)
       (with-system-slots ((map) :of item-system :instance system)
         (with-coordinate entity ()
           ;; TODO : consider character size (#21)
