@@ -26,6 +26,9 @@ and this project adheres to
 ### Fixed
 - Fixed compilation warnings, slightly improving performance.
 - Minor performance improvements in game loop.
+- Fixed bug causing broken lisp image stuck at "filesystem already
+  initialized" error when there was a condition in system
+  initialization.
 
 ## [0.1.1] - 2021-08-07
 ### Added

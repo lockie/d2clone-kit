@@ -39,7 +39,9 @@ See MAKE-PREFAB-COMPONENT"))
  (ftype (function (keyword fixnum) boolean) has-component-p))
 (defun has-component-p (system entity)
   "Returns T when ENTITY has the SYSTEM's component in it."
-  (%has-component-p (gethash system *systems*) entity))
+  (if-let (system-instance (gethash system *systems*))
+    (%has-component-p system-instance entity)
+    nil))
 
 (defmacro defsoa (name &rest slots)
   "Defines structure-of-arrays with NAME and SLOTS and corresponding accessors."
