@@ -101,8 +101,7 @@ Also only integer map coordinates allowed for map chunks, otherwise the screen
                        (tiled-tileset-name tileset)
                        tile-width tile-height))
                     (unless (= tile-width (* 2 tile-height))
-                      (error "~s: wrong tileset size ~dx~d 
-(expected aspect ratio 2:1)"
+                      (error "~s: wrong tileset size ~dx~d (expected to be 2:1)"
                              (tiled-tileset-name tileset)
                              tile-width tile-height))
                     (setf *tile-width* tile-width)
