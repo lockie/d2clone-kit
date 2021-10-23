@@ -86,6 +86,7 @@
     #:game-loop
     #:new-game
     #:game-started-p
+    #:package-version
     #:start-engine
     #:demo)
    ;; data-tables.lisp

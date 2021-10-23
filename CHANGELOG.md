@@ -13,6 +13,7 @@ and this project adheres to
 - Interactive restarts for ENSURE-LOADED to specify another file name
   and retry loading.
 - Interactive restart for game loop to proceed to next iteration.
+- PACKAGE-VERSION helper to get package versions from asdf.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.

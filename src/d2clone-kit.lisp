@@ -97,9 +97,15 @@
   ;; HACK
   (entity-valid-p (player-system-entity *player-system*)))
 
-;; TODO : make this into exported macro (the same trick used in dld)
-(defconstant +engine-version+
-  (slot-value (asdf:find-system :d2clone-kit) 'asdf:version))
+(declaim
+ (ftype (function (string (or character symbol string)) (or string nil))
+        package-version))
+(defun package-version (format package)
+  "Returns the PACKAGE version from asdf formatted according to FORMAT. If the
+package does not exist, then retuns NIL."
+  (values
+   (when-let (package-instance (asdf:find-system package nil))
+     (format nil format (slot-value package-instance 'asdf:version)))))
 
 (cffi:defcallback run-engine :int ((argc :int) (argv :pointer))
   (declare (ignore argc argv))
@@ -114,7 +120,8 @@
       (init-log data-dir)
       (al:set-app-name *sanitized-game-name*)
       (al:init)
-      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
+      (log-info "Starting d2clone-kit engine ~a"
+                (package-version "v~a" :d2clone-kit))
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
