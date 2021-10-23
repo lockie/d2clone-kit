@@ -103,9 +103,9 @@
              (uiop:xdg-data-home))))
       (ensure-directories-exist data-dir)
       (init-log data-dir)
-      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (al:set-app-name *sanitized-game-name*)
       (al:init)
+      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
