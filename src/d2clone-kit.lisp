@@ -98,7 +98,7 @@
   (entity-valid-p (player-system-entity *player-system*)))
 
 (declaim
- (ftype (function (string (or character symbol string)) (or string nil))
+ (ftype (function (string (or character symbol string)) (or string null))
         package-version))
 (defun package-version (format package)
   "Returns the PACKAGE version from asdf formatted according to FORMAT. If the
