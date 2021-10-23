@@ -112,9 +112,9 @@
       ;; TODO : ability to set level e.g. by command line variable
       ;;  (it is not possible through config because of "deadlock")
       (init-log data-dir)
-      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (al:set-app-name *sanitized-game-name*)
       (al:init)
+      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
