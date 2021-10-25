@@ -1,4 +1,4 @@
-image: debian:testing-slim
+image: debian:bullseye-slim
 
 before_script:
   - export DEBIAN_FRONTEND="noninteractive"
@@ -41,8 +41,7 @@ sblint:
     - curl -Ls --output roswell.deb --output-dir /tmp https://github.com/roswell/roswell/releases/download/v21.05.14.109/roswell_21.05.14.109-1_amd64.deb
     - dpkg -i /tmp/roswell.deb
     - ros install cxxxr/sblint lockie/d2clone-kit
-    # TODO use tee command to see sblint output
-    - bash -c "{ /root/.roswell/bin/sblint . || :; } | python3 sblint2codeclimate.py"
+    - bash -c "{ /root/.roswell/bin/sblint . || :; } | tee /dev/stderr | python3 sblint2codeclimate.py"
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
