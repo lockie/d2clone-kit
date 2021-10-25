@@ -21,16 +21,6 @@
   (x nil :type double-float)
   (y nil :type double-float))
 
-(defmethod make-component ((system coordinate-system) entity &rest parameters)
-  (destructuring-bind (&key x y iso-x iso-y) parameters
-    (cond
-      ((and x y)
-       (make-coordinate entity :x x :y y))
-      ((and iso-x iso-y)
-       (multiple-value-bind (x y)
-           (isometric->orthogonal iso-x iso-y)
-         (make-coordinate entity :x x :y y))))))
-
 (declaim
  #-d2c-debug (inline orthogonal->isometric)
  (ftype (function (double-float double-float)
@@ -52,6 +42,16 @@
   (values
    (+ y (* 0.5d0 x))
    (- y (* 0.5d0 x))))
+
+(defmethod make-component ((system coordinate-system) entity &rest parameters)
+  (destructuring-bind (&key x y iso-x iso-y) parameters
+    (cond
+      ((and x y)
+       (make-coordinate entity :x x :y y))
+      ((and iso-x iso-y)
+       (multiple-value-bind (x y)
+           (isometric->orthogonal iso-x iso-y)
+         (make-coordinate entity :x x :y y))))))
 
 (declaim
  #-d2c-debug (inline isometric->orthogonal*)
