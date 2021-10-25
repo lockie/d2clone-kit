@@ -41,6 +41,9 @@ The entry point to the game, should it be ~d2clone-kit:demo~ or other kind of ~m
   "Runs built-in engine demo."
   (start-engine
    "demo"
+   ;; TODO : load that from map file!
+   ;; TODO : also store initial player position in the file
+   ;;  (or some kind of "entrypoint" or "spawnpoint")
    '(((:camera)
       (:coordinate :x 0d0 :y 0d0))
      ((:player)
@@ -147,10 +150,13 @@ Next, we initialize core liballegro facilities: logging, the library itself, fil
 
 #+NAME: run-engine-3
 #+BEGIN_SRC lisp
+      ;; TODO : ability to set level e.g. by command line variable
+      ;;  (it is not possible through config because of "deadlock")
       (init-log data-dir)
-      (log-info "Starting d2clone-kit engine v~a" +engine-version+)
       (al:set-app-name *sanitized-game-name*)
       (al:init)
+      (log-info "Starting d2clone-kit engine ~a"
+                (package-version "v~a" :d2clone-kit))
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
@@ -160,7 +166,7 @@ Afterwards, we initialize various liballegro addons:
 
 #+NAME: run-engine-4
 #+BEGIN_SRC lisp
-    ;; TODO : proper recover from those errors
+    ;; TODO : proper recover from those errors (properly finalize)+retry restart
     (unless (al:init-primitives-addon)
       (error "Initializing primitives addon failed"))
     (unless (al:init-image-addon)
@@ -227,7 +233,7 @@ After that, we create the display and initialize various liballegro event source
 
 #+END_SRC
 
-A few more tweaks, related to the accelerated bitmaps in video memory, random number generator and the data tables containing various game-specific values:
+A few more tweaks, related to the accelerated bitmaps in video memory and random number generator:
 
 #+NAME: run-engine-8
 #+BEGIN_SRC lisp
@@ -235,22 +241,17 @@ A few more tweaks, related to the accelerated bitmaps in video memory, random nu
 
         (setf *random-state* (make-random-state t))
 
-        (setf *data-tables*
-              (build-data-tables
-               (load-castledb-tables
-                (make-instance 'character-stream
-                               :path (format nil "tables/~a.cdb"
-                                             *sanitized-game-name*)))
-               *table-indices*))
-
 #+END_SRC
 
-And finally, we can prepare and start the game loop. First, we initialize the ECS subsystem of the engine with a call to ~initialize-systems~, and then call ~game-loop~ function within the confines of ~unwind-protect~ which handles proper finalization of the engine:
+And finally, we can prepare and start the game loop.
+
+First, we initialize the data tables containing various game-specific values from the =*.cdb= resource files they're stored in by the call to ~load-data-tables~. Next, we initialize the ECS subsystem of the engine with a call to ~initialize-systems~, and then call ~game-loop~ function within the confines of ~unwind-protect~ which handles proper finalization of the engine:
 
 #+NAME: run-engine-9
 #+BEGIN_SRC lisp
         (unwind-protect
              (progn
+               (load-data-tables *table-indices*)
                (initialize-systems)
                (game-loop event-queue))
           (log-info "Shutting engine down")
@@ -283,49 +284,61 @@ And finally, we can prepare and start the game loop. First, we initialize the EC
 
 #+NAME: game-loop
 #+BEGIN_SRC lisp
-(defunl game-loop (event-queue &key (repl-update-interval 0.3))
+(declaim
+ (ftype
+  (function (cffi:foreign-pointer &key (:repl-update-interval double-float)))
+  game-loop))
+(defunl game-loop (event-queue &key (repl-update-interval 0.3d0))
   "Runs game loop."
   (gc :full t)
   (log-info "Starting game loop")
   (livesupport:setup-lisp-repl)
-  (with-system-config-options ((display-vsync display-fps))
-    (let* ((vsync display-vsync)
-           (renderer (make-renderer))
-           (last-tick (al:get-time))
-           (last-repl-update last-tick))
-      (cffi:with-foreign-object (event '(:union al:event))
-        (sleep 0.016)
-        ;; TODO : restart to continue loop from the next iteration
-        (loop :do
-          (nk:with-input (ui-context)
-            (unless (loop :while (al:get-next-event event-queue event)
-                          :always (or (ui-handle-event event)
-                                      (systems-handle-event event)))
-              (loop-finish)))
-          (process-events)
-          (let ((current-tick (al:get-time)))
-            (when (> (- current-tick last-repl-update) repl-update-interval)
-              (livesupport:update-repl-link)
-              (setf last-repl-update current-tick))
-            (when display-fps
-              ;; TODO : smooth FPS counter, like in allegro examples
-              (add-debug-text :fps "FPS: ~d"
-                              (round 1 (- current-tick last-tick))))
-            (setf *delta-time* (- current-tick last-tick))
-            (process-actions)
-            (with-systems sys
-              ;; TODO : replace system-update with event?.. maybe even
-              ;; system-draw too?..
-              (system-update sys))
-            (with-systems sys
-              (system-draw sys renderer))
-            (al:clear-to-color (al:map-rgb 0 0 0))
-            (do-draw renderer)
-            (setf last-tick current-tick))
-          (when vsync
-            (setf vsync (al:wait-for-vsync)))
-          (nk:allegro-render)
-          (al:flip-display))))))
+  (uiop:nest
+   (with-system-config-options ((display-vsync display-fps)))
+   (let* ((vsync display-vsync)
+          (renderer (make-renderer))
+          (last-tick (the double-float (al:get-time)))
+          (last-repl-update last-tick)))
+   (cffi:with-foreign-object (event '(:union al:event))
+     (sleep 0.016)
+     (loop
+       :do (restart-case
+               (progn
+                 (nk:with-input (ui-context)
+                   (unless (loop :while (al:get-next-event event-queue event)
+                                 :always (or (ui-handle-event event)
+                                             (systems-handle-event event)))
+                     (loop-finish)))
+                 (process-events)
+                 (let ((current-tick (the double-float (al:get-time))))
+                   (when (> (- current-tick last-repl-update)
+                            repl-update-interval)
+                     (livesupport:update-repl-link)
+                     (setf last-repl-update current-tick))
+                   (setf *delta-time* (- current-tick last-tick))
+                   ;; TODO : draw FPS counter above the UI
+                   (when display-fps
+                     ;; TODO : smooth FPS counter, like in allegro examples
+                     (add-debug-text :fps "FPS: ~d" (round 1 *delta-time*)))
+                   (process-actions)
+                   ;; TODO : use separate threads for updating?..
+                   (with-systems sys
+                     ;; TODO : replace system-update with event?.. maybe even
+                     ;; system-draw too?..
+                     (system-update sys))
+                   (with-systems sys
+                     (system-draw sys renderer))
+                   (al:clear-to-color (al:map-rgb 0 0 0))
+                   (do-draw renderer)
+                   (setf last-tick current-tick))
+                 (when vsync
+                   (setf vsync (al:wait-for-vsync)))
+                 (nk:allegro-render)
+                 (al:flip-display))
+             ;; TODO restart to terminate the loop
+             (next-iteration ()
+               :report "Proceed to next game loop iteration."
+               nil))))))
 #+END_SRC
 
 * Logging
