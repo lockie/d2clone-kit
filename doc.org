@@ -76,9 +76,18 @@ The entry point to the game, should it be ~d2clone-kit:demo~ or other kind of ~m
 
 * Engine
 
-To start the engine, we save the arguments passed to ~start-engine~ to dynamic variables (to properly pass it to CFFI callback we'll discuss in a moment).
+To start the engine, we'll save the arguments passed to ~start-engine~ to dynamic variables defined above to properly pass it to CFFI callback we'll discuss in a moment:
 
-Then we use ~float-features:with-float-traps-masked~ from Shinmera's [[https://shinmera.github.io/float-features][float-features]] library to stop Lisp popping up with floating point errors (like e.g. [[https://en.wikipedia.org/wiki/Arithmetic_underflow][underflow]]) which are usual (and often ignored) in C world.
+#+NAME: callback-globals
+#+BEGIN_SRC lisp
+(defvar *game-name*)
+(defvar *sanitized-game-name*)
+(defvar *new-game-object-specs*)
+(defvar *config-options*)
+(defvar *table-indices*)
+#+END_SRC
+
+Then we use ~float-features:with-float-traps-masked~ from Shinmera's [[https://shinmera.github.io/float-features][float-features]] library to stop Lisp popping up with floating point errors (like e.g. [[https://en.wikipedia.org/wiki/Arithmetic_underflow][underflow]]) which are usual (and by default ignored) in C world.
 
 Finally, we call [[https://liballeg.org/a5docs/trunk/misc.html#al_run_main][al:run-main]] from liballegro with the ~run-engine~ [[https://common-lisp.net/project/cffi/manual/html_node/defcallback.html][CFFI callback]]; this is required in order for the game to be able to run under MacOS with its weird main thread rules.
 
@@ -114,7 +123,7 @@ See BUILD-DATA-TABLES"
   (with-condition-reporter
 #+END_SRC
 
-This macro executes a block of code, and if it triggers an unhandled condition, it displays nice GUI dialog with [[https://liballeg.org/a5docs/trunk/native_dialog.html#al_show_native_message_box][al:show-native-message-box]] with its description and nice reference to the original Diablo 2 error message. Of course this only happens when you're not running your Lisp under debugger. Also, this macro puts condition description as well as full backtrace to liballegro log.
+This macro executes a block of code, and if it triggers an unhandled condition, it displays nice GUI dialog with [[https://liballeg.org/a5docs/trunk/native_dialog.html#al_show_native_message_box][al:show-native-message-box]] displaying its description and good old "Hey guys" error message. Of course this only happens when you're not running your Lisp under debugger. Also, this macro puts condition description as well as full backtrace to liballegro log.
 
 #+NAME: with-condition-reporter
 #+BEGIN_SRC lisp
@@ -160,6 +169,21 @@ Next, we initialize core liballegro facilities: logging, the library itself, fil
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
+#+END_SRC
+
+Right after logging is initialized, we emit a newborn cry - the very first log line, reporting engine version by using the following nice helper function which tries to get given package version from [[https://common-lisp.net/project/asdf/][ASDF]]:
+
+#+NAME: package-version
+#+BEGIN_SRC lisp
+(declaim
+ (ftype (function (string (or character symbol string)) (or string null))
+        package-version))
+(defun package-version (format package)
+  "Returns the PACKAGE version from asdf formatted according to FORMAT. If the
+package does not exist, then retuns NIL."
+  (values
+   (when-let (package-instance (asdf:find-system package nil))
+     (format nil format (slot-value package-instance 'asdf:version)))))
 #+END_SRC
 
 Afterwards, we initialize various liballegro addons:
@@ -282,8 +306,29 @@ First, we initialize the data tables containing various game-specific values fro
 
 * Game loop
 
+TODO
+
 #+NAME: game-loop
 #+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline ui-handle-event)
+ (ftype (function (cffi:foreign-pointer) boolean) ui-handle-event))
+(defun ui-handle-event (event)
+  (and (ui-on-p)
+       (positive-fixnum-p (the fixnum (nk:allegro-handle-event event)))))
+
+(declaim
+ #-d2c-debug (inline systems-handle-event)
+ (ftype (function (cffi:foreign-pointer) boolean) systems-handle-event))
+(defun systems-handle-event (event)
+  (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
+         (allegro-event (make-allegro-event :type type :struct event)))
+    ;; NOTE : processing allegro event without queueing, because event struct
+    ;; is stack allocated
+    (with-systems system
+      (process-event system allegro-event))
+    (not (eq type :display-close))))
+
 (declaim
  (ftype
   (function (cffi:foreign-pointer &key (:repl-update-interval double-float)))
@@ -341,6 +386,39 @@ First, we initialize the data tables containing various game-specific values fro
                nil))))))
 #+END_SRC
 
+* Game session
+
+There are a couple more functions defined in =d2clone-kit.lisp= file, and they both are related to the game session and both called only from GUI scripts.
+
+First one, ~new-game~ initializes a new game by recreating ~*session-entity*~, which is the parent of all entities created in the game session (we'll delve into entities in a few). It also clears the event queue.
+
+#+NAME: new-game
+#+BEGIN_SRC lisp
+(defun new-game ()
+  "Starts new game."
+  (log-info "Starting new game")
+  (when (entity-valid-p *session-entity*)
+    (delete-entity *session-entity*))
+  (growable-vector-clear *event-queue*)
+  (setf (player-system-last-target *player-system*) +invalid-entity+)
+  (setf *session-entity* (make-entity))
+  (dolist (spec *new-game-object-specs*)
+    (make-object spec *session-entity*)))
+#+END_SRC
+
+The second one, ~game-started-p~ returns boolean indicating whether there currently is an active gameplay session.
+
+#+NAME: game-started-p
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline game-started-p)
+ (ftype (function () boolean) game-started-p))
+(defun game-started-p ()
+  "Returns boolean indicating whether the game session is currently running."
+  ;; HACK
+  (entity-valid-p (player-system-entity *player-system*)))
+#+END_SRC
+
 * Logging
 
 ~defunl~ is the simple macro wrapper over standard ~defun~, which puts the function name to the dynamic variable ~*function-name*~.
@@ -394,6 +472,14 @@ d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDE
 <<preamble>>
 
 <<game-loop>>
+
+<<callback-globals>>
+
+<<new-game>>
+
+<<game-started-p>>
+
+<<package-version>>
 
 <<run-engine-1>>
 <<run-engine-2>>
