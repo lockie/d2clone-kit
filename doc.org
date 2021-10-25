@@ -153,6 +153,7 @@ Next, we initialize core liballegro facilities: logging, the library itself, fil
       (al:init)
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
+
 #+END_SRC
 
 Afterwards, we initialize various liballegro addons:
@@ -173,6 +174,7 @@ Afterwards, we initialize various liballegro addons:
       (error "Initializing audio codec addon failed"))
     (unless (al:restore-default-mixer)
       (error "Initializing default audio mixer failed"))
+
 #+END_SRC
 
 Then we set the configuration variables that might've been set in call to ~start-engine~:
@@ -183,6 +185,7 @@ Then we set the configuration variables that might've been set in call to ~start
       (apply #'(setf config) val
              (mapcar #'make-keyword
                      (uiop:split-string (string key) :separator '(#\-)))))
+
 #+END_SRC
 
 Next, we setup various display parameters, such as width and height of the viewport and multisampling.
@@ -199,6 +202,7 @@ Next, we setup various display parameters, such as width and height of the viewp
       (unless (zerop display-multisampling)
         (al:set-new-display-option :sample-buffers 1 :require)
         (al:set-new-display-option :samples display-multisampling :require))
+
 #+END_SRC
 
 After that, we create the display and initialize various liballegro event sources, so that we can process the events in our game loop:
@@ -220,6 +224,7 @@ After that, we create the display and initialize various liballegro event source
         (setf *event-source* (cffi:foreign-alloc '(:struct al::event-source)))
         (al:init-user-event-source *event-source*)
         (al:register-event-source event-queue *event-source*)
+
 #+END_SRC
 
 A few more tweaks, related to the accelerated bitmaps in video memory, random number generator and the data tables containing various game-specific values:
@@ -237,6 +242,7 @@ A few more tweaks, related to the accelerated bitmaps in video memory, random nu
                                :path (format nil "tables/~a.cdb"
                                              *sanitized-game-name*)))
                *table-indices*))
+
 #+END_SRC
 
 And finally, we can prepare and start the game loop. First, we initialize the ECS subsystem of the engine with a call to ~initialize-systems~, and then call ~game-loop~ function within the confines of ~unwind-protect~ which handles proper finalization of the engine:
@@ -378,19 +384,12 @@ d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDE
 
 <<run-engine-1>>
 <<run-engine-2>>
-
 <<run-engine-3>>
-
 <<run-engine-4>>
-
 <<run-engine-5>>
-
 <<run-engine-6>>
-
 <<run-engine-7>>
-
 <<run-engine-8>>
-
 <<run-engine-9>>
 
 <<start-engine>>
