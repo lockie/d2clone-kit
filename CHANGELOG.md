@@ -14,6 +14,7 @@ and this project adheres to
   and retry loading.
 - Interactive restart for game loop to proceed to next iteration.
 - PACKAGE-VERSION helper to get package versions from asdf.
+- Ability to create coordinates component with :ISO-X and :ISO-Y arguments.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.
