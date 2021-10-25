@@ -51,10 +51,12 @@
                      (livesupport:update-repl-link)
                      (setf last-repl-update current-tick))
                    (setf *delta-time* (- current-tick last-tick))
+                   ;; TODO : draw FPS counter above the UI
                    (when display-fps
                      ;; TODO : smooth FPS counter, like in allegro examples
                      (add-debug-text :fps "FPS: ~d" (round 1 *delta-time*)))
                    (process-actions)
+                   ;; TODO : use separate threads for updating?..
                    (with-systems sys
                      ;; TODO : replace system-update with event?.. maybe even
                      ;; system-draw too?..
@@ -68,6 +70,7 @@
                    (setf vsync (al:wait-for-vsync)))
                  (nk:allegro-render)
                  (al:flip-display))
+             ;; TODO restart to terminate the loop
              (next-iteration ()
                :report "Proceed to next game loop iteration."
                nil))))))
@@ -125,7 +128,7 @@ package does not exist, then retuns NIL."
       (init-fs *sanitized-game-name* data-dir)
       (init-config))
 
-    ;; TODO : proper recover from those errors
+    ;; TODO : proper recover from those errors (properly finalize)+retry restart
     (unless (al:init-primitives-addon)
       (error "Initializing primitives addon failed"))
     (unless (al:init-image-addon)
@@ -230,6 +233,9 @@ See BUILD-DATA-TABLES"
   "Runs built-in engine demo."
   (start-engine
    "demo"
+   ;; TODO : load that from map file!
+   ;; TODO : also store initial player position in the file
+   ;;  (or some kind of "entrypoint" or "spawnpoint")
    '(((:camera)
       (:coordinate :x 0d0 :y 0d0))
      ((:player)

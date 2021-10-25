@@ -123,6 +123,8 @@ different windows."
         (let ((font-name (format nil "fonts/~a" display-font)))
           (setf
            ;; TODO : unhardcode font sizes
+           ;; TODO : have ENSURE-LOADED return second value - the name of the
+           ;; file actually loaded. use it here
            font-small (ensure-loaded #'al:load-ttf-font font-name -8 0)
            font-medium (ensure-loaded #'al:load-ttf-font font-name -12 0)
            font-large (ensure-loaded #'al:load-ttf-font font-name -20 0)

@@ -127,6 +127,7 @@ cursor position."
   (declare (notinline item-at)) ;; NOTE : avoiding circular dependency
   (block nil
     (with-system-config-options ((display-width display-height))
+      ;; TODO : draw orbs with Nuklear!?!
       (with-system-slots ((entity orb orb-fill orb-flare orb-tmp)
                           :of player-system :instance system)
         (unless (entity-valid-p entity) (return))
