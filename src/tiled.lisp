@@ -26,16 +26,19 @@
 
 (defstruct tiled-object
   (id nil :type fixnum :read-only t)
+  (name nil :type (or null string) :read-only t)
   (x nil :type fixnum :read-only t)
   (y nil :type fixnum :read-only t)
   (width nil :type (or null fixnum) :read-only t)
   (height nil :type (or null fixnum) :read-only t)
   (properties nil :type hash-table :read-only t)
-  (text nil :type (or null string) :read-only t))
+  (text nil :type (or null string) :read-only t)
+  (type nil :type keyword :read-only t))
 
 (defstruct tiled-map
   (format-version nil :type string :read-only t)
   (tiled-version nil :type string :read-only t)
+  ;; TODO : change symbol to keyword where appropriate
   (orientation nil :type symbol :read-only t)
   (render-order nil :type symbol :read-only t)
   (width nil :type fixnum :read-only t)
@@ -92,9 +95,11 @@
                 (gethash
                  (symbolize (xmlrep-attrib-value "name" property nil))
                  properties)
-                (parse-property-value
-                 (symbolize (xmlrep-attrib-value "type" property nil))
-                 (xmlrep-attrib-value "value" property nil)))))
+                (if-let (value (xmlrep-attrib-value "value" property nil))
+                  (parse-property-value
+                   (symbolize (xmlrep-attrib-value "type" property nil))
+                   value)
+                  (xmlrep-string-child property)))))
            properties))
        (parse-tiles-properties (tag)
          (let* ((tileset-tile-count (xmlrep-integer-attrib-value "tilecount"
@@ -183,6 +188,7 @@
        (parse-object (tag)
          (make-tiled-object
           :id (xmlrep-integer-attrib-value "id" tag)
+          :name (xmlrep-attrib-value "name" tag nil)
           :x (xmlrep-integer-attrib-value "x" tag)
           :y (xmlrep-integer-attrib-value "y" tag)
           :width (xmlrep-integer-attrib-value "width" tag)
@@ -190,7 +196,15 @@
           :properties (tag-properties tag)
           :text (if-let (text-tag (xmlrep-find-child-tag "text" tag nil))
                   (xmlrep-string-child text-tag nil)
-                  nil))))
+                  nil)
+          :type (if-let (object-type-child
+                         (remove-if
+                          #'(lambda (child-name)
+                              (or (string= child-name "properties")
+                                  (string= child-name "text")))
+                          (mapcar #'xmlrep-tag (xmlrep-children tag))))
+                  (symbolize (first object-type-child))
+                  :rectangle))))
     (let ((map-tag (parse stream)))
       (unless map-tag
         (error "Invalid tmx file."))
