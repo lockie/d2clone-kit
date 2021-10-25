@@ -322,33 +322,6 @@ And finally, we can prepare and start the game loop. First, we initialize the EC
           (al:flip-display))))))
 #+END_SRC
 
-#+BEGIN_SRC lisp :tangle d2clone-kit.lisp :noweb yes :exports none
-(in-package :d2clone-kit)
-
-<<game-loop>>
-
-<<run-engine-1>>
-<<run-engine-2>>
-
-<<run-engine-3>>
-
-<<run-engine-4>>
-
-<<run-engine-5>>
-
-<<run-engine-6>>
-
-<<run-engine-7>>
-
-<<run-engine-8>>
-
-<<run-engine-9>>
-
-<<start-engine>>
-
-<<demo>>
-#+END_SRC
-
 * Logging
 
 ~defunl~ is the simple macro wrapper over standard ~defun~, which puts the function name to the dynamic variable ~*function-name*~.
@@ -375,8 +348,58 @@ d2clone-kit I start-engine      [   0.00027] Starting d2clone-kit engine v0.1.2
 d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDEV/d2clone-kit/Resources to mount points
 #+END_EXAMPLE
 
-#+BEGIN_SRC lisp :tangle log.lisp :noweb yes :exports none
+* Tangling :noexport:
+#+NAME: preamble
+#+BEGIN_SRC lisp
+;;;; Copyright (C) 2020-2021 Andrew Kravchuk and contributors
+;;;;
+;;;; This program is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; This program is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;;; WARNING: DO NOT EDIT, AUTO-GENERATED CODE. Edit doc.org instead.
+
 (in-package :d2clone-kit)
+#+END_SRC
+
+#+BEGIN_SRC lisp :tangle d2clone-kit.lisp :noweb yes :exports none
+<<preamble>>
+
+<<game-loop>>
+
+<<run-engine-1>>
+<<run-engine-2>>
+
+<<run-engine-3>>
+
+<<run-engine-4>>
+
+<<run-engine-5>>
+
+<<run-engine-6>>
+
+<<run-engine-7>>
+
+<<run-engine-8>>
+
+<<run-engine-9>>
+
+<<start-engine>>
+
+<<demo>>
+#+END_SRC
+
+#+BEGIN_SRC lisp :tangle log.lisp :noweb yes :exports none
+<<preamble>>
 
 <<defunl>>
 
