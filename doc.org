@@ -64,7 +64,17 @@ We put all of engine's source code into ~:d2clone-kit~ package.
 #+BEGIN_SRC lisp :tangle d2clone-kit.lisp :noweb yes :exports none
 <<preamble>>
 
-<<game-loop>>
+<<ui-handle-event>>
+
+<<systems-handle-event>>
+
+<<game-loop-1>>
+<<game-loop-2>>
+<<game-loop-3>>
+<<game-loop-4>>
+<<game-loop-5>>
+<<game-loop-6>>
+<<game-loop-7>>
 
 <<callback-globals>>
 
@@ -145,7 +155,7 @@ To start the engine, we'll save the arguments passed to ~start-engine~ to dynami
 
 Then we use ~float-features:with-float-traps-masked~ from Shinmera's [[https://shinmera.github.io/float-features][float-features]] library to stop Lisp popping up with floating point errors (like e.g. [[https://en.wikipedia.org/wiki/Arithmetic_underflow][underflow]]) which are usual (and by default ignored) in C world.
 
-Finally, we call [[https://liballeg.org/a5docs/trunk/misc.html#al_run_main][al:run-main]] from liballegro with the ~run-engine~ [[https://common-lisp.net/project/cffi/manual/html_node/defcallback.html][CFFI callback]]; this is required in order for the game to be able to run under MacOS with its weird main thread rules.
+Finally, we call [[https://liballeg.org/a5docs/trunk/misc.html#al_run_main][~al:run-main~]] from liballegro with the ~run-engine~ [[https://common-lisp.net/project/cffi/manual/html_node/defcallback.html][CFFI callback]]; this is required in order for the game to be able to run under MacOS with its weird main thread rules.
 
 #+NAME: start-engine
 #+BEGIN_SRC lisp
@@ -179,7 +189,7 @@ See BUILD-DATA-TABLES"
   (with-condition-reporter
 #+END_SRC
 
-This macro executes a block of code, and if it triggers an unhandled condition, it displays nice GUI dialog with [[https://liballeg.org/a5docs/trunk/native_dialog.html#al_show_native_message_box][al:show-native-message-box]] displaying its description and good old "Hey guys" error message. Of course this only happens when you're not running your Lisp under debugger. Also, this macro puts condition description as well as full backtrace to liballegro log.
+This macro executes a block of code, and if it triggers an unhandled condition, it displays nice GUI dialog with [[https://liballeg.org/a5docs/trunk/native_dialog.html#al_show_native_message_box][~al:show-native-message-box~]] displaying its description and good old "Hey guys" error message. Of course this only happens when you're not running your Lisp under debugger. Also, this macro puts condition description as well as full backtrace to liballegro log.
 
 #+NAME: with-condition-reporter
 #+BEGIN_SRC lisp
@@ -323,7 +333,7 @@ A few more tweaks, related to the accelerated bitmaps in video memory and random
 
 #+END_SRC
 
-And finally, we can prepare and start the game loop.
+And finally, we can prepare and start the game loop by calling ~game-loop~ function.
 
 First, we initialize the data tables containing various game-specific values from the =*.cdb= resource files they're stored in by the call to ~load-data-tables~. Next, we initialize the ECS subsystem of the engine with a call to ~initialize-systems~, and then call ~game-loop~ function within the confines of ~unwind-protect~ which handles proper finalization of the engine:
 
@@ -362,29 +372,10 @@ First, we initialize the data tables containing various game-specific values fro
 
 *** Game loop
 
-TODO
+The game loop starts with calling garbage collector using the ~gc~ function from the [[https://common-lisp.net/project/trivial-garbage/][trivial-garbage]] library. After that, leaving some comment in log, we setup the [[https://github.com/cbaggers/livesupport][livesupport]] library by calling ~setup-lisp-repl~. This amazing library allows to feed arbitrary code into REPL while the game is running. Next, by using ~uiop:next~ macro to avoid extra nesting, we prepare some variables for the loop. We read the ~display-vsync~ and ~display-fps~ variables from config (see the [[sec:config][Config]] section for the discussion of ~with-system-config-options~ macro used for that). We also create a functional renderer instance with a call to ~make-renderer~ (discussed in [[sec:renderer][Renderer]] section) and initialize some time counters using the [[https://liballeg.org/a5docs/trunk/time.html#al_get_time][~al:get-time~]] function, namely the timestamp of the last frame, called ~last-tick~ and last livesupport update time called ~last-repl-update~; we update livesupport REPL link once in 0.3 seconds by default, which is set in ~repl-update-interval~ keyword argument to the ~game-loop~ function.
 
-#+NAME: game-loop
+#+NAME: game-loop-1
 #+BEGIN_SRC lisp
-(declaim
- #-d2c-debug (inline ui-handle-event)
- (ftype (function (cffi:foreign-pointer) boolean) ui-handle-event))
-(defun ui-handle-event (event)
-  (and (ui-on-p)
-       (positive-fixnum-p (the fixnum (nk:allegro-handle-event event)))))
-
-(declaim
- #-d2c-debug (inline systems-handle-event)
- (ftype (function (cffi:foreign-pointer) boolean) systems-handle-event))
-(defun systems-handle-event (event)
-  (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
-         (allegro-event (make-allegro-event :type type :struct event)))
-    ;; NOTE : processing allegro event without queueing, because event struct
-    ;; is stack allocated
-    (with-systems system
-      (process-event system allegro-event))
-    (not (eq type :display-close))))
-
 (declaim
  (ftype
   (function (cffi:foreign-pointer &key (:repl-update-interval double-float)))
@@ -400,16 +391,65 @@ TODO
           (renderer (make-renderer))
           (last-tick (the double-float (al:get-time)))
           (last-repl-update last-tick)))
+#+END_SRC
+
+Next, we allocate [[https://liballeg.org/a5docs/trunk/events.html#allegro_event][liballegro event]] foreign structure with ~cffi:with-foreign-object~ macro and sleep for approximately 1/60 of a second so that the calculated FPS value for the very first frame does not cause division by zero. After that, we finally start the actual game loop with its body wrapped into ~restart-case~ for some nice restarts we'll discuss in a few moments.
+
+#+NAME: game-loop-2
+#+BEGIN_SRC lisp
    (cffi:with-foreign-object (event '(:union al:event))
      (sleep 0.016)
      (loop
        :do (restart-case
                (progn
+#+END_SRC
+
+First of all, in the beginning of every frame, we process the events. We first try to feed the allegro events we receive with [[https://liballeg.org/a5docs/trunk/events.html#al_get_next_event][~al:get-next-event~]] to the [[https://github.com/Immediate-Mode-UI/Nuklear/][Nuklear]] library using ~ui-handle-event~ helper in case some UI windows are active. In case the event is not handled by Nuklear, we call ~systems-handle-event~ helper we'll discuss in a moment. Also note that we can receive several events per frame, so we also use a loop here.
+
+#+NAME: game-loop-3
+#+BEGIN_SRC lisp
                  (nk:with-input (ui-context)
                    (unless (loop :while (al:get-next-event event-queue event)
                                  :always (or (ui-handle-event event)
                                              (systems-handle-event event)))
                      (loop-finish)))
+#+END_SRC
+
+~ui-handle-event~ helper basically just feeds the event to the ~nk:allegro-handle-event~ function from [[https://gitlab.com/lockie/cl-liballegro-nuklear][cl-liballegro-nuklear]] wrapper library. The minor optimization here is that we don't do that if there are no active UI windows, which we determine by the call to ~ui-on-p~ function described in [[sec:ui-system][UI system]] section.
+
+#+NAME: ui-handle-event
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline ui-handle-event)
+ (ftype (function (cffi:foreign-pointer) boolean) ui-handle-event))
+(defun ui-handle-event (event)
+  (and (ui-on-p)
+       (positive-fixnum-p (the fixnum (nk:allegro-handle-event event)))))
+#+END_SRC
+
+~systems-hande-event~ helper serves as a bridge between the low-level liballegro events and high-level in-game events described in detail in [[sec:events][Events]] section. It calls ~make-allegro-event~ constructor function to make an instance of in-game event and then feeds that instance to all ECS systems; we'll talk more about what ECS is in [[sec:ecs][corresponding section]]. Note that ~systems-handle-event~ returns ~nil~ only when the type of event is ~:display-close~, which is produced by liballegro when the game window is closed. This fact is used in the game loop to finish it.
+
+#+NAME: systems-handle-event
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline systems-handle-event)
+ (ftype (function (cffi:foreign-pointer) boolean) systems-handle-event))
+(defun systems-handle-event (event)
+  (let* ((type (cffi:foreign-slot-value event '(:union al:event) 'al::type))
+         (allegro-event (make-allegro-event :type type :struct event)))
+    ;; NOTE : processing allegro event without queueing, because event struct
+    ;; is stack allocated
+    (with-systems system
+      (process-event system allegro-event))
+    (not (eq type :display-close))))
+#+END_src
+
+In game loop, after processing all low-level liballegro events, we separately process high-level events with ~process-events~ function, since the low-level event might trigger one or more high-level events and we don't want to deal with ordering issues.
+
+After all of the events are processed, we do some time-based calculations. We get current frame's timestamp into the ~current-tick~ variable, check if we need to update livesupport REPL link with ~livesupport:update-repl-link~, calculate delta time between current frame and the previous one into the ~*delta-time*~ global variable and display FPS value if it is set in config.
+
+#+NAME: game-loop-4
+#+BEGIN_SRC lisp
                  (process-events)
                  (let ((current-tick (the double-float (al:get-time))))
                    (when (> (- current-tick last-repl-update)
@@ -421,6 +461,16 @@ TODO
                    (when display-fps
                      ;; TODO : smooth FPS counter, like in allegro examples
                      (add-debug-text :fps "FPS: ~d" (round 1 *delta-time*)))
+#+END_SRC
+
+Next, we call ~process-actions~ function which processes the actions related to every ECS system. Actions constitute separate framework used for multi-frame stateful actions performed by in-game entities; we'll cover those in detail in [[sec:actions][corresponding section]].
+
+After that, we call ~system-update~ generic method in loop for every ECS system, which updates the aspects of the state of in-game entities being handled by those systems.
+
+Further down the line, we call ~system-draw~ generic method which arranges the drawing commands needed for those state aspects to be drawn on screen.
+
+#+NAME: game-loop-5
+#+BEGIN_SRC lisp
                    (process-actions)
                    ;; TODO : use separate threads for updating?..
                    (with-systems sys
@@ -429,6 +479,12 @@ TODO
                      (system-update sys))
                    (with-systems sys
                      (system-draw sys renderer))
+#+END_SRC
+
+After those issues are handled, we proceed to actual drawing. We call [[https://liballeg.org/a5docs/trunk/graphics.html#al_clear_to_color][~al:clear-to-color~]] to flush the screen with the same black color, and then we call ~do-draw~ function which makes the functional renderer instance to do the actual draw calls. After swapping ~last-tick~ with ~current-tick~, we also call [[https://liballeg.org/a5docs/trunk/display.html#al_wait_for_vsync][~al:wait-for-vsync~]] if the vertical sync was set in config, and we call ~nk:allegro-render~ to render UI windows, if any. With that, we're finished with the draw calls, and we finally call [[https://liballeg.org/a5docs/trunk/display.html#al_flip_display][~al:flip-display~]] to swap drawing buffers.
+
+#+NAME: game-loop-6
+#+BEGIN_SRC lisp
                    (al:clear-to-color (al:map-rgb 0 0 0))
                    (do-draw renderer)
                    (setf last-tick current-tick))
@@ -436,6 +492,12 @@ TODO
                    (setf vsync (al:wait-for-vsync)))
                  (nk:allegro-render)
                  (al:flip-display))
+#+END_SRC
+
+At the bottom of the game loop body, we have a ~next-iteration~ restart, which allows to continue to the next iteration of loop when some condition arises within.
+
+#+NAME: game-loop-7
+#+BEGIN_SRC lisp
              ;; TODO restart to terminate the loop
              (next-iteration ()
                :report "Proceed to next game loop iteration."
@@ -509,6 +571,23 @@ d2clone-kit I start-engine      [   0.00027] Starting d2clone-kit engine v0.1.2
 d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDEV/d2clone-kit/Resources to mount points
 #+END_EXAMPLE
 
+** Config
+<<sec:config>>
+
+** Renderer
+<<sec:renderer>>
+
+** UI system
+<<sec:ui-system>>
+
+** Events
+<<sec:events>>
+
+** ECS
+<<sec:ecs>>
+
+** Actions
+<<sec:actions>>
 
 # Local Variables:
 # org-src-preserve-indentation: t
