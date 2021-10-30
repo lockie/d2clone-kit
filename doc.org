@@ -31,7 +31,63 @@ To launch the built-in engine demo using the resources you've downloaded, type i
 (d2clone-kit:demo)
 #+END_SRC
 
-* Entry point
+* Source code walkthrough
+
+d2clone-kit is licensed under the GNU GPL license version 3.
+
+We put all of engine's source code into ~:d2clone-kit~ package.
+
+#+NAME: preamble
+#+BEGIN_SRC lisp
+;;;; Copyright (C) 2020-2021 Andrew Kravchuk and contributors
+;;;;
+;;;; This program is free software: you can redistribute it and/or modify
+;;;; it under the terms of the GNU General Public License as published by
+;;;; the Free Software Foundation, either version 3 of the License, or
+;;;; (at your option) any later version.
+;;;;
+;;;; This program is distributed in the hope that it will be useful,
+;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;;;; GNU General Public License for more details.
+;;;;
+;;;; You should have received a copy of the GNU General Public License
+;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;;; WARNING: DO NOT EDIT, AUTO-GENERATED CODE. Edit doc.org instead.
+
+(in-package :d2clone-kit)
+#+END_SRC
+
+** Entry point
+
+#+BEGIN_SRC lisp :tangle d2clone-kit.lisp :noweb yes :exports none
+<<preamble>>
+
+<<game-loop>>
+
+<<callback-globals>>
+
+<<new-game>>
+
+<<game-started-p>>
+
+<<package-version>>
+
+<<run-engine-1>>
+<<run-engine-2>>
+<<run-engine-3>>
+<<run-engine-4>>
+<<run-engine-5>>
+<<run-engine-6>>
+<<run-engine-7>>
+<<run-engine-8>>
+<<run-engine-9>>
+
+<<start-engine>>
+
+<<demo>>
+#+END_SRC
 
 The entry point to the game, should it be ~d2clone-kit:demo~ or other kind of ~main~ function supplied to ~:entry-point~ argument of game's ~asdf:defsystem~, just needs to call ~start-engine~ with appropriate arguments:
 
@@ -74,7 +130,7 @@ The entry point to the game, should it be ~d2clone-kit:demo~ or other kind of ~m
    nil))
 #+END_SRC
 
-* Engine
+** Engine
 
 To start the engine, we'll save the arguments passed to ~start-engine~ to dynamic variables defined above to properly pass it to CFFI callback we'll discuss in a moment:
 
@@ -304,7 +360,7 @@ First, we initialize the data tables containing various game-specific values fro
   0)
 #+END_SRC
 
-* Game loop
+*** Game loop
 
 TODO
 
@@ -386,7 +442,7 @@ TODO
                nil))))))
 #+END_SRC
 
-* Game session
+*** Game session
 
 There are a couple more functions defined in =d2clone-kit.lisp= file, and they both are related to the game session and both called only from GUI scripts.
 
@@ -419,7 +475,15 @@ The second one, ~game-started-p~ returns boolean indicating whether there curren
   (entity-valid-p (player-system-entity *player-system*)))
 #+END_SRC
 
-* Logging
+** Logging
+
+#+BEGIN_SRC lisp :tangle log.lisp :noweb yes :exports none
+<<preamble>>
+
+<<defunl>>
+
+<<with-condition-reporter>>
+#+END_SRC
 
 ~defunl~ is the simple macro wrapper over standard ~defun~, which puts the function name to the dynamic variable ~*function-name*~.
 
@@ -444,65 +508,6 @@ system      I al_install_system [   0.00000] Allegro version: 5.2.7
 d2clone-kit I start-engine      [   0.00027] Starting d2clone-kit engine v0.1.2
 d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDEV/d2clone-kit/Resources to mount points
 #+END_EXAMPLE
-
-* Tangling :noexport:
-#+NAME: preamble
-#+BEGIN_SRC lisp
-;;;; Copyright (C) 2020-2021 Andrew Kravchuk and contributors
-;;;;
-;;;; This program is free software: you can redistribute it and/or modify
-;;;; it under the terms of the GNU General Public License as published by
-;;;; the Free Software Foundation, either version 3 of the License, or
-;;;; (at your option) any later version.
-;;;;
-;;;; This program is distributed in the hope that it will be useful,
-;;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;;;; GNU General Public License for more details.
-;;;;
-;;;; You should have received a copy of the GNU General Public License
-;;;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-;;;; WARNING: DO NOT EDIT, AUTO-GENERATED CODE. Edit doc.org instead.
-
-(in-package :d2clone-kit)
-#+END_SRC
-
-#+BEGIN_SRC lisp :tangle d2clone-kit.lisp :noweb yes :exports none
-<<preamble>>
-
-<<game-loop>>
-
-<<callback-globals>>
-
-<<new-game>>
-
-<<game-started-p>>
-
-<<package-version>>
-
-<<run-engine-1>>
-<<run-engine-2>>
-<<run-engine-3>>
-<<run-engine-4>>
-<<run-engine-5>>
-<<run-engine-6>>
-<<run-engine-7>>
-<<run-engine-8>>
-<<run-engine-9>>
-
-<<start-engine>>
-
-<<demo>>
-#+END_SRC
-
-#+BEGIN_SRC lisp :tangle log.lisp :noweb yes :exports none
-<<preamble>>
-
-<<defunl>>
-
-<<with-condition-reporter>>
-#+END_SRC
 
 
 # Local Variables:
