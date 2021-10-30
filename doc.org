@@ -210,7 +210,7 @@ messagebox when not in debugger."
      ,@body))
 #+END_SRC
 
-So the next thing ~run-engine~ does is determining the data directory (something like =~/.local/share/demo/=, where =demo= is the name of the game sans forbidden characters, which is held in ~*sanitized-game-name*~ variable).
+So the next thing ~run-engine~ does is determining the *data directory* (something like =~/.local/share/demo/=, where =demo= is the name of the game sans forbidden characters, which is held in ~*sanitized-game-name*~ variable).
 
 #+NAME: run-engine-2
 #+BEGIN_SRC lisp
@@ -542,12 +542,101 @@ The second one, ~game-started-p~ returns boolean indicating whether there curren
 #+BEGIN_SRC lisp :tangle log.lisp :noweb yes :exports none
 <<preamble>>
 
+<<init-log>>
+
+<<cfuns>>
+
 <<defunl>>
+
+<<last-message>>
+
+<<trace-1>>
+<<trace-2>>
+
+<<deflog>>
 
 <<with-condition-reporter>>
 #+END_SRC
 
-~defunl~ is the simple macro wrapper over standard ~defun~, which puts the function name to the dynamic variable ~*function-name*~.
+~init-log~ function first constructs the name of the log file, which would be =log.txt= residing in data directory. After that, it actually sets this file name to liballegro by setting the =ALLEGRO_TRACE= environment variable. Next, it tweaks a few logging parameters of liballegro. Namely, it (1) turns off the display of source code lines of log messages, because we can't reliably and easily get those in CL, and (2) it sets the log severity level, which by default is =info= and is being set in ~level~ optional argument to ~init-log~.
+
+#+NAME: init-log
+#+BEGIN_SRC lisp
+(defun init-log (data-dir &optional (level "info"))
+  (let ((log-file
+          (merge-pathnames
+           (make-pathname :name "log" :type "txt")
+           data-dir)))
+    ;; TODO : wait for liballegro 5.2.8 to release and then call
+    ;;  al_register_trace_handler to handle output to both stdout & logfile
+    (setf (uiop:getenv "ALLEGRO_TRACE")
+          (namestring log-file)))
+  (al:set-config-value (al:get-system-config) "trace" "lines" "0")
+  (al:set-config-value (al:get-system-config) "trace" "level" level))
+#+END_SRC
+
+~%trace~ function is pivotal in the logging subsystem. It puts the messages with given severity level from Lisp side into liballegro log. To do that, it uses a couple of internal liballegro functions which are not a part of public interface. Therefore, we have to import those functions using CFFI:
+
+#+NAME: cfuns
+#+BEGIN_SRC lisp
+(cffi:defcfun ("_al_trace_prefix" trace-prefix) :boolean
+  (channel :string) (level :int) (file :string) (line :int) (function :string))
+
+(cffi:defcfun ("_al_trace_suffix" trace-suffix) :void
+  (msg :string) &rest)
+#+END_SRC
+
+The heavy lifting of logging is done by the ~do-trace~ local function, which first calls ~trace-prefix~ internal function we've imported, and if it succeeds, it calls ~trace-suffix~ further down; this is part of calling protocol of those functions. We add extra newline to the log message to be output, and after that we split it by 1024 byte portions, since this is the size of internal liballegro buffer, and if we don't do the splitting, the message will get truncated.
+
+#+NAME: trace-1
+#+BEGIN_SRC lisp
+(defun %trace (level message args)
+  (flet
+      ((do-trace (level function-name message)
+         (when (trace-prefix "d2clone-kit" level "" 0 function-name)
+           (loop :with finalized-message := (format nil "~a~%" message)
+                 :with length := (length finalized-message)
+                 :for i :of-type fixnum :from 0 :to length :by 1024
+                 :do (trace-suffix
+                      "%s"
+                      :string
+                      (subseq finalized-message i (min length (+ i 1024))))))))
+#+END_SRC
+
+The ~%trace~ function first formats the arguments it has been given using the standard CL ~format~ function.
+
+~%trace~ also features duplicate message detection which could be found in some popular logging utilities. It does that using the ~*last-message*~ and ~*last-message-repetitions*~ global variables defined above:
+
+#+NAME: last-message
+#+BEGIN_SRC lisp
+(declaim (string *last-message*)
+         (fixnum *last-message-repetitions*))
+(global-vars:define-global-var *last-message* "")
+(global-vars:define-global-var *last-message-repetitions* 0)
+#+END_SRC
+
+If the previous message was repeated more than once, before putting another message we add the line saying that /last message repeated/ that count of /times/.
+
+After that, we finally put the actual log message along with the function name using ~do-trace~.
+
+#+NAME: trace-2
+#+BEGIN_SRC lisp
+    (let ((full-message (apply #'format (list* nil message args))))
+      (cond
+        ((string= *last-message* full-message)
+         (incf *last-message-repetitions*))
+        (t
+         (unless (zerop *last-message-repetitions*)
+           (do-trace 1 "trace" (format nil "[last message repeated ~a times]"
+                                       *last-message-repetitions*))
+           (setf *last-message-repetitions* 0))
+         (do-trace level (string-downcase *function-name*) full-message)
+         (setf *last-message* full-message))))))
+#+END_SRC
+
+In C world, one can use [[https://gcc.gnu.org/onlinedocs/gcc/Function-Names.html][~__func__~]] macro to get the name of the current function. CL lacks that feature, so we had to implement it using our own ~defunl~ macro instead of standard ~defun~ for functions we want to see in log.
+
+~defunl~ basically just puts the function name to the dynamic variable ~*function-name*~ right before the function body starts.
 
 #+NAME: defunl
 #+BEGIN_SRC lisp
@@ -563,13 +652,41 @@ functions."
          ,@body))))
 #+END_SRC
 
-This variable is being used to supply the function name to liballegro logging subsytem, so that the names of Lisp functions can nicely appear in logs, like that:
+This variable is being used to supply the function name to ~do-trace~ local function we've seen above, so that the names of Lisp functions can nicely appear in logs like that:
 
 #+BEGIN_EXAMPLE
 system      I al_install_system [   0.00000] Allegro version: 5.2.7
 d2clone-kit I start-engine      [   0.00027] Starting d2clone-kit engine v0.1.2
 d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDEV/d2clone-kit/Resources to mount points
 #+END_EXAMPLE
+
+Finally, we don't use the ~%trace~ function itself throughout the engine codebase. Instead, we define a few wrappers for every log severity level supported by liballegro using the ~deflog~ macro, which just defines a small function with docstrings and everything wrapping ~%trace~ with the nice names like ~trace-debug~, ~trace-info~ etc.:
+
+#+NAME: deflog
+#+BEGIN_SRC lisp
+(defmacro deflog (name level docstring)
+  (let
+      ((function-name (intern (concatenate 'string "LOG-" (symbol-name name)))))
+    `(defun ,function-name (message &rest args)
+       ,@(ensure-list docstring)
+       (%trace ,level message args))))
+
+(deflog debug 0
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro debug channel.")
+
+(deflog info 1
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro info channel.")
+
+(deflog warn 2
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro warn channel.")
+
+(deflog error 3
+  "Adds formatted message MESSAGE using placeholder arguments ARGS to
+  liballegro error channel.")
+#+END_SRC
 
 ** Config
 <<sec:config>>
