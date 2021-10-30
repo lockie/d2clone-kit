@@ -372,7 +372,7 @@ First, we initialize the data tables containing various game-specific values fro
 
 *** Game loop
 
-The game loop starts with calling garbage collector using the ~gc~ function from the [[https://common-lisp.net/project/trivial-garbage/][trivial-garbage]] library. After that, leaving some comment in log, we setup the [[https://github.com/cbaggers/livesupport][livesupport]] library by calling ~setup-lisp-repl~. This amazing library allows to feed arbitrary code into REPL while the game is running. Next, by using ~uiop:next~ macro to avoid extra nesting, we prepare some variables for the loop. We read the ~display-vsync~ and ~display-fps~ variables from config (see the [[sec:config][Config]] section for the discussion of ~with-system-config-options~ macro used for that). We also create a functional renderer instance with a call to ~make-renderer~ (discussed in [[sec:renderer][Renderer]] section) and initialize some time counters using the [[https://liballeg.org/a5docs/trunk/time.html#al_get_time][~al:get-time~]] function, namely the timestamp of the last frame, called ~last-tick~ and last livesupport update time called ~last-repl-update~; we update livesupport REPL link once in 0.3 seconds by default, which is set in ~repl-update-interval~ keyword argument to the ~game-loop~ function.
+The game loop starts with calling garbage collector using the ~gc~ function from the [[https://common-lisp.net/project/trivial-garbage/][trivial-garbage]] library. After that, leaving some comment in log, we setup the [[https://github.com/cbaggers/livesupport][livesupport]] library by calling ~setup-lisp-repl~. This amazing library allows to feed arbitrary code into REPL while the game is running. Next, by using ~uiop:next~ macro to avoid extra nesting, we prepare some variables for the loop. We read the ~display-vsync~ and ~display-fps~ variables from config (see the [[Config]] section for the discussion of ~with-system-config-options~ macro used for that). We also create a functional renderer instance with a call to ~make-renderer~ (discussed in [[Renderer]] section) and initialize some time counters using the [[https://liballeg.org/a5docs/trunk/time.html#al_get_time][~al:get-time~]] function, namely the timestamp of the last frame, called ~last-tick~ and last livesupport update time called ~last-repl-update~; we update livesupport REPL link once in 0.3 seconds by default, which is set in ~repl-update-interval~ keyword argument to the ~game-loop~ function.
 
 #+NAME: game-loop-1
 #+BEGIN_SRC lisp
@@ -415,7 +415,7 @@ First of all, in the beginning of every frame, we process the events. We first t
                      (loop-finish)))
 #+END_SRC
 
-~ui-handle-event~ helper basically just feeds the event to the ~nk:allegro-handle-event~ function from [[https://gitlab.com/lockie/cl-liballegro-nuklear][cl-liballegro-nuklear]] wrapper library. The minor optimization here is that we don't do that if there are no active UI windows, which we determine by the call to ~ui-on-p~ function described in [[sec:ui-system][UI system]] section.
+~ui-handle-event~ helper basically just feeds the event to the ~nk:allegro-handle-event~ function from [[https://gitlab.com/lockie/cl-liballegro-nuklear][cl-liballegro-nuklear]] wrapper library. The minor optimization here is that we don't do that if there are no active UI windows, which we determine by the call to ~ui-on-p~ function described in [[UI system]] section.
 
 #+NAME: ui-handle-event
 #+BEGIN_SRC lisp
@@ -427,7 +427,7 @@ First of all, in the beginning of every frame, we process the events. We first t
        (positive-fixnum-p (the fixnum (nk:allegro-handle-event event)))))
 #+END_SRC
 
-~systems-hande-event~ helper serves as a bridge between the low-level liballegro events and high-level in-game events described in detail in [[sec:events][Events]] section. It calls ~make-allegro-event~ constructor function to make an instance of in-game event and then feeds that instance to all ECS systems; we'll talk more about what ECS is in [[sec:ecs][corresponding section]]. Note that ~systems-handle-event~ returns ~nil~ only when the type of event is ~:display-close~, which is produced by liballegro when the game window is closed. This fact is used in the game loop to finish it.
+~systems-hande-event~ helper serves as a bridge between the low-level liballegro events and high-level in-game events described in detail in [[Events]] section. It calls ~make-allegro-event~ constructor function to make an instance of in-game event and then feeds that instance to all ECS systems; we'll talk more about what ECS is in [[ECS][corresponding section]]. Note that ~systems-handle-event~ returns ~nil~ only when the type of event is ~:display-close~, which is produced by liballegro when the game window is closed. This fact is used in the game loop to finish it.
 
 #+NAME: systems-handle-event
 #+BEGIN_SRC lisp
@@ -463,7 +463,7 @@ After all of the events are processed, we do some time-based calculations. We ge
                      (add-debug-text :fps "FPS: ~d" (round 1 *delta-time*)))
 #+END_SRC
 
-Next, we call ~process-actions~ function which processes the actions related to every ECS system. Actions constitute separate framework used for multi-frame stateful actions performed by in-game entities; we'll cover those in detail in [[sec:actions][corresponding section]].
+Next, we call ~process-actions~ function which processes the actions related to every ECS system. Actions constitute separate framework used for multi-frame stateful actions performed by in-game entities; we'll cover those in detail in [[Actions][corresponding section]].
 
 After that, we call ~system-update~ generic method in loop for every ECS system, which updates the aspects of the state of in-game entities being handled by those systems.
 
@@ -689,22 +689,16 @@ Finally, we don't use the ~%trace~ function itself throughout the engine codebas
 #+END_SRC
 
 ** Config
-<<sec:config>>
 
 ** Renderer
-<<sec:renderer>>
 
 ** UI system
-<<sec:ui-system>>
 
 ** Events
-<<sec:events>>
 
 ** ECS
-<<sec:ecs>>
 
 ** Actions
-<<sec:actions>>
 
 # Local Variables:
 # org-src-preserve-indentation: t
