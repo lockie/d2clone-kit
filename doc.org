@@ -12,7 +12,7 @@ sudo apt-get install liballegro-acodec5-dev liballegro-audio5-dev \
     liballegro-physfs5-dev liballegro-video5-dev
 #+END_SRC
 
-Now, clone the repo to your [[https://quicklisp.org][Quicklisp]] directory and download resource files:
+Now, clone the repo to your [[https://quicklisp.org][Quicklisp]] directory and download resource files (note that you don't have to unpack the resources archive, d2clone-kit features reading files from zip archives):
 
 #+BEGIN_SRC shell
 export QUICKLISP_DIR=~/quicklisp  # adjust according to your Quicklisp path
@@ -21,6 +21,7 @@ wget https://gitlab.com/lockie/darkness-looming-the-dawn/-/raw/master/Resources/
     -P $QUICKLISP_DIR/local-projects/d2clone-kit/Resources/
 cd $QUICKLISP_DIR/local-projects/d2clone-kit/src/
 #+END_SRC
+
 
 Start your favourite Lisp (or slime/sly) from engine's =src/= subdirectory.
 To launch the built-in engine demo using the resources you've downloaded, type in REPL:
@@ -142,7 +143,7 @@ The entry point to the game, should it be ~d2clone-kit:demo~ or other kind of ~m
 
 ** Engine
 
-To start the engine, we'll save the arguments passed to ~start-engine~ to dynamic variables defined above to properly pass it to CFFI callback we'll discuss in a moment:
+To start the engine, we'll save the arguments passed to ~start-engine~ to dynamic variables defined below to properly pass it to CFFI callback we'll discuss in a moment:
 
 #+NAME: callback-globals
 #+BEGIN_SRC lisp
@@ -189,7 +190,7 @@ See BUILD-DATA-TABLES"
   (with-condition-reporter
 #+END_SRC
 
-This macro executes a block of code, and if it triggers an unhandled condition, it displays nice GUI dialog with [[https://liballeg.org/a5docs/trunk/native_dialog.html#al_show_native_message_box][~al:show-native-message-box~]] displaying its description and good old "Hey guys" error message. Of course this only happens when you're not running your Lisp under debugger. Also, this macro puts condition description as well as full backtrace to liballegro log.
+This macro executes a block of code, and if it triggers an unhandled condition, it displays nice GUI dialog with [[https://liballeg.org/a5docs/trunk/native_dialog.html#al_show_native_message_box][~al:show-native-message-box~]] displaying its description and good old "Hey guys" error message. Of course this only happens when you're not running your Lisp under debugger (e.g. slime/sly). Also, this macro puts condition description as well as full backtrace to liballegro log.
 
 #+NAME: with-condition-reporter
 #+BEGIN_SRC lisp
@@ -252,7 +253,7 @@ package does not exist, then retuns NIL."
      (format nil format (slot-value package-instance 'asdf:version)))))
 #+END_SRC
 
-Afterwards, we initialize various liballegro addons:
+Afterwards, we initialize various [[https://liballeg.org/a5docs/trunk/index.html#addons][liballegro addons]]:
 
 #+NAME: run-engine-4
 #+BEGIN_SRC lisp
@@ -335,7 +336,7 @@ A few more tweaks, related to the accelerated bitmaps in video memory and random
 
 And finally, we can prepare and start the game loop by calling ~game-loop~ function.
 
-First, we initialize the data tables containing various game-specific values from the =*.cdb= resource files they're stored in by the call to ~load-data-tables~. Next, we initialize the ECS subsystem of the engine with a call to ~initialize-systems~, and then call ~game-loop~ function within the confines of ~unwind-protect~ which handles proper finalization of the engine:
+First, we initialize the data tables containing various game-specific values from the =*.cdb= resource files they're stored in by the call to ~load-data-tables~. We'll cover this in detail in [[Data tables]] section. Next, we initialize the ECS subsystem of the engine with a call to ~initialize-systems~, and then call ~game-loop~ function within the confines of ~unwind-protect~ which handles proper finalization of the engine:
 
 #+NAME: run-engine-9
 #+BEGIN_SRC lisp
@@ -404,7 +405,7 @@ Next, we allocate [[https://liballeg.org/a5docs/trunk/events.html#allegro_event]
                (progn
 #+END_SRC
 
-First of all, in the beginning of every frame, we process the events. We first try to feed the allegro events we receive with [[https://liballeg.org/a5docs/trunk/events.html#al_get_next_event][~al:get-next-event~]] to the [[https://github.com/Immediate-Mode-UI/Nuklear/][Nuklear]] library using ~ui-handle-event~ helper in case some UI windows are active. In case the event is not handled by Nuklear, we call ~systems-handle-event~ helper we'll discuss in a moment. Also note that we can receive several events per frame, so we also use a loop here.
+First of all, in the beginning of every frame, we process the events. We first try to feed the allegro events we receive with [[https://liballeg.org/a5docs/trunk/events.html#al_get_next_event][~al:get-next-event~]] to the [[https://github.com/Immediate-Mode-UI/Nuklear/][Nuklear]] library using ~ui-handle-event~ helper in case some UI windows are active. In case the event is not handled by Nuklear, we call ~systems-handle-event~ helper we'll discuss in a moment. Also note that we can receive several events per frame, so we also use ~loop~ construct here.
 
 #+NAME: game-loop-3
 #+BEGIN_SRC lisp
@@ -446,7 +447,7 @@ First of all, in the beginning of every frame, we process the events. We first t
 
 In game loop, after processing all low-level liballegro events, we separately process high-level events with ~process-events~ function, since the low-level event might trigger one or more high-level events and we don't want to deal with ordering issues.
 
-After all of the events are processed, we do some time-based calculations. We get current frame's timestamp into the ~current-tick~ variable, check if we need to update livesupport REPL link with ~livesupport:update-repl-link~, calculate delta time between current frame and the previous one into the ~*delta-time*~ global variable and display FPS value if it is set in config.
+After all of the events are processed, we do some time-based calculations. We get current frame's timestamp into the ~current-tick~ variable, check if we need to update livesupport REPL link with ~livesupport:update-repl-link~, calculate delta time between current frame and the previous one into the ~*delta-time*~ global variable and display FPS value if this is set in config.
 
 #+NAME: game-loop-4
 #+BEGIN_SRC lisp
@@ -467,7 +468,7 @@ Next, we call ~process-actions~ function which processes the actions related to 
 
 After that, we call ~system-update~ generic method in loop for every ECS system, which updates the aspects of the state of in-game entities being handled by those systems.
 
-Further down the line, we call ~system-draw~ generic method which arranges the drawing commands needed for those state aspects to be drawn on screen.
+Further down the line, we call ~system-draw~ generic method which arranges the drawing commands needed for those state aspects to be drawn on screen with the ~renderer~ instance.
 
 #+NAME: game-loop-5
 #+BEGIN_SRC lisp
@@ -558,7 +559,7 @@ The second one, ~game-started-p~ returns boolean indicating whether there curren
 <<with-condition-reporter>>
 #+END_SRC
 
-~init-log~ function first constructs the name of the log file, which would be =log.txt= residing in data directory. After that, it actually sets this file name to liballegro by setting the =ALLEGRO_TRACE= environment variable. Next, it tweaks a few logging parameters of liballegro. Namely, it (1) turns off the display of source code lines of log messages, because we can't reliably and easily get those in CL, and (2) it sets the log severity level, which by default is =info= and is being set in ~level~ optional argument to ~init-log~.
+~init-log~ function first constructs the name of the log file, which would be =log.txt= residing in data directory. After that, it actually passes this file name to liballegro by setting the =ALLEGRO_TRACE= environment variable. Next, it tweaks a few logging parameters of liballegro. Namely, it (1) turns off the display of source code lines of log messages, because we can't reliably and easily get those in CL, and (2) it sets the log severity level, which by default is =info= and is being set in ~level~ optional argument to ~init-log~.
 
 #+NAME: init-log
 #+BEGIN_SRC lisp
@@ -660,6 +661,8 @@ d2clone-kit I start-engine      [   0.00027] Starting d2clone-kit engine v0.1.2
 d2clone-kit I init-fs           [   0.00031] Appending /home/andrew/Progs/GAMEDEV/d2clone-kit/Resources to mount points
 #+END_EXAMPLE
 
+Note that this mechanism might cause slowdown, so you probably don't want the functions called in tight loops to be defined with ~defunl~.
+
 Finally, we don't use the ~%trace~ function itself throughout the engine codebase. Instead, we define a few wrappers for every log severity level supported by liballegro using the ~deflog~ macro, which just defines a small function with docstrings and everything wrapping ~%trace~ with the nice names like ~trace-debug~, ~trace-info~ etc.:
 
 #+NAME: deflog
@@ -692,13 +695,15 @@ Finally, we don't use the ~%trace~ function itself throughout the engine codebas
 
 ** Renderer
 
-** UI system
-
-** Events
+** Data tables
 
 ** ECS
 
+** Events
+
 ** Actions
+
+** UI system
 
 # Local Variables:
 # org-src-preserve-indentation: t
