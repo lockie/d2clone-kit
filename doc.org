@@ -691,9 +691,179 @@ Finally, we don't use the ~%trace~ function itself throughout the engine codebas
   liballegro error channel.")
 #+END_SRC
 
+** Filesystem
+
 ** Config
 
-** Renderer
+#+BEGIN_SRC lisp :tangle config.lisp :noweb yes :exports none
+<<preamble>>
+
+<<global-config>>
+
+<<init-config>>
+
+<<save-config>>
+
+<<config-setter>>
+
+<<config-getter>>
+
+<<close-config>>
+
+<<defoptions>>
+
+<<system-options>>
+#+END_SRC
+
+Config subsystem, while piggybacking on top of [[https://liballeg.org/a5docs/trunk/config.html][liballegro facilities]], provides nice lispy interface to serialize global configuration options. Each of these options have so called /section/, so they're basically organized into simple one-level hierarchy. We'll return to this hierarchy in a moment.
+
+Now first of all, there's global liballegro [[https://liballeg.org/a5docs/trunk/config.html#allegro_config][configuration structure]] called ~*config*~ and used to store everything we need:
+
+#+NAME: global-config
+#+BEGIN_SRC lisp
+(declaim (type cffi:foreign-pointer *config*))
+(global-vars:define-global-var *config* (cffi:null-pointer))
+#+END_SRC
+
+~init-log~ function, called in ~run-engine~, just uses [[https://liballeg.org/a5docs/trunk/config.html#al_load_config_file][~al:load-config-file~]] to try and load config from =config.ini= file in data directory. Note that the location of data directory is obtained by liballegro itself using the game name, that's why it is important to call [[https://liballeg.org/a5docs/trunk/system.html#al_set_app_name][~al:set-app-name~]] before calling ~init-log~.
+If ~init-log~ fails to load aforementioned file, it just creates an empty configuration structure with the call to [[https://liballeg.org/a5docs/trunk/config.html#al_create_config][~al:create-config~]].
+
+#+NAME: init-config
+#+BEGIN_SRC lisp
+(defun init-config ()
+  (setf *config* (al:load-config-file "config.ini"))
+  (when (cffi:null-pointer-p *config*)
+    (setf *config* (al:create-config))))
+#+END_SRC
+
+There's also an evil twin of ~init-config~, called ~close-config~ and used to finalize config subsystem:
+
+#+NAME: close-config
+#+BEGIN_SRC lisp
+(defun close-config ()
+  (save-config)
+  (al:destroy-config *config*)
+  (setf *config* (cffi:null-pointer)))
+#+END_SRC
+
+It just saves the config with the call to ~save-config~, destroys the global variable ~*config*~ with the call to [[https://liballeg.org/a5docs/trunk/config.html#al_destroy_config][~al:destroy-config~]] and sets it to ~NULL~ pointer to prevent use-after-free memory errors.
+
+~save-config~, in turn, is a simple wrapper over [[https://liballeg.org/a5docs/trunk/config.html#al_save_config_file][~al:save-config-file~]] which just saves configuration data to the file with predefined name =config.ini= (note: it is written by liballegro to the data directory):
+
+#+NAME: save-config
+#+BEGIN_SRC lisp
+(declaim #-d2c-debug (inline save-config))
+(defun save-config ()
+  (al:save-config-file "config.ini" *config*))
+#+END_SRC
+
+Next, there are two functions which are keystone to config subsystem interface, namely the getter and the setter of options.
+
+The getter, simply called ~config~, first calls [[https://liballeg.org/a5docs/trunk/config.html#al_get_config_value][~al:get-config-value~]] on global ~*config*~ instance to get the configuration option value with supplied section name and option name - both expected to be keywords and both are, of course, converted to string before passing to C API. Note that section could be ~nil~, so that there could be sectionless options.
+If the requested value was found, it is being converted to Lisp value with the call to ~read-from-string~, so we can have various Lisp data in config, including, but not limited to lists, for example it is possible to notice something like the following in the config file:
+
+#+BEGIN_EXAMPLE
+[DEBUG]
+CURSOR=(0 0 255)
+#+END_EXAMPLE
+
+which is the list of three elements 0, 0 and 255 in the option named ~:cursor~ under the section named ~:debug~.
+
+If, on the other hand, the requested value was not found, we take the optional default value supplied to the call to ~config~ and set it to configuration calling setter, ~(setf config)~. That's an important feature, and it has two important consequences: (1) while trying to simply get the config option value, there could be underlying disk write to set the previously unset default value, at least for the first time, and (2) even if the config file didn't exist before starting the engine, it would appear afterwards, filled with the default values.
+
+#+NAME: config-getter
+#+BEGIN_SRC lisp
+(declaim
+ (ftype (function ((or keyword null) keyword &optional t) t) config))
+(defun config (section key &optional default)
+  (if-let (value (al:get-config-value
+                  *config* (string (or section :||)) (string key)))
+    (read-from-string value)
+    (setf (config section key) default)))
+#+END_SRC
+
+Now to the option setter, which is being defined as custom ~setf~ place, namely ~(setf config)~. It also takes the option name and optional section name, also converts those to strings and calls [[https://liballeg.org/a5docs/trunk/config.html#al_set_config_value][~al:set-config-value~]] to set the supplied value (converted to the string by the call to ~write-to-string~). After that, it calls ~save-config~ to write updated ~*config*~ structure to disk.
+
+#+NAME: config-setter
+#+BEGIN_SRC lisp
+(declaim
+ (ftype (function (t (or keyword null) keyword) t) (setf config)))
+(defun (setf config) (value section key)
+  (al:set-config-value
+   *config* (string (or section :||)) (string key)
+   (write-to-string value))
+  (save-config)
+  value)
+#+END_SRC
+
+Finally, there's a macro called ~defoptions~ used to create a pre-defined set of configuration options along with a nice macro to access those by just specifying their names instead of typing a lot of boilerplate code involving getter and setter described above.
+This macro is somewhat similar to the standard ~defstruct~: you specify the name of the set, then you enumerate configuration options, specifically option name, section name, Lisp type and default value, and the macro does the rest. There's nothing more to say about it, except that it involves a bit of semi-complex macro trickery, namely defining a macro within a macro:
+
+#+NAME: defoptions
+#+BEGIN_SRC lisp
+;; TODO : come up with some sort of caching to global var, calling
+;; al_get_config_value is not free
+(defmacro defoptions (name &rest options)
+  "Defines macro to access given group of options. E.g. when NAME is 'SYSTEM,
+it defines WITH-SYSTEM-CONFIG-OPTIONS macro. OPTIONS should be list of lists
+containing option's section name, option's name, and :TYPE and :DEFAULT
+properties.
+
+See WITH-SYSTEM-CONFIG-OPTIONS"
+  (let* ((section-names (mapcar #'car options))
+         (key-names (mapcar #'cadr options))
+         (option-names (mapcar #'(lambda (s k) (symbolicate s :- k))
+                               section-names key-names))
+         (option-types (mapcar #'(lambda (o) (getf o :type)) options))
+         (option-defaults (mapcar #'(lambda (o) (getf o :default)) options))
+         (let-clauses (mapcar
+                       #'(lambda (o s k type d)
+                           `(,o . ((the ,type
+                                        (config ,(make-keyword s)
+                                                ,(make-keyword k)
+                                                ,d)))))
+                       option-names section-names key-names
+                       option-types option-defaults)))
+    `(defmacro ,(symbolicate :with- name :-config-options) ((options
+                                                             &key (read-only t))
+                                                            &body body)
+       "Executes BODY with bindings for config options OPTIONS. If READ-ONLY is
+T (the default), options are not SETF-able."
+       (let ((let-clauses
+               (remove-if-not
+                #'(lambda (c) (find (car c) options))
+                '(,@let-clauses))))
+         `(,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
+           ,@body)))))
+#+END_SRC
+
+Let's jump to this macro's usage example, which defines a set of so-called **system config options** used throughout the engine. For now, it just includes two sections: =display=, related to rendering options, and =debug= related to various debugging helpers.
+
+#+NAME: system-options
+#+BEGIN_SRC lisp
+(defoptions system
+  (display width :type fixnum :default 800)
+  (display height :type fixnum :default 600)
+  (display windowed :type boolean :default t)
+  (display vsync :type boolean :default nil)
+  (display fps :type boolean :default nil)
+  (display multisampling :type fixnum :default 0)
+  (display font :type string :default "font.ttf")
+  (debug grid :type list :default nil)
+  (debug sprite :type list :default nil)
+  (debug cursor :type list :default nil)
+  (debug path :type list :default nil)
+  (debug collisions :type list :default nil)
+
+  )
+#+END_SRC
+
+This macro invocation defines the macro ~with-system-config-options~, which is again somewhat similar to standard ~with-slots~ macro in a sense that it allows to write something like this:
+
+#+BEGIN_SRC lisp
+(with-system-config-options ((display-width display-height))
+  (format t "screen size is ~a x ~a~%" display-width display-height))
+#+END_SRC
 
 ** Data tables
 
@@ -702,6 +872,8 @@ Finally, we don't use the ~%trace~ function itself throughout the engine codebas
 ** Events
 
 ** Actions
+
+** Renderer
 
 ** UI system
 
