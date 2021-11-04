@@ -166,14 +166,21 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
               (error "error reading '~a': ~a" path (al:ferrmsg al-file)))
           (code-char char)))))
 
-;; TODO
-;; (defmethod stream-read-sequence ((stream character-stream) sequence
-;;                                  start end &key &allow-other-keys)
-;; ;;   (with-slots (path al-file) stream
-;; ;;     (let ((length (- end start)
-;; ;;     (cffi:with-foreign-string
-;; ;;     (al:fread
-;;   )
+(defmethod trivial-gray-streams:stream-read-sequence ((stream character-stream)
+                                                      sequence start end
+                                                      &key &allow-other-keys)
+  (declare (type non-negative-fixnum start end))
+  (with-slots (path al-file) stream
+    (let* ((length (- end start))
+           actual-length
+           (result
+             (cffi:with-foreign-pointer-as-string (buffer length
+                                                          :count actual-length)
+               (setf actual-length (al:fread al-file buffer length))
+               (when (al:ferror al-file)
+                 (error "error reading '~a': ~a" path (al:ferrmsg al-file))))))
+      (replace sequence result :start1 start :end1 end)
+      actual-length)))
 
 (defmethod trivial-gray-streams:stream-unread-char ((stream character-stream)
                                                     char)
@@ -211,6 +218,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
   (with-slots (path al-file) stream
     (cffi:with-pointer-to-vector-data (buffer sequence)
       (let ((pointer (cffi:inc-pointer buffer start)))
+        ;; TODO : test for error
         (+ start (al:fread al-file pointer (- end start)))))))
 
 (defun stream-size (stream)

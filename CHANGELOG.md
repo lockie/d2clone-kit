@@ -32,6 +32,7 @@ and this project adheres to
 - Fixed bug causing broken lisp image stuck at "filesystem already
   initialized" error when there was a condition in system
   initialization.
+- Minor performance improvement in loading of text resource files.
 
 ## [0.1.1] - 2021-08-07
 ### Added
