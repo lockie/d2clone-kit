@@ -445,7 +445,15 @@ First of all, in the beginning of every frame, we process the events. We first t
     (not (eq type :display-close))))
 #+END_src
 
-In game loop, after processing all low-level liballegro events, we separately process high-level events with ~process-events~ function, since the low-level event might trigger one or more high-level events and we don't want to deal with ordering issues.
+You may notice weird ~inline~ declaration on both of the above helpers, effective only when ~:d2c-debug~ is present in ~*features*~. This kind of declaration appears in a lot of places of the engine. Its purpose is to allow inlining hot functions in release build for performance reasons, while having the ability to easily debug in the process of developing. So when you're working on d2clone-kit engine code or perhaps on your game's code based on the engine, you might want to do
+
+#+BEGIN_SRC lisp
+(pushnew :d2c-debug *features*)
+#+END_SRC
+
+in your REPL before ~quickload~'ing those.
+
+Back to the game loop, after processing all low-level liballegro events, we separately process high-level events with ~process-events~ function, since the low-level event might trigger one or more high-level events and we don't want to deal with ordering issues.
 
 After all of the events are processed, we do some time-based calculations. We get current frame's timestamp into the ~current-tick~ variable, check if we need to update livesupport REPL link with ~livesupport:update-repl-link~, calculate delta time between current frame and the previous one into the ~*delta-time*~ global variable and display FPS value if this is set in config.
 
