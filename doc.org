@@ -701,6 +701,207 @@ Finally, we don't use the ~%trace~ function itself throughout the engine codebas
 
 ** Filesystem
 
+#+BEGIN_SRC lisp :tangle fs.lisp :noweb yes :exports none
+<<preamble>>
+
+<<physfs-defines>>
+
+<<mount>>
+
+<<enumerate-directory-callback>>
+
+<<enumerate-directory-trampoline>>
+
+<<enumerate-directory>>
+
+<<init-fs>>
+
+<<close-fs>>
+
+#+END_SRC
+
+Liballegro features its own [[https://liballeg.org/a5docs/trunk/file.html][wrappers around C file I/O]] as well as [[https://liballeg.org/a5docs/trunk/physfs.html][integration]] with [[http://icculus.org/physfs/][PhysicsFS]] library. Despite the name, this library has nothing to do with physics simulation; it is rather a provider of uniform interface for various game archive formats, including, but not limited to, ZIP files, Quake™ PAK files, Doom™ WAD files etc.
+
+We build upon this functionality, allowing the game resources to be loaded from ZIP files as if they were mere folders, instead of using separate files in real filesystem folders. This improves loading performance, especially on spinning hard disk drives. Also consider using zero compression level for ZIP files in your game projects for extra bit of performance upon loading.
+
+In =fs.lisp= file we define lispish wrappers around liballegro file APIs using [[https://github.com/trivial-gray-streams/trivial-gray-streams][trivial-gray-streams]] library.
+
+First of all, as liballegro documentation [[https://liballeg.org/a5docs/trunk/physfs.html][states]], one should set up PhysicsFS through its own API, so we start by defining all the necessary functions with CFFI.
+
+On Windows, the PhysicsFS library is statically built into =allegro_physfs= DLL, so we don't need to worry about loading foreign library under that platform. On other OSes, PhysicsFS is usually a dependency of liballegro, installed separately, so we tell CFFI which file names of that library we expect.
+
+After having foreign library stuff handled, we proceed to defining all the functions we'll need.
+
+#+NAME: physfs-defines
+#+BEGIN_SRC lisp
+#-windows (progn
+            (cffi:define-foreign-library libphysfs
+              (:darwin (:or "libphysfs.3.0.2.dylib" "libphysfs.1.dylib"))
+              (:unix (:or "libphysfs.so.3.0.2" "libphysfs.so.1"))
+              (t (:default "libphysfs")))
+            (cffi:use-foreign-library libphysfs))
+
+(cffi:defcfun ("PHYSFS_init" physfs-init) :int (argv0 :string))
+(cffi:defcfun ("PHYSFS_deinit" physfs-deinit) :int)
+(cffi:defcfun ("PHYSFS_getLastError" physfs-get-last-error) :string)
+(cffi:defcfun ("PHYSFS_permitSymbolicLinks" physfs-permit-symbolic-links) :void
+  (allow :int))
+(cffi:defcfun ("PHYSFS_getBaseDir" physfs-get-base-dir) :string)
+(cffi:defcfun ("PHYSFS_setWriteDir" physfs-set-write-dir) :int
+  (new-dir :string))
+(cffi:defcfun ("PHYSFS_enumerateFilesCallback" physfs-enumerate) :int
+  (dir :string) (callback :pointer) (data :pointer))
+(cffi:defcfun ("PHYSFS_getRealDir" physfs-get-real-dir) :string
+  (file-name :string))
+(cffi:defcfun ("PHYSFS_mount" physfs-mount) :int
+  (new-dir :string) (mount-point :string) (append-to-path :int))
+#+END_SRC
+
+Next, we define ~init-fs~ function which does all the necessary initialization. Namely, it calls [[https://icculus.org/physfs/docs/html/physfs_8h.html#a61b94cac8e65267afb8a5f2344e60dd1][physfs-init]] with the ~argv[0]~ argument it requires, obtained from the call to ~raw-command-line-arguments~ from UIOP.
+Then we tweak PhysicsFS by allowing it to follow symbolic links with the call to [[https://icculus.org/physfs/docs/html/physfs_8h.html#aad451d9b3f46f627a1be8caee2eef9b7][physfs-permit-symbolic-links]].
+Next, we set PhysicsFS /write dir/ to our data directory - that would be the only directory in which the engine would be able to write files, so all resources are basically read-only. To do that, we call [[https://icculus.org/physfs/docs/html/physfs_8h.html#a36c408d40b3a93c8f9fc02a16c02e430][physfs-set-write-dir]].
+After that, we /mount/ several locations using helper function ~mount~, which is just a thin logging wrapper over [[https://icculus.org/physfs/docs/html/physfs_8h.html#a8eb320e9af03dcdb4c05bbff3ea604d4][physfs-mount]] - a function that adds a directory or archive path to [[http://icculus.org/physfs/docs/html/][PhysicsFS /search path/]], so that files from that dir or archive can be acessed by only specifying file name, without the full path:
+
+#+NAME: mount
+#+BEGIN_SRC lisp
+(defun mount (path &key (append t))
+  (let ((path-string
+          (if (typep path 'pathname)
+              (namestring path)
+              path)))
+    (log-info "~a ~a to mount points"
+              (if append "Appending" "Prepending")
+              path-string)
+    (when (zerop (physfs-mount path-string (cffi:null-pointer) (if append 1 0)))
+      (log-warn "...failed: ~a" (physfs-get-last-error)))))
+#+END_SRC
+
+In ~init-fs~, we first mount the directory =../Resources=. This choice of resources directory location is the consequence of the typical game folder layout [[https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html#//apple_ref/doc/uid/10000123i-CH101-SW20][required on MacOS]] and suitable on other platforms: the binary is located in some subdirectory of the project (=MacOS= on MacOS and =bin= on other platforms), and the resources are located in =Resources= subdirectory:
+
+#+BEGIN_EXAMPLE
+.
+├── Resources
+│   └── assets.zip
+└── bin
+    ├── the-game
+    └── liballegro.so.5.2
+#+END_EXAMPLE
+
+#+BEGIN_EXAMPLE
+.
+├── Resources
+│   └── assets.zip
+└── MacOS
+    ├── the-game
+    └── liballegro.5.2.dylib
+#+END_EXAMPLE
+
+This also makes sense for developing and running the game from the source tree, since it is expected from programmer to launch REPL from =src= subdirectory of the project:
+
+#+BEGIN_EXAMPLE
+.
+├── Resources
+│   └── assets.zip
+├── src
+│   └── d2clone-kit.lisp
+└── d2clone-kit.asd
+#+END_EXAMPLE
+
+After mounting =Resources= directory, we proceed with mounting our data directory with PhysicsFS. Further down in ~init-fs~ we mount the directories from [[https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html][~$XDG_DATA_DIRS~]] in case the game is properly packaged into some binary package and the resources are located somewhere under =/usr/share= folder.
+
+Finally, we enumerate all the files that are accessible by PhysicsFS and try to mount the files which name ends with =.zip=. We do that using ~enumerate-directory~ macro we'll discuss in a moment.
+
+The last thing ~init-fs~ does is calling [[https://liballeg.org/a5docs/trunk/physfs.html#al_set_physfs_file_interface][al:set-physfs-file-interface]] which initializes integration between liballegro and PhysicsFS libraries.
+
+#+NAME: init-fs
+#+BEGIN_SRC lisp
+(defunl init-fs (game-name data-dir)
+  (when (zerop (physfs-init (first (uiop/image:raw-command-line-arguments))))
+    (error "failed to initialize filesystem: ~a" (physfs-get-last-error)))
+  (physfs-permit-symbolic-links 1)
+  (when (zerop (physfs-set-write-dir (namestring data-dir)))
+    (error "failed to initialize filesystem writing: ~a"
+           (physfs-get-last-error)))
+  (mount (merge-pathnames
+          (truename
+           (if (uiop:argv0)
+               (merge-pathnames "../" (directory-namestring (uiop:argv0)))
+               "../"))
+          "Resources"))
+  (mount data-dir)
+  (dolist (dir (uiop/configuration:xdg-data-dirs))
+    (mount
+     (merge-pathnames
+      (make-pathname :directory `(:relative ,game-name))
+      dir)))
+  (enumerate-directory "/"
+    (when (uiop:string-suffix-p file ".zip")
+      (mount (merge-pathnames (uiop:ensure-directory-pathname
+                               (pathname (physfs-get-real-dir file)))
+                              (pathname file)))))
+  (al:set-physfs-file-interface))
+#+END_SRC
+
+There's also FS subsystem finalization function, ~close-fs~, which is again just a thin logging wrapper over [[https://icculus.org/physfs/docs/html/physfs_8h.html#aa465c9b58e5020f503085d433a413b5b][physfs-deinit]]:
+
+#+NAME: close-fs
+#+BEGIN_SRC lisp
+(defunl close-fs ()
+  (when (zerop (physfs-deinit))
+    (log-error "failed to close filesystem: ~a" (physfs-get-last-error))))
+#+END_SRC
+
+~enumerate-directory~ is a macro allowing enumerating given PhysicFS directory. It is based on [[https://icculus.org/physfs/docs/html/physfs_8h.html#a33085cbbf18ba7eb659cf2a43d6793ba][physfs-enumerate]] function taking the callback parameter. Since we don't want users of this funciton to meddle with such low-level details, we put macro body into the function with two ignorable arguments, ~directory~ and ~file~, and set this function to the dynamic variable ~*enumerate-directory-callback*~:
+
+#+NAME: enumerate-directory-callback
+#+BEGIN_SRC lisp
+(declaim (type (function (string string)) *enumerate-directory-callback*))
+(defvar *enumerate-directory-callback*)
+#+END_SRC
+
+We then use this variable in CFFI callback called ~enumerate-directory-trampoline~ which basically just ~funcall~'s the function:
+
+#+NAME: enumerate-directory-trampoline
+#+BEGIN_SRC lisp
+(cffi:defcallback enumerate-directory-trampoline :int
+    ((data :pointer) (directory :string) (file :string))
+  (declare (ignore data))
+  (funcall *enumerate-directory-callback* directory file))
+#+END_SRC
+
+This trampoline actually gets passed to PhysicsFS C API using [[https://common-lisp.net/project/cffi/manual/html_node/callback.html][~cffi:callback~]]:
+
+#+NAME: enumerate-directory
+#+BEGIN_SRC lisp
+;; TODO : perhaps add required extension optional/keyword arg
+(defmacro enumerate-directory (dir &body body)
+  "Enumerates directory DIR. Executes BODY for each file with corresponding
+variables DIRECTORY and FILE bound."
+  (let ((callback-name (gensym "ENUMERATE-DIRECTORY-CALLBACK")))
+    `(progn
+       (defun ,callback-name (directory file)
+         (declare (type string directory file) (ignorable directory file))
+         ,@body
+         1)
+       (let ((*enumerate-directory-callback* #',callback-name))
+         (physfs-enumerate ,dir
+                           (cffi:callback enumerate-directory-trampoline)
+                           (cffi:null-pointer))))))
+#+END_SRC
+
+Next, there are a few file-related helpers defined in =fs.lisp=.
+
+TODO
+
+Finally, there are few helper [[http://www.nhplace.com/kent/CL/Issues/stream-definition-by-user.html][Gray streams]] defined in =fs.lisp=.
+
+*** Character stream
+
+*** Binary stream
+
+*** Virtual binary stream
+
+
 ** Config
 
 #+BEGIN_SRC lisp :tangle config.lisp :noweb yes :exports none
