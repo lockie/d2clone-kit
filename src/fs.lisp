@@ -195,7 +195,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
 
 (defmethod initialize-instance :after ((stream binary-stream) &key)
   (with-slots (path al-file) stream
-    (setf al-file (al:fopen path "r"))
+    (setf al-file (al:fopen path "rb"))
     (when (cffi:null-pointer-p al-file)
       (error "failed to open '~a'" path))))
 

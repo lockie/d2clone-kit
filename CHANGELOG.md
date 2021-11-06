@@ -23,6 +23,7 @@ and this project adheres to
 - Load all CastleDB .cdb files instead of the one specific for the game.
 - Improved error handling of .cdb file loading.
 - Removed source file and line output from log.
+- Supply correct file mode to al_fopen in BINARY-STREAM.
 
 ### Removed
 
