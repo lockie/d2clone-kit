@@ -373,7 +373,7 @@ First, we initialize the data tables containing various game-specific values fro
 
 *** Game loop
 
-The game loop starts with calling garbage collector using the ~gc~ function from the [[https://common-lisp.net/project/trivial-garbage/][trivial-garbage]] library. After that, leaving some comment in log, we setup the [[https://github.com/cbaggers/livesupport][livesupport]] library by calling ~setup-lisp-repl~. This amazing library allows to feed arbitrary code into REPL while the game is running. Next, by using ~uiop:next~ macro to avoid extra nesting, we prepare some variables for the loop. We read the ~display-vsync~ and ~display-fps~ variables from config (see the [[Config]] section for the discussion of ~with-system-config-options~ macro used for that). We also create a functional renderer instance with a call to ~make-renderer~ (discussed in [[Renderer]] section) and initialize some time counters using the [[https://liballeg.org/a5docs/trunk/time.html#al_get_time][~al:get-time~]] function, namely the timestamp of the last frame, called ~last-tick~ and last livesupport update time called ~last-repl-update~; we update livesupport REPL link once in 0.3 seconds by default, which is set in ~repl-update-interval~ keyword argument to the ~game-loop~ function.
+The game loop starts with calling garbage collector using the ~gc~ function from the [[https://common-lisp.net/project/trivial-garbage/][trivial-garbage]] library. After that, leaving some comment in log, we setup the [[https://github.com/cbaggers/livesupport][livesupport]] library by calling ~setup-lisp-repl~. This amazing library allows to feed arbitrary code into REPL while the game is running. Next, by using ~uiop:nest~ macro to avoid extra nesting, we prepare some variables for the loop. We read the ~display-vsync~ and ~display-fps~ variables from config (see the [[Config]] section for the discussion of ~with-system-config-options~ macro used for that). We also create a functional renderer instance with a call to ~make-renderer~ (discussed in [[Renderer]] section) and initialize some time counters using the [[https://liballeg.org/a5docs/trunk/time.html#al_get_time][~al:get-time~]] function, namely the timestamp of the last frame, called ~last-tick~ and last livesupport update time called ~last-repl-update~; we update livesupport REPL link once in 0.3 seconds by default, which is set in ~repl-update-interval~ keyword argument to the ~game-loop~ function.
 
 #+NAME: game-loop-1
 #+BEGIN_SRC lisp
@@ -718,6 +718,49 @@ Finally, we don't use the ~%trace~ function itself throughout the engine codebas
 
 <<close-fs>>
 
+<<prompt-for-string>>
+
+<<ensure-loaded>>
+
+<<sanitize-filename>>
+
+<<read-file-into-list>>
+
+<<character-stream>>
+
+<<character-stream-initialize>>
+
+<<character-stream-read-char>>
+
+<<character-stream-read-sequence>>
+
+<<character-stream-unget-char>>
+
+<<binary-stream>>
+
+<<binary-stream-initialize>>
+
+<<binary-stream-element-type>>
+
+<<binary-stream-read-byte>>
+
+<<binary-stream-read-sequence>>
+
+<<binary-stream-size>>
+
+<<virtual-binary-stream>>
+
+<<virtual-binary-stream-element-type>>
+
+<<virtual-binary-stream-read-byte>>
+
+<<virtual-binary-stream-read-sequence>>
+
+<<read-binary>>
+
+<<read-binary-methods>>
+
+<<define-binary-struct>>
 #+END_SRC
 
 Liballegro features its own [[https://liballeg.org/a5docs/trunk/file.html][wrappers around C file I/O]] as well as [[https://liballeg.org/a5docs/trunk/physfs.html][integration]] with [[http://icculus.org/physfs/][PhysicsFS]] library. Despite the name, this library has nothing to do with physics simulation; it is rather a provider of uniform interface for various game archive formats, including, but not limited to, ZIP files, Quake™ PAK files, Doom™ WAD files etc.
@@ -811,7 +854,7 @@ After mounting =Resources= directory, we proceed with mounting our data director
 
 Finally, we enumerate all the files that are accessible by PhysicsFS and try to mount the files which name ends with =.zip=. We do that using ~enumerate-directory~ macro we'll discuss in a moment.
 
-The last thing ~init-fs~ does is calling [[https://liballeg.org/a5docs/trunk/physfs.html#al_set_physfs_file_interface][al:set-physfs-file-interface]] which initializes integration between liballegro and PhysicsFS libraries.
+The last thing ~init-fs~ does is calling [[https://liballeg.org/a5docs/trunk/physfs.html#al_set_physfs_file_interface][~al:set-physfs-file-interface~]] which initializes integration between liballegro and PhysicsFS libraries.
 
 #+NAME: init-fs
 #+BEGIN_SRC lisp
@@ -891,16 +934,364 @@ variables DIRECTORY and FILE bound."
 
 Next, there are a few file-related helpers defined in =fs.lisp=.
 
-TODO
+First, there's ~ensure-loaded~ helper used to handle loading of different CFFI resources. It could be used with any C function returning ~NULL~ on failure. The function is passed through ~load-fn~ argument, and the file name in ~file-name~ argument along with any rest arguments are just passed to that function. Typical examples of such functions are [[https://liballeg.org/a5docs/trunk/graphics.html#al_load_bitmap][~al:load-bitmap~]] and [[https://liballeg.org/a5docs/trunk/audio.html#al_load_sample][~al:load-sample~]]. In case of success, the non-~NULL~ result is just returned from the ~ensure-loaded~ helper. In case of failure, we signal a condition indicating it, and we present user with few handy restarts. The first one, ~specify-filename~, just calls ~ensure-loaded~ again, but with the new file name specified by user; we receive the new name with simple ~prompt-for-string~ helper:
+
+#+NAME: prompt-for-string
+#+BEGIN_SRC lisp
+(declaim (ftype (function (string) string) prompt-for-string))
+(defun prompt-for-string (prompt)
+  "Prompts for a string value from *QUERY-IO*. To be used with interactive
+restarts."
+  (format *query-io* prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
+#+END_SRC
+
+The next restart, ~retry-loading~, just retries the loading with the same arguments.
+
+#+NAME: ensure-loaded
+#+BEGIN_SRC lisp
+(declaim (ftype (function (function string &rest t) cffi:foreign-pointer)
+                ensure-loaded))
+(defun ensure-loaded (load-fn file-name &rest rest)
+  "Calls LOAD-FN (which could be #'AL:LOAD-BITMAP, #'AL:LOAD-SAMPLE or
+similar) with the FILE-NAME argument and REST arguments, if any.  If the
+result of calling of LOAD-FN is not a null pointer, it is returned. Otherwise
+the error is raised, with interactive restart allowing to specify another
+filename."
+  (values
+   (restart-case
+       (let ((file (apply load-fn file-name rest)))
+         (if (cffi:null-pointer-p file)
+             (error "failed to load '~a'" file-name)
+             file))
+     (specify-filename (new-file-name)
+       :report "Specify another file name."
+       :interactive (lambda ()
+                      (list
+                       (prompt-for-string
+                        "Please specify another file name: ")))
+       (apply #'ensure-loaded load-fn new-file-name rest))
+     (retry-loading ()
+       :report "Retry loading."
+       (apply #'ensure-loaded load-fn file-name rest)))))
+#+END_SRC
+
+Next, there's a little ~sanitize-filename~ helper used to remove the characters from a string that are forbidden in file names on common filesystems. It uses [[http://edicl.github.io/cl-ppcre][cl-ppcre]] regular expression library to achieve that:
+
+#+NAME: sanitize-filename
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline sanitize-filename)
+ (ftype (function (string) string) sanitize-filename))
+(defun sanitize-filename (filename)
+  (values (cl-ppcre:regex-replace-all
+           "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename
+           "")))
+#+END_SRC
+
+Also there's ~read-file-into-list~ helper that's used to read the whole text file from resources into Lisp list. This helper is very similar to [[https://common-lisp.net/project/asdf/uiop.html#index-read_002dfile_002dlines][~uiop:read-file-lines~]], but it possesses the ability to read files within PhycisFS virtual filesystem, including reading files from ZIP archives. To achieve that, it uses [[https://liballeg.org/a5docs/trunk/file.html#al_fopen][~al:fopen~]] and [[https://liballeg.org/a5docs/trunk/file.html#al_fgets][~al:fgets~]] along with some [[https://common-lisp.net/project/cffi/manual/html_node/Strings.html][CFFI string manipulaton functions]]:
+
+#+NAME: read-file-into-list
+#+BEGIN_SRC lisp
+(declaim
+ (ftype (function (string &key (:buffer-length fixnum)) list)
+        read-file-into-list))
+(defun read-file-into-list (pathname &key (buffer-length 4096))
+  "Reads text file specified by PATHNAME into a list line-by-line.
+Lines are expected to be shorter than BUFFER-LENGTH chars."
+  (cffi:with-foreign-object (buffer :char buffer-length)
+    (loop
+      :with file := (al:fopen (namestring pathname) "r")
+        :initially (when (cffi:null-pointer-p file) (return nil))
+      :for line := (al:fgets file buffer buffer-length)
+      :until (cffi:null-pointer-p line)
+      :collecting
+      (flet ((trim (str) (subseq str 0 (1- (length str)))))
+        (trim (cffi:foreign-string-to-lisp line)))
+      :finally (al:fclose file))))
+#+END_SRC
+
+There's an important consequence of using such low-level C APIs, namely - the lines in the file should be shorter than ~buffer-length~, which is 4k bytes by default, otherwise it'll get truncated.
+
+*** Binary file struct helpers
+
+Further down, there are a few helpers for defining and reading structures from binary files. Those center around the ~define-binary-struct~ macro which acts similar to standard [[http://www.lispworks.com/documentation/lw70/CLHS/Body/m_defstr.htm][~defstruct~]] macro. The supported types for the ~:type~ parameter of the field are: ~'byte~, ~'word~, ~'dword~, ~'string~ and ~'bytes~. Also you could supply ~:length~ parameter to field plist to specify the length of this field in units of its type. This macro defines a structure with an actual ~defstruct~ call and then defines a ~read-binary~ generic method, which we'll describe in a moment, specializing on this structure:
+
+#+NAME: define-binary-struct
+#+BEGIN_SRC lisp
+(defmacro define-binary-struct (name &rest slots)
+  "Defines structure with name NAME and slots SLOTS along with corresponding
+READ-BINARY method which reads and returns that structure from given binary
+stream.
+
+See READ-BINARY"
+  (flet
+      ((slot->struct-slot (spec)
+         (let* ((parameters (cdr spec))
+                (type (eval (getf parameters :type)))
+                (lisp-type (ecase type
+                             ((byte word dword) 'fixnum)
+                             (string 'string)
+                             (bytes 't)))
+                (initial (ecase type
+                           ((byte word dword) 0)
+                           (string "")
+                           (bytes nil))))
+           `(,(car spec) ,initial :type ,lisp-type :read-only t)))
+       (slot->slot-ctor (spec)
+         (let* ((parameters (cdr spec))
+                (type (getf parameters :type))
+                (length (getf parameters :length)))
+           `(,(make-keyword (car spec))
+             (read-binary ,(if length length type) stream)))))
+    `(progn
+       (defstruct ,name
+         ,@(mapcar #'slot->struct-slot slots))
+       (defmethod read-binary ((type (eql ',name)) stream)
+         (,(symbolicate :make- name)
+          ,@(mapcan #'slot->slot-ctor slots))))))
+#+END_SRC
+
+To have a look at the actual usage of that macro, refer to [[Aseprite format support]].
+
+The ~read-binary~ generic method takes the ~type~ argument, one of field types mentioned above or some structure defined with ~define-binary-struct~, and the binary stream to read from. Also the ~fixnum~ passed as the ~type~ argument is interpreted as the number of bytes to read.
+
+#+NAME: read-binary
+#+BEGIN_SRC lisp
+(defgeneric read-binary (type stream)
+  (:documentation "Reads and returns element of type denoted by TYPE from
+  binary stream STREAM."))
+#+END_SRC
+
+Further down, this method is specialized for all of supported field types:
+
+#+NAME: read-binary-methods
+#+BEGIN_SRC lisp
+(defmethod read-binary ((type (eql 'byte)) stream)
+  (read-byte stream))
+
+;; TODO : use Zach Beane's trick: (logand x #xFFFFFFFF) removes the need
+;;  of declaring x to be fixnum
+
+(defmethod read-binary ((type (eql 'word)) stream)
+  (let ((word 0))
+    (setf (ldb (byte 8 0) word) (read-byte stream))
+    (setf (ldb (byte 8 8) word) (read-byte stream))
+    word))
+
+(defmethod read-binary ((type (eql 'dword)) stream)
+  (let ((dword 0))
+    (setf (ldb (byte 8 0) dword) (read-byte stream))
+    (setf (ldb (byte 8 8) dword) (read-byte stream))
+    (setf (ldb (byte 8 16) dword) (read-byte stream))
+    (setf (ldb (byte 8 24) dword) (read-byte stream))
+    dword))
+
+(defmethod read-binary ((length fixnum) stream)
+  (let ((string (make-array length :element-type '(unsigned-byte 8))))
+    (read-sequence string stream)
+    string))
+#+END_SRC
+
 
 Finally, there are few helper [[http://www.nhplace.com/kent/CL/Issues/stream-definition-by-user.html][Gray streams]] defined in =fs.lisp=.
 
 *** Character stream
 
+First of those is textual ~character-stream~:
+
+#+NAME: character-stream
+#+BEGIN_SRC lisp
+(defclass character-stream
+    (trivial-gray-streams:fundamental-character-input-stream)
+  ((path :initarg :path :initform (error "missing path"))
+   (al-file))
+  (:documentation "Wrapper around liballegro
+[file APIs](https://liballeg.org/a5docs/trunk/file.html)."))
+#+END_SRC
+
+It has the initial path name supplied by user, ~path~, and the CFFI pointer returned from [[https://liballeg.org/a5docs/trunk/file.html#al_fopen][~al:fopen~]], ~al-file~ as slots.
+
+We define ~initialize-instance~ ~:after~ method which handles file opening failure by signaling the condition:
+
+#+NAME: character-stream-initialize
+#+BEGIN_SRC lisp
+(defmethod initialize-instance :after ((stream character-stream) &key)
+  (with-slots (path al-file) stream
+    (setf al-file (al:fopen path "r"))
+    (when (cffi:null-pointer-p al-file)
+      (error "failed to open '~a'" path))))
+#+END_SRC
+
+Then we define ~stream-read-char~ for the character stream, which is a trivial wrapper over [[https://liballeg.org/a5docs/trunk/file.html#al_fgetc][~al:fgetc~]], with additional error checking by the call to [[https://liballeg.org/a5docs/trunk/file.html#al_feof][~al:feof~]], namely, if the former returns negative value, we check if it was related to the end-of-file, and if not, we signal a condition:
+
+#+NAME: character-stream-read-char
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-read-char ((stream character-stream))
+  (with-slots (path al-file) stream
+    (let ((char (al:fgetc al-file)))
+      (if (minusp char)
+          (if (al:feof al-file)
+              :eof
+              (error "error reading '~a': ~a" path (al:ferrmsg al-file)))
+          (code-char char)))))
+#+END_SRC
+
+We also define ~stream-read-sequence~ specialized on ~character-stream~, which again is a wrapper around [[https://liballeg.org/a5docs/trunk/file.html#al_fread][~al:fread~]]. Again, we do error checking by calling [[https://liballeg.org/a5docs/trunk/file.html#al_ferror][~al:ferror~]] and signaling a condition if it reports some error.
+
+#+NAME: character-stream-read-sequence
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-read-sequence ((stream character-stream)
+                                                      sequence start end
+                                                      &key &allow-other-keys)
+  (declare (type non-negative-fixnum start end))
+  (with-slots (path al-file) stream
+    (let* ((length (- end start))
+           actual-length
+           (result
+             (cffi:with-foreign-pointer-as-string (buffer length
+                                                          :count actual-length)
+               (setf actual-length (al:fread al-file buffer length))
+               (when (al:ferror al-file)
+                 (error "error reading '~a': ~a" path (al:ferrmsg al-file))))))
+      (replace sequence result :start1 start :end1 end)
+      actual-length)))
+#+END_SRC
+
+Finally, we define ~stream-unread-char~ for the character stream, which is just a thin wrapper over [[https://liballeg.org/a5docs/trunk/file.html#al_fungetc][al:fungetc]]:
+
+#+NAME: character-stream-unget-char
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-unread-char ((stream character-stream)
+                                                    char)
+  (with-slots (path al-file) stream
+    (al:fungetc al-file (char-code char))))
+#+END_SRC
+
 *** Binary stream
+
+The next stream type is also based on liballegro file APIs, but is intended to use with binary files. It shares the same slots with the ~character-stream~, ~path~ and ~al-file~:
+
+#+NAME: binary-stream
+#+BEGIN_SRC lisp
+(defclass binary-stream (trivial-gray-streams:fundamental-binary-input-stream)
+  ((path :initarg :path :initform (error "missing path"))
+   (al-file))
+  (:documentation "Wrapper around liballegro
+[file APIs](https://liballeg.org/a5docs/trunk/file.html)."))
+#+END_SRC
+
+~initialize-instance~ ~:after~ method for ~binary-stream~ only differs from similar method of ~character-stream~ by using ~"rb"~ opening method in call to [[https://liballeg.org/a5docs/trunk/file.html#al_fopen][al:fopen]]:
+
+#+NAME: binary-stream-initialize
+#+BEGIN_SRC lisp
+(defmethod initialize-instance :after ((stream binary-stream) &key)
+  (with-slots (path al-file) stream
+    (setf al-file (al:fopen path "rb"))
+    (when (cffi:null-pointer-p al-file)
+      (error "failed to open '~a'" path))))
+#+END_SRC
+
+It is important to setup Gray stream's character type since we're using binary data. We do that by specializing ~stream-element-type~ generic method:
+
+#+NAME: binary-stream-element-type
+#+BEGIN_SRC lisp
+(defmethod stream-element-type ((stream binary-stream))
+  '(unsigned-byte))
+#+END_SRC
+
+Then we define ~stream-read-byte~, which implementation is almost identical to the ~stream-read-char~ for ~character-stream~ in a sense that it calls the same liballegro file APIs:
+
+#+NAME: binary-stream-read-byte
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-read-byte ((stream binary-stream))
+  (with-slots (path al-file) stream
+    (let ((char (al:fgetc al-file)))
+      (if (minusp (the fixnum char))
+          (if (al:feof al-file)
+              :eof
+              (error "error reading '~a': ~a" path (al:ferrmsg al-file)))
+          char))))
+#+END_SRC
+
+Next, we define ~stream-read-sequence~ for ~binary-stream~ which uses [[https://liballeg.org/a5docs/trunk/file.html#al_fread][~al:fread~]] and enjoys some features of CFFI, namely [[https://www.crategus.com/books/cffi/pages/cffi-sys_fun_with-pointer-to-vector-data.html][~cffi:with-pointer-to-vector-data~]] which allows to put some binary data straight into a Lisp vector of bytes, omitting any extra copying:
+
+#+NAME: binary-stream-read-sequence
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-read-sequence ((stream binary-stream)
+                                                      sequence start end
+                                                      &key &allow-other-keys)
+  (declare (type non-negative-fixnum start end))
+  (with-slots (path al-file) stream
+    (cffi:with-pointer-to-vector-data (buffer sequence)
+      (let ((pointer (cffi:inc-pointer buffer start)))
+        ;; TODO : test for error
+        (+ start (al:fread al-file pointer (- end start)))))))
+#+END_SRC
+
+And last but not least, we specify ~stream-size~ method for ~binary-stream~, which just calls [[https://liballeg.org/a5docs/trunk/file.html#al_fsize][~al:fsize~]]:
+
+#+NAME: binary-stream-size
+#+BEGIN_SRC lisp
+(defun stream-size (stream)
+  "Returns the file size of BINARY-STREAM and CHARACTER-STREAM.
+
+See BINARY-STREAM
+See CHARACTER-STREAM"
+  (with-slots (al-file) stream
+    (al:fsize al-file)))
+#+END_SRC
 
 *** Virtual binary stream
 
+The last Gray stream type we define is read-only ~virtual-binary-stream~, which is backed by an array of bytes:
+
+#+NAME: virtual-binary-stream
+#+BEGIN_SRC lisp
+(defclass virtual-binary-stream
+    (trivial-gray-streams:fundamental-binary-input-stream)
+  ((buffer :initarg :buffer :initform (error "missing buffer"))
+   (position :initform 0))
+  (:documentation "Read-only binary Gray stream based on SIMPLE-ARRAY of
+  UNSIGNED-BYTE."))
+#+END_SRC
+
+We also specify the element type of this stream by specializing ~stream-element-type~ on it, since it is also binary:
+
+#+NAME: virtual-binary-stream-element-type
+#+BEGIN_SRC lisp
+(defmethod stream-element-type ((stream virtual-binary-stream))
+  '(unsigned-byte))
+#+END_SRC
+
+Then we define ~stream-read-byte~, which basically retrieves the byte by the stream's current position with [[http://www.lispworks.com/documentation/HyperSpec/Body/f_elt.htm][~elt~]] and then advances the position:
+
+#+NAME: virtual-binary-stream-read-byte
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-read-byte ((stream
+                                                   virtual-binary-stream))
+  (with-slots (buffer position) stream
+    (declare (type (simple-array (unsigned-byte 8)) buffer)
+             (type non-negative-fixnum position))
+    (elt buffer (prog1 position (incf position)))))
+#+END_SRC
+
+And finally, we specialize ~stream-read-sequence~ on ~virtual-binary-stream~, which uses [[http://www.lispworks.com/documentation/HyperSpec/Body/f_replac.htm][~replace~]] to copy the requested range of bytes:
+
+#+NAME: virtual-binary-stream-read-sequence
+#+BEGIN_SRC lisp
+(defmethod trivial-gray-streams:stream-read-sequence ((stream
+                                                       virtual-binary-stream)
+                                                      sequence start end
+                                                      &key &allow-other-keys)
+  (with-slots (buffer position) stream
+    (declare (type (simple-array (unsigned-byte 8)) sequence buffer)
+             (type non-negative-fixnum position start end))
+    (replace sequence buffer :start1 start :end1 end :start2 position)
+    (let ((copied (min (- end start) (- (length buffer) position))))
+      (+ start (incf position copied)))))
+#+END_SRC
 
 ** Config
 
@@ -1083,6 +1474,8 @@ This macro invocation defines the macro ~with-system-config-options~, which is a
 ** Actions
 
 ** Renderer
+
+** Aseprite format support
 
 ** UI system
 
