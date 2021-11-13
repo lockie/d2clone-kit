@@ -1467,6 +1467,196 @@ This macro invocation defines the macro ~with-system-config-options~, which is a
 
 ** Data tables
 
+#+BEGIN_SRC lisp :tangle data-tables.lisp :noweb yes :exports none
+<<preamble>>
+
+<<global-data-tables>>
+
+<<build-data-table>>
+
+<<table-indices>>
+
+<<build-data-tables>>
+
+<<load-data-tables>>
+
+<<table-value-ref>>
+
+<<table-value-ref*>>
+#+END_SRC
+
+Next stop is data tables, which are the databases where the engine looks for game-specific data. The file format it uses to store those databases is compatible with [[http://castledb.org][CastleDB]] editor and basically is just a JSON with pre-defined model. The data read from those databases is organized in the way that allows for fast row access using index columns (which are also pre-defined for every table). This data is stored in global variable ~*data-tables*~, which is a hashtable keyed by the keywords representing table names:
+
+#+NAME: global-data-tables
+#+BEGIN_SRC lisp
+(declaim (type hash-table *data-tables*))
+(global-vars:define-global-var *data-tables* (make-hash :test #'eq)
+  "Global data tables read from CastleDB resource files.")
+#+END_SRC
+
+Next, there's a global constant called ~+table-indices+~, which stores the specifications of tables known to the engine:
+
+#+NAME: table-indices
+#+BEGIN_SRC lisp
+(define-constant +table-indices+
+    '(:impact-sounds ((:armor-class :weapon-class) (:sound))
+      )
+  :test #'equal
+  :documentation "Specifies the columns to be included in indices for data
+  tables. It is assumed that the columns list is alphabetically sorted.")
+#+END_SRC
+
+~+table-indices+~ is a plist, in which keys reference the table name and values are the lists specifying the columns. Namely, the first element in that list should be another list consisting of the index column names in **alphabetical order**. The second element should be also a list containing all the other columns.
+
+The ~load-data-tables~ function called from ~run-engine~ just enumerates the =tables/= subdirectory in resources, trying to find any files there with =.cdb= extension, with the help of ~enumerate-directory~ macro we've seen previously. Next, it uses ~load-castledb-tables~ function we'll describe in the next section, called with the ~character-stream~ instance to deserialize the data from the JSON. After that, we have some awkward ~loop~ to figure out database file priorities (refer to [[CastleDB format support]] for details). Finally, this function calls ~build-data-tables~ with all of the gathered data and custom table indices specification it was supplied with in ~table-indices~ argument. The final result is stored in ~*data-tables*~ variable we've seen before.
+
+#+NAME: load-data-tables
+#+BEGIN_SRC lisp
+(defunl load-data-tables (table-indices)
+  "Loads all possible data from CastleDB files, considering table priorities.
+Afterwards, builds all the appropriate indices and sets *DATA-TABLES*
+accordingly.
+
+See *DATA-TABLES*"
+  (let ((all-tables (make-hash :test #'eq))
+        (all-priorities (make-hash :test #'eq)))
+    (enumerate-directory "tables"
+      (when (uiop:string-suffix-p file ".cdb")
+        (log-info "Loading data table ~a" file)
+        (multiple-value-bind (tables priorities)
+            (load-castledb-tables
+             (make-instance 'character-stream
+                            :path (namestring
+                                   (make-pathname
+                                    :defaults (pathname file)
+                                    :directory `(:relative ,directory)))))
+          (loop :for table-name :being :the :hash-key
+                :using (hash-value rows) :of tables
+                :for priority := (gethash table-name priorities)
+                :do (multiple-value-bind (old-priority existing)
+                        (gethash table-name all-priorities)
+                      (when (or (not existing)
+                                (< old-priority priority))
+                        (setf
+                         (gethash table-name all-tables) rows
+                         (gethash table-name all-priorities) priority)))))))
+    (setf *data-tables* (build-data-tables all-tables table-indices))))
+#+END_SRC
+
+The ~build-data-tables~ function takes care of organizing the data according to the indices specification it was given. First, it tries to merge that ~table-indices~ specifications with global ~+table-indices+~ constant we've discussed previously. Next, it just iterates over all of the tables it was given (since ~data~ argument is just a hashtable with table names as keys and plists of rows as values) and just feeds the row data to ~build-data-table~ function, which does the job of organizing the data for a single table.
+
+#+NAME: build-data-tables
+#+BEGIN_SRC lisp
+(declaim (ftype (function (hash-table list)) build-data-tables))
+(defunl build-data-tables (data table-indices)
+  "Builds data table indices for given DATA and TABLE-INDICES
+
+See +TABLE-INDICES+"
+  (loop :with indices := (append +table-indices+ table-indices)
+        :with result := (make-hash :test #'eq)
+        :for count :of-type fixnum :from 0
+        :for designator :being :the :hash-key
+        :using (hash-value table) :of data
+        :for (index-columns value-columns) := (getf indices designator)
+        :do (setf (gethash designator result)
+                  (build-data-table table index-columns value-columns))
+        :finally (log-info "~d data table(s) built" count)
+        :finally (return result)))
+#+END_SRC
+
+~build-data-table~ function transforms the list of rows represented as plists into a single hashtable, in which the keys are the plists of index columns, and the values are either singular values or a plists of all of the other columns. To demonstrate, let's have a look at the contents of =:impact-sounds= table that's used in the engine:
+
+#+BEGIN_EXAMPLE
+D2C> (hash-table-plist (gethash :impact-sounds *data-tables*))
+((:ARMOR-CLASS :BONE :WEAPON-CLASS :SWORD)
+ :SWORD-BONE
+ (:ARMOR-CLASS :BONE :WEAPON-CLASS :DAGGER)
+ :DAGGER-BONE
+ (:ARMOR-CLASS :BONE :WEAPON-CLASS :FISTS)
+ :FISTS-BONE
+;; ...
+#+END_EXAMPLE
+
+Since we use index column values as keys in the resulting hashtable, it should be obvious that the index column values should be unique, as it always is in relational databases.
+
+#+NAME: build-data-table
+#+BEGIN_SRC lisp
+(declaim (ftype (function (list list list) hash-table) build-data-table))
+(defun build-data-table (table index-columns value-columns)
+  (loop :with result := (make-hash :test #'equal)
+        :for row :in table
+        :for indices := (mapcan
+                         #'(lambda (column) (list column (getf row column)))
+                         index-columns)
+        for values := (if (length= 1 value-columns)
+                          (getf row (first value-columns))
+                          (mapcan
+                           #'(lambda (column) (list column (getf row column)))
+                           value-columns))
+        :do (setf (gethash indices result) values)
+        :finally (return result)))
+#+END_SRC
+
+Finally, we have a couple of accessors for the table data. They're not accessors per se, rather the getters, since the table data is read-only once it is loaded.
+
+The first one, ~table-value-ref~, just accesses the data table's hashtable described above. It takes ~table-designator~ argument as a keyword, and plist of ~predicates~ which relate to index column(s). It can return specified ~default~ value instead of ~nil~ when the column is not found, and it can return only a single column value instead of full plist when supplied with ~column~ keyword argument.
+
+#+NAME: table-value-ref
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline table-value-ref)
+ (ftype
+  (function (keyword list &key (:default t) (:column (or keyword null))) t)
+  table-value-ref))
+(defun table-value-ref (table-designator predicates
+                        &key (default nil) (column nil))
+  "References the data table designated by TABLE-DESIGNATOR by plist
+PREDICATES, returning either (1) the column value, if it is just a single
+column, (2) a plist of columns if there are multiple, or (3) DEFAULT, if no
+row corresponding to PREDICATES is found. COLUMN, if non-NIL, specifies the
+column to return in (2) case. This function assumes that the column names in
+PREDICATES are alphabetically sorted.
+
+See TABLE-VALUE-REF*"
+  (if-let (table (gethash table-designator *data-tables*))
+    (if-let (row (gethash predicates table))
+      (if column
+          (getf row column)
+          row)
+      default)
+    default))
+#+END_SRC
+
+The important detail of the contract for this function is that supplied ~predicates~ plist should be alphabetically sorted by the names of the columns, since this is how they're stored in the hashtables we've discussed above. If we change the order, the hash value of the list would change and this function wouldn't be able to find the requested row.
+
+To alleviate that, there's a star version of this function, ~table-value-ref*~, that does the ~predicates~ list sorting at the cost of slight performance penalty:
+
+#+NAME: table-value-ref*
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline table-value-ref*)
+ (ftype (function (keyword list &key (:default t) (:column keyword)) t)
+        table-value-ref*))
+(defun table-value-ref* (table-designator predicates
+                         &key (default nil) (column nil))
+  "References the data table designated by TABLE-DESIGNATOR by plist
+PREDICATES, returning either (1) the column value, if it is just a single
+column, (2) a plist of columns if there are multiple, or (3) DEFAULT, if no
+row corresponding to PREDICATES is found. COLUMN, if non-NIL, specifies the
+column to return in (2) case. This function makes sure that the column names
+in PREDICATES are alphabetically sorted and therefore works slightly slower.
+
+See TABLE-VALUE-REF"
+  (table-value-ref table-designator
+                   (sort predicates
+                         #'string<
+                         :key #'car)
+                   :default default
+                   :column column))
+#+END_SRC
+
+** CastleDB format support
+
 ** ECS
 
 ** Events
