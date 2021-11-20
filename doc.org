@@ -1657,6 +1657,110 @@ See TABLE-VALUE-REF"
 
 ** CastleDB format support
 
+#+BEGIN_SRC lisp :tangle castledb.lisp :noweb yes :exports none
+<<preamble>>
+
+<<load-castledb-tables-1>>
+<<load-castledb-tables-2>>
+<<load-castledb-tables-3>>
+<<load-castledb-tables-4>>
+<<load-castledb-tables-5>>
+<<load-castledb-tables-6>>
+<<load-castledb-tables-7>>
+<<load-castledb-tables-8>>
+#+END_SRC
+
+In =castledb.lisp= file we have only one function, ~load-castledb-tables~, that does loading the database from the text stream corresponding to =.cdb= file. It starts with reading the whole stream into the string using ~read-stream-content-into-string~ from [[https://common-lisp.net/project/alexandria/][Alexandria]] library and then it feeds that string to [[https://rudolph-miller.github.io/jonathan/overview.html][Jonathan library]]'s function ~parse~ to decompose the JSON contents of the supplied file to Lisp data (**note** that the column names in the CastleDB databases are case-insensitive in the engine since at some point they're converted to CL keywords). Then the function proceeds by getting the =sheets= property of the JSON that contains all the needed data:
+
+#+NAME: load-castledb-tables-1
+#+BEGIN_SRC lisp
+(defun load-castledb-tables (stream)
+  (loop
+    :with sheets := (getf
+                     (let ((jonathan:*null-value* :null))
+                       (jonathan:parse
+                        (read-stream-content-into-string stream
+                                                         :buffer-size
+                                                         (stream-size stream))
+                        :keyword-normalizer #'string-upcase
+                        :normalize-all t))
+                     :sheets)
+#+END_SRC
+
+Then in loop body we initialize the result placeholders - the hashtables that would be returned from the function:
+
+#+NAME: load-castledb-tables-2
+#+BEGIN_SRC lisp
+    :with priorities := (make-hash :test #'eq :size (length (the list sheets)))
+    :with result := (make-hash :test #'eq :size (length (the list sheets)))
+#+END_SRC
+
+Next, we iterate through the sheets contained in the =.cdb= file:
+
+#+NAME: load-castledb-tables-3
+#+BEGIN_SRC lisp
+    :for sheet :in sheets
+#+END_SRC
+
+The singular =sheet= object from the JSON may have custom property saved in =props= field, called =priority=, which is used to determine the priorities of sheets with identical names defined in different =.cdb= files. So we try to retrive this property:
+
+#+NAME: load-castledb-tables-4
+#+BEGIN_SRC lisp
+    :for priority := (getf (getf sheet :props) :priority 0)
+#+END_SRC
+
+Next, we work on sheet's columns by retrieving column data from JSON and then by building the =column-processors= plist of the functions that'd convert string cell values read from JSON into corresponding Lisp values. Right now the only supported column type is /Text/ (numerically coded =1=). Note that we call ~read~ on the value, so we support saving any Lisp data inside of text CastleDB cells:
+
+#+NAME: load-castledb-tables-5
+#+BEGIN_SRC lisp
+    :for columns := (getf sheet :columns)
+    :for column-processors :=
+       (loop :for column :in columns
+             :for column-type := (parse-integer
+                                   (getf column :typestr "")
+                                   :junk-allowed t)
+             :append (list (make-keyword
+                            (string-upcase
+                             (getf column :name)))
+                           (ecase column-type
+                             (1 #'(lambda (text)
+                                    (with-input-from-string (s text)
+                                      (read s)))))))
+#+END_SRC
+
+The next step is to retrieve the actual data rows along with the name of the sheet, replacing undescrores with the dashes in the former:
+
+#+NAME: load-castledb-tables-6
+#+BEGIN_SRC lisp
+    :for lines := (getf sheet :lines)
+    :for sheet-name := (make-keyword
+                        (string-upcase
+                         (substitute #\- #\_ (getf sheet :name))))
+#+END_SRC
+
+Further down the line, we iterate through the data rows, calling corresponding functions from =column-processors= plist on the cell values and storing the modified row in =result= hashtable, along with storing sheet priority in =priorities= hashtable:
+
+#+NAME: load-castledb-tables-7
+#+BEGIN_SRC lisp
+    :do (setf (gethash sheet-name result)
+              (dolist (line lines lines)
+                (doplist (column value line)
+                         (setf (getf line column)
+                               (funcall
+                                (the function (getf column-processors column))
+                                value))))
+              (gethash sheet-name priorities)
+              priority)
+#+END_SRC
+
+Finally, we return the collected results as the multiple values from the =load-castledb-tables=:
+
+#+NAME: load-castledb-tables-8
+#+BEGIN_SRC lisp
+    :finally (return (values result priorities))))
+#+END_SRC
+
+
 ** ECS
 
 ** Events
