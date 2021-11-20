@@ -69,13 +69,7 @@ We put all of engine's source code into ~:d2clone-kit~ package.
 
 <<systems-handle-event>>
 
-<<game-loop-1>>
-<<game-loop-2>>
-<<game-loop-3>>
-<<game-loop-4>>
-<<game-loop-5>>
-<<game-loop-6>>
-<<game-loop-7>>
+<<gameloop>>
 
 <<callback-globals>>
 
@@ -375,8 +369,7 @@ First, we initialize the data tables containing various game-specific values fro
 
 The game loop starts with calling garbage collector using the ~gc~ function from the [[https://common-lisp.net/project/trivial-garbage/][trivial-garbage]] library. After that, leaving some comment in log, we setup the [[https://github.com/cbaggers/livesupport][livesupport]] library by calling ~setup-lisp-repl~. This amazing library allows to feed arbitrary code into REPL while the game is running. Next, by using ~uiop:nest~ macro to avoid extra nesting, we prepare some variables for the loop. We read the ~display-vsync~ and ~display-fps~ variables from config (see the [[Config]] section for the discussion of ~with-system-config-options~ macro used for that). We also create a functional renderer instance with a call to ~make-renderer~ (discussed in [[Renderer]] section) and initialize some time counters using the [[https://liballeg.org/a5docs/trunk/time.html#al_get_time][~al:get-time~]] function, namely the timestamp of the last frame, called ~last-tick~ and last livesupport update time called ~last-repl-update~; we update livesupport REPL link once in 0.3 seconds by default, which is set in ~repl-update-interval~ keyword argument to the ~game-loop~ function.
 
-#+NAME: game-loop-1
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
 (declaim
  (ftype
   (function (cffi:foreign-pointer &key (:repl-update-interval double-float)))
@@ -396,8 +389,7 @@ The game loop starts with calling garbage collector using the ~gc~ function from
 
 Next, we allocate [[https://liballeg.org/a5docs/trunk/events.html#allegro_event][liballegro event]] foreign structure with ~cffi:with-foreign-object~ macro and sleep for approximately 1/60 of a second so that the calculated FPS value for the very first frame does not cause division by zero. After that, we finally start the actual game loop with its body wrapped into ~restart-case~ for some nice restarts we'll discuss in a few moments.
 
-#+NAME: game-loop-2
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
    (cffi:with-foreign-object (event '(:union al:event))
      (sleep 0.016)
      (loop
@@ -407,8 +399,7 @@ Next, we allocate [[https://liballeg.org/a5docs/trunk/events.html#allegro_event]
 
 First of all, in the beginning of every frame, we process the events. We first try to feed the allegro events we receive with [[https://liballeg.org/a5docs/trunk/events.html#al_get_next_event][~al:get-next-event~]] to the [[https://github.com/Immediate-Mode-UI/Nuklear/][Nuklear]] library using ~ui-handle-event~ helper in case some UI windows are active. In case the event is not handled by Nuklear, we call ~systems-handle-event~ helper we'll discuss in a moment. Also note that we can receive several events per frame, so we also use ~loop~ construct here.
 
-#+NAME: game-loop-3
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
                  (nk:with-input (ui-context)
                    (unless (loop :while (al:get-next-event event-queue event)
                                  :always (or (ui-handle-event event)
@@ -457,8 +448,7 @@ Back to the game loop, after processing all low-level liballegro events, we sepa
 
 After all of the events are processed, we do some time-based calculations. We get current frame's timestamp into the ~current-tick~ variable, check if we need to update livesupport REPL link with ~livesupport:update-repl-link~, calculate delta time between current frame and the previous one into the ~*delta-time*~ global variable and display FPS value if this is set in config.
 
-#+NAME: game-loop-4
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
                  (process-events)
                  (let ((current-tick (the double-float (al:get-time))))
                    (when (> (- current-tick last-repl-update)
@@ -478,8 +468,7 @@ After that, we call ~system-update~ generic method in loop for every ECS system,
 
 Further down the line, we call ~system-draw~ generic method which arranges the drawing commands needed for those state aspects to be drawn on screen with the ~renderer~ instance.
 
-#+NAME: game-loop-5
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
                    (process-actions)
                    ;; TODO : use separate threads for updating?..
                    (with-systems sys
@@ -492,8 +481,7 @@ Further down the line, we call ~system-draw~ generic method which arranges the d
 
 After those issues are handled, we proceed to actual drawing. We call [[https://liballeg.org/a5docs/trunk/graphics.html#al_clear_to_color][~al:clear-to-color~]] to flush the screen with the same black color, and then we call ~do-draw~ function which makes the functional renderer instance to do the actual draw calls. After swapping ~last-tick~ with ~current-tick~, we also call [[https://liballeg.org/a5docs/trunk/display.html#al_wait_for_vsync][~al:wait-for-vsync~]] if the vertical sync was set in config, and we call ~nk:allegro-render~ to render UI windows, if any. With that, we're finished with the draw calls, and we finally call [[https://liballeg.org/a5docs/trunk/display.html#al_flip_display][~al:flip-display~]] to swap drawing buffers.
 
-#+NAME: game-loop-6
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
                    (al:clear-to-color (al:map-rgb 0 0 0))
                    (do-draw renderer)
                    (setf last-tick current-tick))
@@ -505,8 +493,7 @@ After those issues are handled, we proceed to actual drawing. We call [[https://
 
 At the bottom of the game loop body, we have a ~next-iteration~ restart, which allows to continue to the next iteration of loop when some condition arises within.
 
-#+NAME: game-loop-7
-#+BEGIN_SRC lisp
+#+BEGIN_SRC lisp :noweb_ref gameloop
              ;; TODO restart to terminate the loop
              (next-iteration ()
                :report "Proceed to next game loop iteration."
