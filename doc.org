@@ -1715,9 +1715,219 @@ Finally, we return the collected results as the multiple values from the =load-c
 
 ** ECS
 
+ECS stands for Entity-Component-System, which is a popular architectural pattern in various kinds of games. It deviates from usual OOP tight coupling by allowing in-game objects to be dynamically constructed at runtime with varying sets of features, called /components/. Incidentally, this approach also gives possibility to optimize performance by accessing those components in CPU cache friendly way.
+
+For detailed description of ECS pattern, refer to following resources:
+- [[http://t-machine.org/index.php/2007/09/03/entity-systems-are-the-future-of-mmog-development-part-1][Entity Systems are the future of MMOG development]] article series
+- [[http://entity-systems.wikidot.com][Entity Systems Wiki]]
+- [[https://github.com/SanderMertens/ecs-faq][ECS FAQ]]
+- Chapters from Game Programming Patterns book: [[https://gameprogrammingpatterns.com/component.html][Component]], [[https://gameprogrammingpatterns.com/data-locality.html][Data Locality]], [[https://gameprogrammingpatterns.com/object-pool.html][Object Pool]]
+
+To summarize those in one bulleted list:
+- Components are structs with object facet's specific data, stored as a struct of arrays instead of naive approach of array of structs.
+- Entities are just integer indices in those arrays, spanning zero or more facets of an in-game object.
+- Systems incorporate the logic of data processing since componets are merely structs without any code attached. Systems usually process single entity's component, going through the corresponding array in order for every entity, thus leveraging CPU caching.
+
+*** Entities
+
+#+BEGIN_SRC lisp :tangle entities.lisp :noweb yes :exports none
+<<preamble>>
+
+<<invalid-entity>>
+
+<<entity-counts>>
+
+<<deleted-entities>>
+
+<<entities-children>>
+
+<<current-action>>
+
+<<make-entity>>
+
+<<delete-child>>
+
+<<delete-entity>>
+
+<<entity-valid-p>>
+
+<<finalize-entities>>
+
+<<session-entity>>
+
+<<dump-entities>>
+#+END_SRC
+
+=entities.lisp= contains a few global variables containing important engine data as well as a bunch of functions to manage entities and their parent-child relationships. The former is not required for an ECS implementation, but we have it anyway.
+
+First of all, we define a constant denoting the invalid entity. Since entities themselves are just integer indices in some internal engine arrays, we use =-1= as the invalid one:
+
+#+NAME: invalid-entity
+#+BEGIN_SRC lisp
+(defconstant +invalid-entity+ -1 "The invalid entity.")
+#+END_SRC
+
+Next, we have global entities count and allocated entity data storage size:
+
+#+NAME: entity-counts
+#+BEGIN_SRC lisp
+(declaim (type array-length *entities-count*))
+(global-vars:define-global-var *entities-count* 0)
+
+(declaim (type array-length *entities-allocated*))
+(global-vars:define-global-var *entities-allocated* 144)
+#+END_SRC
+
+Note that we have =144= entities allocated initially, which grows as needed.
+
+Then we define ~*deleted-entities*~, which stores the entities that were deleted with ~delete-entity~ function described later in this section. We store those to omit extra memory allocations in a few object creation hot paths.
+
+#+NAME: deleted-entities
+#+BEGIN_SRC lisp
+(declaim (type growable-vector *deleted-entities*))
+(global-vars:define-global-var *deleted-entities*
+    (make-growable-vector :initial-element +invalid-entity+))
+#+END_SRC
+
+After that, we have ~*entities-children*~, which stores child-parent relationship data. Note that in our engine the entity can have only one parent, so we use a hashtable from an integer to a list of integers here:
+
+#+NAME: entities-children
+#+BEGIN_SRC lisp
+(declaim (type hash-table *entities-children*))
+(global-vars:define-global-var *entities-children* (make-hash-table))
+#+END_SRC
+
+Next, we store current action for every allocated entity in ~*current-action*~ growable vector. Actions are covered in depth in section [[Actions]], and growable vector data structure is a basic wrapper around ~simple-vector~ and is described in more detail in [[Growable vectors]].
+
+#+NAME: current-action
+#+BEGIN_SRC lisp
+(declaim (type growable-vector *current-action*))
+(global-vars:define-global-var* *current-action*
+    (make-growable-vector :initial-element +invalid-index+
+                          :initial-allocated-size *entities-allocated*))
+#+END_SRC
+
+Next, we got the cornerstone function for the entities, ~make-enity~. First, it tries to reuse the index of some previously deleted entity from ~*deleted-entities*~ growable vector described above. If there's no index to reuse, we fall back to full entity creation: we make the new entity to be equal to ~*entities-count*~, then we increment that variable by one and check if there's the need to increase the various storage sizes for entity data. If there is such need, we increase ~*entities-allocated*~ variable accordingly, we call ~system-adjust-components~ method for every system instance we got to grow corresponding component arrays, and we grow the ~*current-action*~ growable vector.
+As the last step of ~make-entity~, we add the newly created entity to its parent children list, if ~parent~ argument was set.
+
+#+NAME: make-entity
+#+BEGIN_SRC lisp
+(defunl make-entity (&optional parent)
+  "Allocates new entity. When PARENT is set, deleting parent entity
+automatically deletes it.
+
+See DELETE-ENTITY"
+  (let ((new-entity
+          (if (growable-vector-emptyp *deleted-entities*)
+              (let ((res *entities-count*))
+                (incf *entities-count*)
+                (when (= *entities-count* *entities-allocated*)
+                  (setf *entities-allocated*
+                        (round (* *entities-allocated* +array-growth-factor+)))
+                  (log-debug "Adjusting component allocated size to ~a"
+                             *entities-allocated*)
+                  (with-systems system
+                    (system-adjust-components system *entities-allocated*))
+                  (growable-vector-grow *current-action* *entities-allocated*))
+                res)
+              (growable-vector-pop *deleted-entities* 0))))
+    (when parent
+      (setf (gethash parent *entities-children*)
+            (push new-entity (gethash parent *entities-children* nil))))
+    new-entity))
+#+END_SRC
+
+There's ~delete-child~ function which modifes given entity children list by removing given child entity from it. Note that it does not delete the child entity itself.
+
+#+NAME: delete-child
+#+BEGIN_SRC lisp
+(defun delete-child (parent child)
+  "Deletes relationship between PARENT and CHILD.
+
+See MAKE-ENTITY"
+  (setf (gethash parent *entities-children*)
+        (delete child (the list (gethash parent *entities-children* nil)))))
+#+END_SRC
+
+To actually delete entity, one should use ~delete-entity~ function. First, it recursively deletes all of entity's children and clears its children list. Next, it calls ~delete-entity-actions~ to delete all of entity's associated actions; refer to [[Actions]] for detailed discussion on associated actions. Next, we synchronously issue ~entity-deleted~ event, which basically means that every live system's ~process-event~ method would be called with an instance of that event; refer to [[Events]] for description of event system internals. Further down the line, we again loop over all systems, calling corresponding ~delete-component~ method which is responsible for manual cleaning up of the component data. Finally, we add the deleted entity to ~*deleted-entities*~ growable vector.
+
+#+NAME: delete-entity
+#+BEGIN_SRC lisp
+(defun delete-entity (entity)
+  "Deletes entity ENTITY. Do NOT call this when entity has parent (call
+DELETE-CHILD first).
+
+See MAKE-ENTITY
+See DELETE-CHILD"
+  (dolist (child (gethash entity *entities-children* nil))
+    (delete-entity child))
+  (remhash entity *entities-children*)
+  (delete-entity-actions entity)
+  (issue (entity-deleted :async nil) :entity entity)
+  (with-systems system
+    (when (%has-component-p system entity)
+      (delete-component system entity)))
+  (growable-vector-push *deleted-entities* entity))
+#+END_SRC
+
+Next, we have a tiny ~entity-valid-p~ helper predicate function, which just checks whether an entity is valid - e.g. not ~+invalid-entity+~:
+
+#+NAME: entity-valid-p
+#+BEGIN_SRC lisp
+(declaim
+ #-d2c-debug (inline entity-valid-p)
+ (ftype (function (fixnum) boolean) entity-valid-p))
+(defun entity-valid-p (entity)
+  "Return T if entity is valid."
+  (not (minusp entity)))
+#+END_SRC
+
+Next, we have ~finalize-entities~ function which is usually called right before the game end to clean up the memory used by various entity data storage variables, like ~*current-action*~, ~*entities-children*~ and ~*deleted-entities*~:
+
+#+NAME: finalize-entities
+#+BEGIN_SRC lisp
+(defun finalize-entities ()
+  (setf *entities-count* 0
+        *entities-allocated* 144
+        *current-action* (make-growable-vector
+                          :initial-element +invalid-index+
+                          :initial-allocated-size *entities-allocated*))
+  (clrhash *entities-children*)
+  (growable-vector-clear *deleted-entities*))
+#+END_SRC
+
+Next, we have another global variable, which serves as the root parent of all of the entities in current game session, so this session could be manipulated easily, e.g. deleted in one sweep. Also if this variable is set to ~+invalid-entity+~, this means that the game session hasn't started yet and the user is just looking at the main menu.
+
+#+NAME: session-entity
+#+BEGIN_SRC lisp
+(declaim (type fixnum *session-entity*))
+(global-vars:define-global-var *session-entity* +invalid-entity+)
+#+END_SRC
+
+Finally, we have debugging helper function called ~dump-entities~ which prints the tree of objects starting from the given entity along with the list of components contained in every object.
+
+#+NAME: dump-entities
+#+BEGIN_SRC lisp
+(declaim (ftype (function (fixnum &optional stream fixnum)) dump-entities))
+(defun dump-entities (root &optional (stream *standard-output*) (offset 0))
+  "Dumps entities tree starting from ROOT node to the STREAM."
+  (let ((components (loop :for system :being :the :hash-key
+                          :using (hash-value system-instance) :of *systems*
+                          :when (%has-component-p system-instance root)
+                          :collect system)))
+    (format stream "~vT~d[~{~a~^  ~}]~%" offset root components)
+    (dolist (child (reverse (gethash root *entities-children*)))
+      (dump-entities child stream (+ offset 4)))))
+#+END_SRC
+
+
+** Prefabs
+
 ** Events
 
 ** Actions
+
+** Growable vectors
 
 ** Renderer
 
@@ -1727,4 +1937,5 @@ Finally, we return the collected results as the multiple values from the =load-c
 
 # Local Variables:
 # org-src-preserve-indentation: t
+# org-babel-use-quick-and-dirty-noweb-expansion: t
 # End:
