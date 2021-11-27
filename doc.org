@@ -2,7 +2,7 @@
 
 * Quickstart
 
-d2clone-kit engine requires [[https://liballeg.org][liballegro]] game programming library to function (*unrelated* to Allegro Common Lisp; d2clone-kit supports variety of Common Lisp compilers, including SBCL).
+d2clone-kit engine requires [[https://liballeg.org][liballegro]] game programming library to function (*unrelated* to Allegro Common Lisp; d2clone-kit supports variety of Common Lisp compilers, including, but not limited to SBCL, ClozureCL and ECL).
 
 To install liballegro development files, refer to your distribution's package manager; for instance, on Debian derivatives (including Ubuntu and Mint) issue the following command:
 
