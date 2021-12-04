@@ -221,7 +221,7 @@ Next, we initialize core liballegro facilities: logging, the library itself, fil
 
 #+END_SRC
 
-Right after logging is initialized, we emit a newborn cry - the very first log line, reporting engine version by using the following nice helper function which tries to get given package version from [[https://common-lisp.net/project/asdf/][ASDF]]:
+Right after logging is initialized, we emit a newborn cry --- the very first log line, reporting engine version by using the following nice helper function which tries to get given package version from [[https://common-lisp.net/project/asdf/][ASDF]]:
 
 #+NAME: package-version
 #+BEGIN_SRC lisp
@@ -769,8 +769,8 @@ After having foreign library stuff handled, we proceed to defining all the funct
 
 Next, we define ~init-fs~ function which does all the necessary initialization. Namely, it calls [[https://icculus.org/physfs/docs/html/physfs_8h.html#a61b94cac8e65267afb8a5f2344e60dd1][physfs-init]] with the ~argv[0]~ argument it requires, obtained from the call to ~raw-command-line-arguments~ from UIOP.
 Then we tweak PhysicsFS by allowing it to follow symbolic links with the call to [[https://icculus.org/physfs/docs/html/physfs_8h.html#aad451d9b3f46f627a1be8caee2eef9b7][physfs-permit-symbolic-links]].
-Next, we set PhysicsFS /write dir/ to our data directory - that would be the only directory in which the engine would be able to write files, so all resources are basically read-only. To do that, we call [[https://icculus.org/physfs/docs/html/physfs_8h.html#a36c408d40b3a93c8f9fc02a16c02e430][physfs-set-write-dir]].
-After that, we /mount/ several locations using helper function ~mount~, which is just a thin logging wrapper over [[https://icculus.org/physfs/docs/html/physfs_8h.html#a8eb320e9af03dcdb4c05bbff3ea604d4][physfs-mount]] - a function that adds a directory or archive path to [[http://icculus.org/physfs/docs/html/][PhysicsFS /search path/]], so that files from that dir or archive can be acessed by only specifying file name, without the full path:
+Next, we set PhysicsFS /write dir/ to our data directory --- that would be the only directory in which the engine would be able to write files, so all resources are basically read-only. To do that, we call [[https://icculus.org/physfs/docs/html/physfs_8h.html#a36c408d40b3a93c8f9fc02a16c02e430][physfs-set-write-dir]].
+After that, we /mount/ several locations using helper function ~mount~, which is just a thin logging wrapper over [[https://icculus.org/physfs/docs/html/physfs_8h.html#a8eb320e9af03dcdb4c05bbff3ea604d4][physfs-mount]] --- a function that adds a directory or archive path to [[http://icculus.org/physfs/docs/html/][PhysicsFS /search path/]], so that files from that dir or archive can be acessed by only specifying file name, without the full path:
 
 #+NAME: mount
 #+BEGIN_SRC lisp
@@ -979,7 +979,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
       :finally (al:fclose file))))
 #+END_SRC
 
-There's an important consequence of using such low-level C APIs, namely - the lines in the file should be shorter than ~buffer-length~, which is 4k bytes by default, otherwise it'll get truncated.
+There's an important consequence of using such low-level C APIs, namely --- the lines in the file should be shorter than ~buffer-length~, which is 4k bytes by default, otherwise it'll get truncated.
 
 *** Binary file struct helpers
 
@@ -1326,7 +1326,7 @@ It just saves the config with the call to ~save-config~, destroys the global var
 
 Next, there are two functions which are keystone to config subsystem interface, namely the getter and the setter of options.
 
-The getter, simply called ~config~, first calls [[https://liballeg.org/a5docs/trunk/config.html#al_get_config_value][~al:get-config-value~]] on global ~*config*~ instance to get the configuration option value with supplied section name and option name - both expected to be keywords and both are, of course, converted to string before passing to C API. Note that section could be ~nil~, so that there could be sectionless options.
+The getter, simply called ~config~, first calls [[https://liballeg.org/a5docs/trunk/config.html#al_get_config_value][~al:get-config-value~]] on global ~*config*~ instance to get the configuration option value with supplied section name and option name --- both expected to be keywords and both are, of course, converted to string before passing to C API. Note that section could be ~nil~, so that there could be sectionless options.
 If the requested value was found, it is being converted to Lisp value with the call to ~read-from-string~, so we can have various Lisp data in config, including, but not limited to lists, for example it is possible to notice something like the following in the config file:
 
 #+BEGIN_EXAMPLE
@@ -1646,7 +1646,7 @@ In =castledb.lisp= file we have only one function, ~load-castledb-tables~, that 
                      :sheets)
 #+END_SRC
 
-Then in loop body we initialize the result placeholders - the hashtables that would be returned from the function:
+Then in loop body we initialize the result placeholders --- the hashtables that would be returned from the function:
 
 #+BEGIN_SRC lisp :noweb-ref load-castledb-tables
     :with priorities := (make-hash :test #'eq :size (length (the list sheets)))
@@ -1870,7 +1870,7 @@ See DELETE-CHILD"
   (growable-vector-push *deleted-entities* entity))
 #+END_SRC
 
-Next, we have a tiny ~entity-valid-p~ helper predicate function, which just checks whether an entity is valid - e.g. not ~+invalid-entity+~:
+Next, we have a tiny ~entity-valid-p~ helper predicate function, which just checks whether an entity is valid --- e.g. not ~+invalid-entity+~:
 
 #+NAME: entity-valid-p
 #+BEGIN_SRC lisp
