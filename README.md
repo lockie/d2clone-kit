@@ -72,6 +72,9 @@ $ sbcl --quit --eval \
   camera position.
 
 
+## Development Roadmap
+See [ROADMAP](https://gitlab.com/lockie/d2clone-kit/-/blob/master/ROADMAP.org).
+
 ## Legal
 d2clone-kit is licensed under the GNU GPL license version 3.
 See [LICENSE](https://gitlab.com/lockie/d2clone-kit/-/blob/master/LICENSE).

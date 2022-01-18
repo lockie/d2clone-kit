@@ -1,0 +1,43 @@
+* Roadmap
+  This is pool of tasks that should be implemented, roughly sorted by priority.
+
+  * Literate documentation
+  * Finally fix isometric coordinates math
+    * Implement target indicator
+  * Add ability to specify entities in Tiled maps
+  * Fix twitchy attack bug (#42)
+  * Add winning screen (#62)
+  * Automatically build SBCL usable in older Windows OSes
+  * Replace CastleDB files with plain S-exprs (#65)
+  * Refactoring
+    * Split library in ASDF modules
+    * TODOs in code
+    * Make potion drinking into action (#60)
+    * Rewrite ~*-traverse~ functions as macroses
+    * Use dynamic-extent
+    * Implement condition types
+    * Factor out ECS library (deal with growable vector & sparse array)
+    * Use lisp-namespace library? (#16)
+    * Try damn-fast-priority-queue library
+    * Tweak ~DEFUNL~, replacing ~CL:DEFUN~ with custom declaration (#61)
+    * Think on using trivial-package-local-nicknames
+    * Think on using trivial-types for some missing type
+      specifications (e.g. plist)
+  * Improve A* performance (#24)
+    * Think on implementing character sizes (#21)
+  * Add soundscape (#47)
+  * Add possibility to reload prefabs from disk (#11)
+    * Think on prefab lazy loading (#48)
+  * Add nice cursor (#44)
+  * Research dialogues DSL (#10)
+  * Add character turn speed limit (#27)
+  * Fix unhandled memory fault on condition in system-draw (#53)
+  * Add controller support (#57)
+  * Lower requirements for max texture size (#51)
+    * Try Renderdoc again (#58)
+  * Add illumination (#9)
+  * Add dungeon generation (#8)
+    * Add support for external tiled tileset (#38)
+  * Think on AI DSL (#18)
+  * Improve main loop
+  * Add network game (#50)
