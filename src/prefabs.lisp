@@ -39,6 +39,8 @@ template and optional extra parameters PARAMETERS within SYSTEM for ENTITY."))
          :entity entity
          :system-name (system-name system)))
 
+;; TODO think on using (asdf:system-relative-pathname :awesome-game) to load
+;; resources from
 (defmacro defprefab (system extension &rest slots)
   "Defines prefab structure with slots SLOTS and file name EXTENSION within
 SYSTEM."

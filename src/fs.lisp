@@ -123,6 +123,7 @@ filename."
  #-d2c-debug (inline sanitize-filename)
  (ftype (function (string) string) sanitize-filename))
 (defun sanitize-filename (filename)
+  ;; TODO : try replacing with one-more-re-nightmare
   (values (cl-ppcre:regex-replace-all
            "\\x22|\\x2a|\\x2f|\\x3a|\\x3c|\\x3e|\\x3f|\\x5c|\\x7c" filename
            "")))
@@ -135,6 +136,7 @@ filename."
 Lines are expected to be shorter than BUFFER-LENGTH chars."
   (cffi:with-foreign-object (buffer :char buffer-length)
     (loop
+      ;; TODO : also use ensure-loaded here?
       :with file := (al:fopen (namestring pathname) "r")
         :initially (when (cffi:null-pointer-p file) (return nil))
       :for line := (al:fgets file buffer buffer-length)
@@ -154,6 +156,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
 (defmethod initialize-instance :after ((stream character-stream) &key)
   (with-slots (path al-file) stream
     (setf al-file (al:fopen path "r"))
+    ;; TODO : also use ensure-loaded here?
     (when (cffi:null-pointer-p al-file)
       (error "failed to open '~a'" path))))
 
@@ -196,6 +199,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
 (defmethod initialize-instance :after ((stream binary-stream) &key)
   (with-slots (path al-file) stream
     (setf al-file (al:fopen path "rb"))
+    ;; TODO : also use ensure-loaded here?
     (when (cffi:null-pointer-p al-file)
       (error "failed to open '~a'" path))))
 

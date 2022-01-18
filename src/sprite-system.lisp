@@ -142,6 +142,14 @@ ENTITY. Returns NIL of no such property exists."
         (ase-file-frames ase-file))
    :start total-stance-length))
 
+;; TODO #51 Note that you can query some additional read-only properties such
+;; as the maximum allowed bitmap (i.e. texture) size via
+;; al_get_display_option.  ALLEGRO_MAX_BITMAP_SIZE When queried this returns
+;; the maximum size (width as well as height) a bitmap can have for this
+;; display. Calls to al_create_bitmap or al_load_bitmap for bitmaps larger
+;; than this size will fail. It does not apply to memory bitmaps which always
+;; can have arbitrary size (but are slow for drawing).
+
 (defun load-sprite-stances (ase-file)
   (loop :with stances := (make-hash :size 4 :test #'eq)
         :for frame :across (ase-file-frames ase-file)

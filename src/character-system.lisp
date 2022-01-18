@@ -21,6 +21,7 @@
      (path (make-array 0) :type simple-vector))
     (:documentation "The movement action.")
 
+  ;; TODO : indent
 (declaim
  #-d2c-debug (inline face-target)
  (ftype (function (double-float double-float double-float double-float)
@@ -77,6 +78,9 @@ facing to look at point TARGET-X, TARGET-Y."
 (defun approx-equal (a b &optional (epsilon 0.05d0))
   (< (abs (- a b)) epsilon))
 
+;; TODO : also optimize sin/cos? https://habr.com/ru/company/ruvds/blog/584460/
+;; see also https://github.com/samhocevar/lolremez
+;; TODO : Try single floats everywhere to omit boxing?
 (defperformer move (action target-x target-y path)
   (let ((entity (action-entity action)))
     (with-coordinate entity ()

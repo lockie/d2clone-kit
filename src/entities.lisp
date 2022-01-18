@@ -1,6 +1,8 @@
 (in-package :d2clone-kit)
 
 
+;; TODO : add type alias entity -> fixnum
+
 (defconstant +invalid-entity+ -1 "The invalid entity.")
 
 (declaim (type array-length *entities-count*))
@@ -37,6 +39,8 @@ See DELETE-ENTITY"
                              *entities-allocated*)
                   (with-systems system
                     (system-adjust-components system *entities-allocated*))
+                  ;; TODO : event for storage growth (to reduce tight coupling
+                  ;; with ECS)
                   (growable-vector-grow *current-action* *entities-allocated*))
                 res)
               (growable-vector-pop *deleted-entities* 0))))
@@ -78,6 +82,7 @@ See DELETE-CHILD"
 (defun finalize-entities ()
   (setf *entities-count* 0
         *entities-allocated* 144
+        ;; TODO : move to finalize-actions
         *current-action* (make-growable-vector
                           :initial-element +invalid-index+
                           :initial-allocated-size *entities-allocated*))

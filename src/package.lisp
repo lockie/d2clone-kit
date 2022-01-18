@@ -1,5 +1,6 @@
 (in-package :cl-user)
 
+;; TODO : uiop:define-package
 (defpackage :d2clone-kit
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
