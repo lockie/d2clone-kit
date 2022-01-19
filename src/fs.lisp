@@ -191,6 +191,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
     (al:fungetc al-file (char-code char))))
 
 (defclass binary-stream (trivial-gray-streams:fundamental-binary-input-stream)
+  ;; TODO : use alexandria:required-argument
   ((path :initarg :path :initform (error "missing path"))
    (al-file))
   (:documentation "Wrapper around liballegro
