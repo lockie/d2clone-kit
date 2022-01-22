@@ -80,7 +80,8 @@ See MAKE-PREFAB-COMPONENT"))
                                (ftype
                                 (function (,name array-index) ,type) ,@s))
                               (defun ,@s (objects index)
-                                (growable-vector-ref (,@a objects) index))))
+                                (values
+                                 (growable-vector-ref (,@a objects) index)))))
                         unsafe-slot-accessors array-accessors slot-types))
          (setter-decls (mapcan
                         #'(lambda (ro s a type)
@@ -93,9 +94,10 @@ See MAKE-PREFAB-COMPONENT"))
                                    ,type)
                                   (setf ,@s)))
                                 (defun (setf ,@s) (new-value objects index)
-                                  (setf
-                                   (growable-vector-ref* (,@a objects) index)
-                                   new-value)))))
+                                  (values
+                                   (setf
+                                    (growable-vector-ref* (,@a objects) index)
+                                    new-value))))))
                         slot-ro slot-accessors array-accessors slot-types))
          (unsafe-setter-decls
            (mapcan
@@ -107,8 +109,8 @@ See MAKE-PREFAB-COMPONENT"))
                                       ,type)
                             (setf ,@s)))
                     (defun (setf ,@s) (new-value objects index)
-                      (setf (growable-vector-ref (,@a objects) index)
-                            new-value)))))
+                      (values (setf (growable-vector-ref (,@a objects) index)
+                                    new-value))))))
             slot-ro unsafe-slot-accessors array-accessors slot-types)))
     `(progn
        (defstruct (,name
