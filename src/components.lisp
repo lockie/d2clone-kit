@@ -78,10 +78,7 @@ See MAKE-PREFAB-COMPONENT"))
                             `((declaim
                                #-d2c-debug (inline ,@s)
                                (ftype
-                                (function (,name
-                                           (integer 0 ,array-dimension-limit))
-                                          ,type)
-                                      ,@s))
+                                (function (,name array-index) ,type) ,@s))
                               (defun ,@s (objects index)
                                 (growable-vector-ref (,@a objects) index))))
                         unsafe-slot-accessors array-accessors slot-types))
@@ -92,8 +89,7 @@ See MAKE-PREFAB-COMPONENT"))
                                  #-d2c-debug (inline (setf ,@s))
                                  (ftype
                                   (function
-                                   (,type ,name
-                                          (integer 0 ,array-dimension-limit))
+                                   (,type ,name array-index)
                                    ,type)
                                   (setf ,@s)))
                                 (defun (setf ,@s) (new-value objects index)
@@ -107,8 +103,7 @@ See MAKE-PREFAB-COMPONENT"))
                 (unless ro
                   `((declaim
                      #-d2c-debug (inline (setf ,@s))
-                     (ftype (function (,type ,name
-                                             (integer 0 ,array-dimension-limit))
+                     (ftype (function (,type ,name array-index)
                                       ,type)
                             (setf ,@s)))
                     (defun (setf ,@s) (new-value objects index)
