@@ -9,6 +9,8 @@
    (orb-fill (cffi:null-pointer) :type cffi:foreign-pointer)
    (orb-flare (cffi:null-pointer) :type cffi:foreign-pointer)
    (orb-tmp (cffi:null-pointer) :type cffi:foreign-pointer)
+   (target-indicator-entity +invalid-entity+ :type fixnum)
+   (target-indicator-size 0 :type fixnum)
    (debug-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles player character."
    :order 1))
@@ -60,7 +62,8 @@ cursor position."
   (declare (notinline item-at)) ;; NOTE : avoiding circular dependency
   (let ((player-entity (player-entity)))
     (when (and (entity-valid-p player-entity) (not (deadp player-entity)))
-      (with-system-slots ((mouse-pressed-p last-target)
+      (with-system-slots ((mouse-pressed-p last-target target-indicator-entity
+                                           target-indicator-size)
                           :of player-system
                           :read-only nil)
         (if (entity-valid-p last-target)
@@ -69,6 +72,11 @@ cursor position."
                 (multiple-value-call #'screen->orthogonal*
                   (multiple-value-call #'viewport->absolute
                     (mouse-position mouse-event)))
+              ;; TODO : do this on mouse up, not on mouse down
+              (when (entity-valid-p target-indicator-entity)
+                (with-coordinate target-indicator-entity ()
+                  (setf x new-x y new-y
+                        target-indicator-size (ceiling *tile-height* 2))))
               (if-let (target (and
                                (not mouse-pressed-p)
                                (character-under-cursor new-x new-y)))
@@ -93,14 +101,22 @@ cursor position."
                (player-system-last-target system) +invalid-entity+))))))
 
 (defmethod system-initialize ((system player-system))
-  (with-system-config-options ((debug-cursor))
-    (with-system-slots ((orb orb-fill orb-flare orb-tmp debug-entity)
+  (with-system-config-options ((debug-cursor debug-target))
+    (with-system-slots ((orb orb-fill orb-flare orb-tmp target-indicator-entity
+                             debug-entity)
                         :of player-system :instance system :read-only nil)
       (setf orb (ensure-loaded #'al:load-bitmap "images/orb.png")
             orb-fill (ensure-loaded #'al:load-bitmap "images/orb-fill.png")
             orb-flare (ensure-loaded #'al:load-bitmap "images/orb-flare.png")
             orb-tmp (al:create-bitmap (al:get-bitmap-width orb-fill)
                                       (al:get-bitmap-height orb-fill))
+            target-indicator-entity (if debug-target
+                                        (make-object
+                                         '((:coordinate :x 0d0 :y 0d0)
+                                           (:debug
+                                            :order 2000d0
+                                            :type :ellipse)))
+                                        +invalid-entity+)
             debug-entity (if debug-cursor
                              (make-object '((:debug :order 2000d0)))
                              +invalid-entity+)))))
@@ -116,6 +132,10 @@ cursor position."
       (delete-entity debug-entity))))
 
 (defmethod system-update ((system player-system))
+  (with-system-slots ((target-indicator-size)
+                      :of player-system :instance system :read-only nil)
+    (when (plusp target-indicator-size)
+      (setf target-indicator-size (1- target-indicator-size))))
   (with-system-slots ((mouse-pressed-p last-target)
                       :of player-system :instance system)
     (unless (and (entity-valid-p last-target)
@@ -128,9 +148,23 @@ cursor position."
   (block nil
     (with-system-config-options ((display-width display-height))
       ;; TODO : draw orbs with Nuklear!?!
-      (with-system-slots ((entity orb orb-fill orb-flare orb-tmp)
+      (with-system-slots ((entity orb orb-fill orb-flare orb-tmp
+                                  target-indicator-entity
+                                  target-indicator-size)
                           :of player-system :instance system)
         (unless (entity-valid-p entity) (return))
+        (unless (or (zerop target-indicator-size)
+                    (not (entity-valid-p target-indicator-entity)))
+          (with-coordinate target-indicator-entity ()
+            (multiple-value-bind (screen-x screen-y)
+                (multiple-value-call #'absolute->viewport
+                  (orthogonal->screen x y))
+              (with-system-config-options ((debug-target))
+                (add-debug-ellipse target-indicator-entity
+                                   screen-x screen-y
+                                   target-indicator-size
+                                   target-indicator-size
+                                   debug-target)))))
         (with-hp entity ()
           (with-mana entity ()
             (render
