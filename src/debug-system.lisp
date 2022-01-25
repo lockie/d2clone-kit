@@ -8,9 +8,12 @@
   (:documentation "Handles drawing of various debug information."
    :order 10))
 
-(defcomponent (debug debug-buffer)
+(defcomponent (debug debug-primitive)
   (render-order nil :type double-float)
+  (type nil :type keyword)
   (points nil :type growable-vector))
+
+(defconstant +point-size+ 9)
 
 (declaim
  (ftype (function
@@ -18,10 +21,11 @@
         add-debug-point))
 (defun add-debug-point (entity x y r g b &optional (a nil))
   "Adds point with screen coordinates X, Y and color R, G, B, A to debug
-buffer ENTITY."
-  (with-debug-buffer entity ()
+primitive ENTITY. If primitive's type is not :POLYLINE, the behaviour is
+undefined."
+  (with-debug-primitive entity ()
     (let ((count (growable-vector-length points)))
-      (growable-vector-grow points (+ count 9))
+      (growable-vector-grow points (+ count +point-size+))
       (setf (growable-vector-ref points (+ count 0)) (float x))
       (setf (growable-vector-ref points (+ count 1)) (float y))
       (setf (growable-vector-ref points (+ count 2)) 0f0) ;; z
@@ -36,12 +40,14 @@ buffer ENTITY."
                 add-debug-rectangle))
 (defun add-debug-rectangle (entity x y w h color)
   "Adds rectangle with screen coordinates X, Y, dimensions W, H and color
-COLOR to debug buffer ENTITY."
+COLOR to debug primitive ENTITY. If primitive's type is not :POLYLINE, the
+behaviour is undefined."
   (let ((r (first color))
         (g (second color))
         (b (third color))
         (a (fourth color)))
     (add-debug-point entity x y r g b a)
+    ;; TODO : fix types (sbcl tries to alloc bignum)
     (add-debug-point entity (+ x w) y r g b a)
     (add-debug-point entity (+ x w) y r g b a)
     (add-debug-point entity (+ x w) (+ y h) r g b a)
@@ -52,9 +58,11 @@ COLOR to debug buffer ENTITY."
 
 (declaim (ftype (function (fixnum fixnum fixnum list boolean))
                 add-debug-tile-rhomb))
+;; TODO : make color param API consistent with add-debug-point ???
 (defun add-debug-tile-rhomb (entity x y color mark)
   "Adds grid rhomb with screen coordinates X, Y and color COLOR to debug
-buffer ENTITY. If MARK is T, then rhomb is drawn crossed out."
+primitive ENTITY. If MARK is T, then rhomb is drawn crossed out. If
+primitive's type is not :POLYLINE, the behaviour is undefined."
   (let ((r (first color))
         (g (second color))
         (b (third color))
@@ -79,6 +87,30 @@ buffer ENTITY. If MARK is T, then rhomb is drawn crossed out."
                        r g b a)
       (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a))))
 
+(declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list
+                                  &optional single-float))
+                add-debug-ellipse))
+(defun add-debug-ellipse (entity x y rx ry color &optional (thickness 1f0))
+  "Adds an ellipse with screen coordinates X, Y, radii RX, RY and color COLOR
+to debug primitive ENTITY. Only works if the ellipse is the single item in the
+debug primitive. If primitive's type is not :ELLIPSE, the behaviour is
+undefined."
+  (let ((r (first color))
+        (g (second color))
+        (b (third color))
+        (a (fourth color)))
+    (with-debug-primitive entity ()
+      (growable-vector-grow points +point-size+)
+      (setf (growable-vector-ref points 0) (float x))
+      (setf (growable-vector-ref points 1) (float y))
+      (setf (growable-vector-ref points 2) thickness)
+      (setf (growable-vector-ref points 3) (float rx))
+      (setf (growable-vector-ref points 4) (float ry))
+      (setf (growable-vector-ref points 5) r)
+      (setf (growable-vector-ref points 6) g)
+      (setf (growable-vector-ref points 7) b)
+      (setf (growable-vector-ref points 8) (or a 0)))))
+
 (declaim (ftype (function (keyword string &rest t)) add-debug-text))
 (defun add-debug-text (designator text &rest args)
   "Adds debug text TEXT using FORMAT-like arguments ARGS to display on top
@@ -91,10 +123,12 @@ DESIGNATOR to same value."
 ;; TODO : helper function to clear the list of debug texts
 
 (defmethod make-component ((system debug-system) entity &rest parameters)
-  (destructuring-bind (&key (size 144) (order 1000d0)) parameters
-    (make-debug-buffer
+  (destructuring-bind (&key (size 144) (order 1000d0) (type :polyline))
+      parameters
+    (make-debug-primitive
      entity
      :render-order order
+     :type type
      :points (make-growable-vector :initial-element 0d0
                                    :initial-allocated-size size))))
 
@@ -102,20 +136,43 @@ DESIGNATOR to same value."
   (al:destroy-font (debug-system-font system)))
 
 (defmethod system-update ((system debug-system))
-  (with-debug-buffers
+  ;; TODO !!! document that the arrays are cleared every frame
+  (with-debug-primitives
       (growable-vector-clear points)))
 
 (defmethod system-draw ((system debug-system) renderer)
-  (with-debug-buffers
-      (render
-       renderer render-order
-       (let ((points points))
-         #'(lambda ()
-             (cffi:with-pointer-to-vector-data
-                 (ptr (growable-vector-freeze points
-                                              :element-type 'single-float))
-               (al:draw-prim ptr (cffi:null-pointer) (cffi:null-pointer) 0
-                             (ceiling (growable-vector-length points) 9) 0))))))
+  (with-debug-primitives
+       (render
+        renderer render-order
+        (let ((points points)
+              (type type))
+          #'(lambda ()
+              (ecase type
+                (:ellipse
+                 (loop :for i :of-type fixnum :from 0
+                       :to (1- (growable-vector-length points)) :by +point-size+
+                       :do (al:draw-ellipse
+                            (growable-vector-ref points 0)
+                            (growable-vector-ref points 1)
+                            (growable-vector-ref points 3)
+                            (growable-vector-ref points 4)
+                            (al:map-rgba
+                             (growable-vector-ref points 5)
+                             (growable-vector-ref points 6)
+                             (growable-vector-ref points 7)
+                             (growable-vector-ref points 8))
+                            (growable-vector-ref points 2))))
+                (:polyline
+                 (cffi:with-pointer-to-vector-data
+                     (ptr (growable-vector-freeze
+                           points
+                           :element-type 'single-float))
+                   (al:draw-prim
+                    ptr (cffi:null-pointer) (cffi:null-pointer) 0
+                    (ceiling
+                     (growable-vector-length points)
+                     +point-size+)
+                    0))))))))
   (with-system-slots ((font texts text-designators)
                       :of debug-system :instance system)
     (loop
