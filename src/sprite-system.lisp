@@ -508,9 +508,8 @@ clockwise."
           (multiple-value-bind (x y)
               (absolute->viewport sprite-x sprite-y)
             (when (visiblep x y (max width height))
-              (let ((x0 (- x (truncate (- width *tile-width*) 2)))
-                    (y0 (- y (- (* 3 (truncate height 4))
-                                (truncate *tile-height* 2)))))
+              (let ((x0 (- x (truncate width 2)))
+                    (y0 (- y (* 3 (truncate height 4)))))
                 (loop
                   :for layer :being :the :hash-key
                   :using (hash-value toggled) :of layers-toggled
