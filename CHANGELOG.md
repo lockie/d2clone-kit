@@ -18,6 +18,7 @@ and this project adheres to
 - Support for Tiled objects' type (point, ellipse, polygon, rectangle).
 - Ability to draw debug ellipses.
 - Movement target indicator for debugging.
+- Ability to load game objects from Tiled objects.
 
 ### Changed
 - Changed syntax of WITH-SYSTEM-SLOTS macro to be more DSL-ish.

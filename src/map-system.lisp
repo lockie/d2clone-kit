@@ -121,6 +121,26 @@ Also only integer map coordinates allowed for map chunks, otherwise the screen
        :sprite-batches sprite-batches))))
 
 (defmethod make-prefab-component ((system map-system) entity prefab parameters)
+  (loop :for object :across (tiled-map-objects (map-prefab-tiled-map prefab))
+        :when (and (eq (tiled-object-type object) :point))
+        :do
+           (when-let (object-spec (gethash :object
+                                           (tiled-object-properties object)))
+             (unless (null object-spec)
+               (make-object
+                (cons
+                 ;; TODO : take into account map's location coordinate
+                 `(:coordinate
+                   :iso-x ,(coerce
+                            (* 2 (/ (tiled-object-x object) *tile-width*))
+                            'double-float)
+                   :iso-y ,(coerce
+                            (/ (tiled-object-y object) *tile-height*)
+                            'double-float))
+                 (remove-if
+                  #'(lambda (component) (eq (first component) :coordinate))
+                  (read-from-string object-spec)))
+                entity))))
   (with-system-config-options ((debug-grid))
     (make-map-chunk entity
                     :tiled-map (map-prefab-tiled-map prefab)
