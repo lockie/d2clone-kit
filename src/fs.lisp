@@ -163,7 +163,7 @@ Lines are expected to be shorter than BUFFER-LENGTH chars."
 (defmethod trivial-gray-streams:stream-read-char ((stream character-stream))
   (with-slots (path al-file) stream
     (let ((char (al:fgetc al-file)))
-      (if (minusp char)
+      (if (minusp (the fixnum char))
           (if (al:feof al-file)
               :eof
               (error "error reading '~a': ~a" path (al:ferrmsg al-file)))
