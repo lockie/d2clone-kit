@@ -87,7 +87,7 @@ primitive's type is not :POLYLINE, the behaviour is undefined."
                        r g b a)
       (add-debug-point entity x (+ y (ceiling *tile-height* 2)) r g b a))))
 
-(declaim (ftype (function (fixnum fixnum fixnum fixnum fixnum list
+(declaim (ftype (function (fixnum real real real real list
                                   &optional single-float))
                 add-debug-ellipse))
 (defun add-debug-ellipse (entity x y rx ry color &optional (thickness 1f0))

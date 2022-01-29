@@ -10,10 +10,12 @@
    (orb-flare (cffi:null-pointer) :type cffi:foreign-pointer)
    (orb-tmp (cffi:null-pointer) :type cffi:foreign-pointer)
    (target-indicator-entity +invalid-entity+ :type fixnum)
-   (target-indicator-size 0 :type fixnum)
+   (target-indicator-size 0d0 :type double-float)
    (debug-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles player character."
    :order 1))
+
+(defconstant +target-indicator-decrease-speed+ 20d0)
 
 (defcomponent (player))
 
@@ -76,7 +78,8 @@ cursor position."
               (when (entity-valid-p target-indicator-entity)
                 (with-coordinate target-indicator-entity ()
                   (setf x new-x y new-y
-                        target-indicator-size (ceiling *tile-height* 2))))
+                        target-indicator-size
+                        (coerce (/ *tile-height* 2) 'double-float))))
               (if-let (target (and
                                (not mouse-pressed-p)
                                (character-under-cursor new-x new-y)))
@@ -135,7 +138,9 @@ cursor position."
   (with-system-slots ((target-indicator-size)
                       :of player-system :instance system :read-only nil)
     (when (plusp target-indicator-size)
-      (setf target-indicator-size (1- target-indicator-size))))
+      (setf target-indicator-size
+            (max 0d0 (- target-indicator-size
+                        (* +target-indicator-decrease-speed+ *delta-time*))))))
   (with-system-slots ((mouse-pressed-p last-target)
                       :of player-system :instance system)
     (unless (and (entity-valid-p last-target)

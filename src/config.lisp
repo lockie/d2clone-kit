@@ -83,5 +83,6 @@ T (the default), options are not SETF-able."
   (debug cursor :type list :default nil)
   (debug path :type list :default nil)
   (debug collisions :type list :default nil)
+  (debug target :type list :default nil)
 
   )

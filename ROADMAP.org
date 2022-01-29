@@ -3,7 +3,7 @@
 
   * Literate documentation
   * Finally fix isometric coordinates math
-    * Implement target indicator
+    * +Implement target indicator+
   * Add ability to specify entities in Tiled maps
   * Fix twitchy attack bug (#42)
   * Add winning screen (#62)
