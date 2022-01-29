@@ -400,6 +400,7 @@ extra checks. Does not affect TIME-COUNTER of sprite."
                                 :initial-contents
                                 (sprite-prefab-layer-names prefab)
                                 :init-default nil)))
+                         ;; TODO load :layers-initially-toggled from ASE file
                          (destructuring-bind
                              (&key (layers-initially-toggled nil)
                               &allow-other-keys) parameters
