@@ -192,6 +192,7 @@ system instance to variable VAR."
     (system-finalize system))
   (clrhash *systems*))
 
+;; TODO : replace system name with component name ???
 (defun make-object (spec &optional parent)
   "Creates a new game object following specification SPEC structured as follows:
 
