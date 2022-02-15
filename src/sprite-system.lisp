@@ -463,6 +463,7 @@ it was."
     (and (frame-finished-p entity)
          (= frame (the fixnum (car (last (gethash stance stances))))))))
 
+;; TODO : randomize initial frame #
 (defmethod system-update ((system sprite-system))
   (with-sprites
     (if-let (frame-duration-left (frame-finished-p entity))

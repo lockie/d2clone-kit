@@ -1,6 +1,8 @@
 (in-package :d2clone-kit)
 
 
+;; TODO : add ability to hot-reload config
+
 (declaim (type cffi:foreign-pointer *config*))
 (global-vars:define-global-var *config* (cffi:null-pointer))
 

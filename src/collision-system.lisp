@@ -3,6 +3,7 @@
 
 (defsystem collision
   ((map (make-sparse-matrix) :type sparse-matrix)
+   ;; TODO : rename to character-map (singular)
    (characters-map (make-sparse-matrix) :type sparse-matrix)
    (debug-entity +invalid-entity+ :type fixnum))
   (:documentation "Handles object collisions.
