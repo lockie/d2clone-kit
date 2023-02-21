@@ -33,6 +33,7 @@
   (height nil :type (or null fixnum) :read-only t)
   (properties nil :type hash-table :read-only t)
   (text nil :type (or null string) :read-only t)
+  ;; TODO special types instead of plain keywords?
   (type nil :type keyword :read-only t))
 
 (defstruct tiled-map

@@ -1,6 +1,8 @@
 (in-package :d2clone-kit)
 
 
+;; TODO : make prefabs lazy - adding new art should not require restart!
+
 (defgeneric prefab (system prefab-name)
   (:documentation "Returns prefab with name symbol PREFAB-NAME within SYSTEM."))
 

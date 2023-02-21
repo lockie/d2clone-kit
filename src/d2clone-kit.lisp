@@ -1,5 +1,7 @@
 (in-package :d2clone-kit)
 
+;; TODO : (serapeum:toggle-pretty-print-hash-table)
+
 (declaim
  #-d2c-debug (inline ui-handle-event)
  (ftype (function (cffi:foreign-pointer) boolean) ui-handle-event))

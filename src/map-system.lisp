@@ -18,6 +18,8 @@ The following format features are unsupported yet:
 Also only integer map coordinates allowed for map chunks, otherwise the screen
 <-> map conversion maths are badly fucked up."))
 
+;; TODO : animated tile support?
+
 (defstruct map-tileset
   (first-id 0 :type fixnum)
   (sprite-batch nil :type fixnum))

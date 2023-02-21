@@ -1,5 +1,10 @@
 (in-package :d2clone-kit)
 
+;; TODO : replace z-order number with explicit ordering specs
+;; (e.g. :before system, :after system, :before :all etc)
+;; and/or like in re-frame, :before and :after functions calling each
+;; other in chain
+;; and/or like ring middlewares!
 
 (declaim (type double-float *delta-time*))
 (global-vars:define-global-var *delta-time* 0d0

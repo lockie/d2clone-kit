@@ -1,5 +1,7 @@
 (in-package :d2clone-kit)
 
+;; TODO : like in Flecs, model entity relationships via components,
+;; like IsA, ChildOf etc? might work for prefabs as well
 
 (defgeneric make-component (system entity &rest parameters)
   (:documentation "Creates new component using PARAMETERS within system SYSTEM
@@ -135,6 +137,8 @@ See MAKE-PREFAB-COMPONENT"))
                    slot-names)))
     `(progn
        (defsoa ,name ,@slots)
+       ;; TODO : warn here and in other similar macroses when bindings are nil
+       ;; possibly using (warn 'style-warning)
        (defmacro ,(symbolicate :with- name) (entity bindings &body body)
          (with-gensyms (index system components)
            (let ((component-exps (mapcar #'list

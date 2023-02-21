@@ -9,6 +9,9 @@
   (name nil :type symbol)
   (components-index nil)
   (components nil)
+  ;; TODO : replace order number with explicit order specs
+  ;;  (e.g. :before system, :after system, :before :all etc)
+  ;;  it is called topological sort. see https://github.com/pkulev/topsort
   (order 0 :type fixnum))
 
 (declaim #-d2c-debug (inline system-name system-components-index

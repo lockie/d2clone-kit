@@ -1,5 +1,8 @@
 (in-package :d2clone-kit)
 
+;; TODO : trigger actions?.. like when character damages with both ice
+;;  and fire on an enchanted wooden door, and it breaks opening the
+;;  passage to secret level
 
 (defsoa actions
   (index +invalid-index+ :type fixnum :documentation "")

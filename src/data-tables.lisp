@@ -1,5 +1,6 @@
 (in-package :d2clone-kit)
 
+;; TODO : redo with plain sexps! http://people.csail.mit.edu/rivest/Sexp.txt
 
 (declaim (type hash-table *data-tables*))
 (global-vars:define-global-var *data-tables* (make-hash :test #'eq)
