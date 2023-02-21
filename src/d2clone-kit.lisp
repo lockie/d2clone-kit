@@ -138,6 +138,11 @@ package does not exist, then retuns NIL."
     (al:init-font-addon)
     (unless (al:init-ttf-addon)
       (error "Initializing TTF addon failed"))
+    ;; NOTE autodetected pulseaudio driver crashes when initialized
+    ;; several times in the same process (REPL case), so forcing
+    ;; OpenAL instead
+    ;; TODO : refactor setting system config option (same in log.lisp)
+    (al:set-config-value (al:get-system-config) "audio" "driver" "openal")
     (unless (al:install-audio)
       (error "Intializing audio addon failed"))
     (unless (al:init-acodec-addon)

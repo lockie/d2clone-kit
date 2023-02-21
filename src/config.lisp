@@ -72,6 +72,7 @@ T (the default), options are not SETF-able."
          `(,(if read-only 'let 'symbol-macrolet) (,@let-clauses)
            ,@body)))))
 
+;; TODO : rename system to engine
 (defoptions system
   (display width :type fixnum :default 800)
   (display height :type fixnum :default 600)
