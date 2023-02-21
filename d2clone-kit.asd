@@ -4,7 +4,8 @@
   :homepage "https://lockie.gitlab.io/d2clone-kit"
   :author "Andrew Kravchuk <awkravchuk@gmail.com>"
   :license "GPL v3"
-  :depends-on (:babel
+  :depends-on (:alexandria
+               :babel
                :chipz
                :cl-csv
                :cl-inflector
@@ -16,9 +17,8 @@
                :jonathan
                :livesupport
                :make-hash
-               :golden-utils
-               :parse-float
                :qbase64
+               :serapeum
                :trivial-features
                :trivial-garbage
                :trivial-gray-streams

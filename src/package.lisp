@@ -5,9 +5,9 @@
   (:documentation "Generic Diablo 2 clone game engine.")
   (:nicknames #:d2c)
   ;; TODO : don't use :use, see https://git.io/Jfc8D
-  (:use :cl :golden-utils :trivial-garbage :parse-float :xmls)
-  (:import-from :make-hash :make-hash)
-  (:import-from :cl-inflector :plural-of)
+  (:use #:cl #:alexandria #:serapeum #:trivial-garbage #:xmls)
+  (:import-from #:make-hash #:make-hash)
+  (:import-from #:cl-inflector #:plural-of)
   (:shadow character)
    ;; actions.lisp
    (:export
