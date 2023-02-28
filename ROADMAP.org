@@ -1,43 +1,514 @@
 * Roadmap
-  This is pool of tasks that should be implemented, roughly sorted by priority.
+This is pool of tasks that should be implemented, roughly sorted by priority.
+** Specific tasks
+*** DONE implement target indicator
+*** TODO rebrand the engine
+SVG Logo in =~/tmp=.
+*** TODO add badges to description
+See e.g. [[https://gitlab.com/michenriksen/jdam]].
+*** TODO fix isometric coordinates math
+*** TODO submit to Quicklisp
+Check if there are any warnings (adding =:verbose t= to =ql:quickload=).
+*** TODO add ability to specify entities in Tiled maps
+*** TODO replace CastleDB files with plain S-exprs
+Something in the spirit of
+#+begin_src lisp
+  (deftable impact-sounds
+    (weapon-class armor-class sound
+     :index (weapon-class armor-class))
+    (:mandibles :flesh (:mandibles-flesh-1 :mandibles-flesh-2))
+    (:fists :chitin (:fists-chitin-1 :fists-chitin-2))
+    (:sword :chitin (:sword-chitin-1 :sword-chitin-2))
+    ;; ...
+  )
+#+end_src
+Also perhaps rename LISP resource files to have ".sexp" extension.
+*** TODO fix twitchy attack bug
+When you're running away from mobs, they're kinda twitch (lol) with their
+attack. Do not break attacking animation until it is finished (just as in D2).
+*** TODO fix minor target lock bug
+Target lock sticks when going to main menu.
+*** TODO fix unhandled memory fault on condition in system-draw
+*** TODO add winning screen
+Add some "thanks for playing" screen when the boss dies. Thanks to
+mrduckquacks from Twitch for the reminder :)
+*** TODO add character turn speed limit
+This was not on original Diablo (but this feature was in Warcraft 3 engine
+anyway): the character's turn speed is limited to some finite value.
+*** TODO consider implementing character sizes
+Right now characters are just point particles. I should have the ability to set
+the sizes of them (radius, or width+height) somewhere (aseprite layer user
+data?) and take into account everywhere (pathfinding, collisions, target
+picking etc).
 
-  * Literate documentation
-  * Finally fix isometric coordinates math
-    * +Implement target indicator+
-  * Add ability to specify entities in Tiled maps
-  * Fix twitchy attack bug (#42)
-  * Add winning screen (#62)
-  * Automatically build SBCL usable in older Windows OSes
-  * Replace CastleDB files with plain S-exprs (#65)
-  * Refactoring
-    * Split library in ASDF modules
-    * TODOs in code
-    * Make potion drinking into action (#60)
-    * Rewrite ~*-traverse~ functions as macroses
-    * Use dynamic-extent
-    * Implement condition types
-    * Factor out ECS library (deal with growable vector & sparse array)
-    * Use lisp-namespace library? (#16)
-    * Try damn-fast-priority-queue library
-    * Tweak ~DEFUNL~, replacing ~CL:DEFUN~ with custom declaration (#61)
-    * Think on using trivial-package-local-nicknames
-    * Think on using trivial-types for some missing type
-      specifications (e.g. plist)
-  * Improve A* performance (#24)
-    * Think on implementing character sizes (#21)
-  * Add soundscape (#47)
-  * Add possibility to reload prefabs from disk (#11)
-    * Think on prefab lazy loading (#48)
-  * Add nice cursor (#44)
-  * Research dialogues DSL (#10)
-  * Add character turn speed limit (#27)
-  * Fix unhandled memory fault on condition in system-draw (#53)
-  * Add controller support (#57)
-  * Lower requirements for max texture size (#51)
-    * Try Renderdoc again (#58)
-  * Add illumination (#9)
-  * Add dungeon generation (#8)
-    * Add support for external tiled tileset (#38)
-  * Think on AI DSL (#18)
-  * Improve main loop
-  * Add network game (#50)
+Maybe even use cylinder as a model, so have radius + height.
+
+Perhaps this would solve sticking in fence corners problem.
+
+Also seems like there's bug related to ~attack-distance~ in combat system: when
+we want to close on the enemy, but the path from A* is empty and we set target
+to -1, sometimes this happens when you move towards the mob and it seems stuck.
+
+Also there's a bug with the character collision map: characters now stuck in
+each other (?)
+
+*** DONE implement A*
+#+begin_src
+  OPEN = priority queue containing START
+CLOSED = empty set
+while lowest rank in OPEN is not the GOAL:
+  current = remove lowest rank item from OPEN
+  add current to CLOSED
+  for neighbors of current:
+    cost = g(current) + movementcost(current, neighbor)
+    if neighbor in OPEN and cost less than g(neighbor):
+      remove neighbor from OPEN, because new path is better
+    if neighbor in CLOSED and cost less than g(neighbor):
+      remove neighbor from CLOSED
+    if neighbor not in OPEN and neighbor not in CLOSED:
+      set g(neighbor) to cost
+      add neighbor to OPEN
+      set priority queue rank to g(neighbor) + h(neighbor)
+      set neighbor's parent to current
+reconstruct reverse path from goal to start by following parent pointers
+#+end_src
+
+g(n) represents the /exact cost/ of the path from the starting point to any
+vertex n, and h(n) represents the heuristic /estimated cost/ from vertex n
+to the goal.
+
+**** On cost functions
+On a square grid that allows 8 directions of movement, use Diagonal
+distance (L∞)
+#+begin_src
+  function heuristic(node) =
+    dx = abs(node.x - goal.x)
+    dy = abs(node.y - goal.y)
+    return D * (dx + dy) + (D2 - 2 * D) * min(dx, dy)
+#+end_src
+where D is cost of rectilinear movement, and D2 is cost of diagonal
+movement. Seems like in our case D=D2=1 and the metric becomes Chebyshev
+distance: ~max(dx, dy)~.
+
+A different way to break ties is to prefer paths that are along the straight
+line from the starting point to the goal:
+#+begin_src
+dx1 = current.x - goal.x
+dy1 = current.y - goal.y
+dx2 = start.x - goal.x
+dy2 = start.y - goal.y
+cross = abs(dx1*dy2 - dx2*dy1)
+heuristic += cross*0.001
+#+end_src
+
+And yet another way to break ties on grids is to minimize turns. The change in
+x,y from the parent to the current node tells you what direction you were
+moving in. For all edges being considered from current to neighbor, if the
+change in x,y is different than the one from parent to current, then add a
+small penalty to the movement cost.
+
+Instead of checking both movement costs and for obstacles in your pathfinding
+algorithm, you can use movement costs. Just assign a very high movement cost to
+any obstacle. When expanding nodes (in the A* algorithm), check if the cost is
+too high; if it is, then throw the node out.
+
+**** On non-reachability
+If your game has situations in which the start and goal are not connected at
+all by the graph, A* will take a long time to run, since it has to explore
+every node connected from the start before it realizes there’s no
+path. Calculate the Connected Components first and only use A* if the start and
+goal are in the same region.
+
+In some game maps, there’s no path between the source and destination. If you
+ask A* to find a path, it will end up exploring a large subset of the graph
+before it determines that there’s no path. If the map can be analyzed
+beforehand, mark each of the connected
+[[https://en.wikipedia.org/wiki/Connected-component_labeling][subgraphs]]
+with a different marker. Then, before looking for a path, check if the source
+and destination are both in the same subgraph. If not, then you know there’s
+no path between them.
+
+Consider [[https://tinyurl.com/alt-astar][ALT A*]]
+
+Consider [[https://en.wikipedia.org/wiki/Fringe_search][Fringe search]]
+
+It is possible to exit early from the A* main loop and get a partial
+path. Normally, the loop exits when it finds the goal node. However, at any
+point before that, it can return a path to the currently best node in
+OPEN. That node is our best chance of getting to the goal, so it’s a reasonable
+place to go.
+
+**** On skipping trivial line path sectors
+Sometimes grids are used for pathfinding because the map is made on a grid, not
+because you actually want movement on a grid. A* would run faster and produce
+better paths if given a graph of key points (such as corners) instead of the
+grid. However if you don’t want to precompute the graph of corners, you can use
+Theta*, a variant of A* that runs on square grids, to find paths that don’t
+strictly follow the grid. When building parent pointers, Theta* will point
+directly to an ancestor if there’s a line of sight to that node, and skips the
+nodes in between.
+
+Jump Point Search, a variant of A* that can skip ahead on square grids. When
+considering children of the current node for possible inclusion in the OPEN
+set, Jump Point Search skips ahead to faraway nodes that are visible from the
+current node. Each step is more expensive but there are fewer of them, reducing
+the number of nodes in the OPEN set. See
+[[http://harablog.wordpress.com/2011/09/07/jump-point-search/][this blog post]]
+for details,
+[[http://zerowidth.com/2013/05/05/jump-point-search-explained.html][this]] blog
+post for a nice visual explanation, and
+[[http://reddit.com/r/programming/comments/1es39b][this discussion on reddit]]
+of pros and cons.
+
+A waypoint is a point along a path. Instead of storing every step along the
+way, after pathfinding a post-processing step can collapse multiple steps into
+a single waypoint, usually at places where the path changes direction or at
+major locations like cities. The movement algorithm will then follow a path
+between waypoints.
+
+*** TODO improve A* performance
+Overall performance is not great, but A* performance is notably bad - I was
+forced to make holes in the in-game fence just to make it not hang.  Need to
+improve it, using some algorithmic tricks (see
+[[http://theory.stanford.edu/~amitp/GameProgramming]]) and/or better data types.
+
+The nice basic performance would be finding way in "snake maze" 13x38 in less
+than 15ms.
+
+Also while I'm on it, perhaps it is worth to penalize turns so the character
+movement looks more natural.
+
+Useful links:
+- [[https://en.wikipedia.org/wiki/Jump_point_search]]
+- [[https://github.com/felselva/uastar]]
+- [[https://reddit.com/r/roguelikedev/comments/dur9lx]]
+- [[https://github.com/eduard-permyakov/permafrost-engine]] (GPL!)
+- [[https://cuddly-octo-palm-tree.com/posts/2021-12-26-graph-search]]
+- [[https://pragprog.com/titles/jbmaze/mazes-for-programmers/]]
+
+*** TODO add possibility to reload prefabs from disk
+Perhaps use ~continuable~ from livesupport?
+*** TODO use MacPorts for OSX builds
+https://stackoverflow.com/a/75104694/1336774
+*** TODO consider prefab lazy loading
+This way initial loading would not be that long.
+*** TODO add app icon
+1. Set app file icon in a cross-platform way. For Windows -
+   [[http://angusj.com/resourcehacker][Reshacker]] or
+   [[https://github.com/electron/rcedit][rcedit]]?..
+2. Set running app icon with
+   [[https://tinyurl.com/al-display#al_set_display_icon][al:set-display-icon]]?
+*** TODO add nice custom cursor
+[[https://liballeg.org/a5docs/trunk/mouse.html#mouse-cursors]]
+
+These will do: [[https://opengameart.org/content/pointers-part-5]]
+*** TODO add support for external tiled tileset
+https://tinyurl.com/tmx-format?highlight=tsx#tileset
+*** TODO optimize loading time
+By utilizing [[https://github.com/rpav/fast-io][fast-io]] and/or
+[[https://github.com/psilord/bitio][bitio]], just like the guys from Atlanta
+Common Lisp study group [[https://github.com/AtlantaFP/flac-metadata-demo][do]].
+Also consider using [[https://github.com/zodmaner/trivial-mmap][trivial-mmap]].
+*** TODO implement soundscape
+- static (e.g. water dripping)
+- dynamic (e.g. wind)
+Reuse existing stuff (e.g. placing objects on map). Add background
+sounds (looping). See
+[[https://liballeg.org/a5docs/trunk/audio.html#al_set_sample_instance_playmode]]
+*** TODO lower requirements for max texture size
+Tweak the way sprites are stored to comply with ancient video cards (e.g. store
+vertically or split in several textures).
+*** TODO optimize sprite batch
+Here's the idea: store the single machine word in priority-queue, splitting it
+into priority and index in some growable array, perhaps using SoA.
+*** TODO automatically build SBCL usable in older Windows OSes
+*** TODO fix messagebox on OSX
+Message box on OSX is missing heading text (which is "We got a big problem
+here", a really nice reference). Make pull request for liballegro fixing
+[[https://tinyurl.com/allegro-osx-msgbox][this]] with
+[[https://stackoverflow.com/a/7641402/1336774][this]].
+*** TODO add literate documentation
+*** TODO add "basics of Lisp" doc section for newcomers
+#+begin_quote
+d2clone-kit engine is written in Common Lisp, which is a language from the
+lineage of unique LISP family dating as old as 1957. There are a lot of
+features that were stolen into other languages over the course of time
+(e.g. conditional operator, garbage collection etc), but the most unique
+feature is homoiconicity, which basically means that there is no distinct line
+between the code and the data in LISP language, which in turn allows to easily
+script d2clone-kit based game and yet perform efficiently by compiling to
+native code.  This article demonstrates the basics of Common Lisp needed to
+confidently create and modify d2clone-kit based games.
+#+end_quote
+Also add "made with lisp" logo somewhere.
+** Refactoring
+*** TODO factor out ECS library
+To a separate permissively licensed library to use it in other projects.
+Also deal with growable vector & sparse array.
+*** TODO move demo to a separate repositiy too
+Copy build scripts from
+[[https://gitlab.com/lockie/darkness-looming-the-dawn][dld]].
+Also add AppImage
+[[https://tinyurl.com/appimage-metadata][metadata]].
+*** TODO split library in ASDF modules
+See [[https://lisp-lang.org/learn/writing-libraries]]; see also
+[[https://github.com/koto-bank/lbge/blob/master/src/lbge.asd]] as an
+example.
+*** TODO think on using package local-nickname
+See [[https://github.com/phoe/trivial-package-local-nicknames]] and
+[[https://gist.github.com/phoe/2b63f33a2a4727a437403eceb7a6b4a3]].
+*** TODO make potion drinking into an action
+Also add sound of leather handling (like getting the potion from belt).
+*** TODO change actions to components
+- Each action = separate component?..
+- Also perhaps typecase on the action type?..
+*** TODO rewrite ~*-traverse~ functions as macroses
+Thus omitting extra =CALL=.
+*** TODO use dynamic-extent where applicable
+For known-size stack-allocated objects (fixed size arrays and known structs).
+*** TODO implement condition types
+And replace =(error "error text")= with =(error 'error-type "text")=.
+*** TODO use wrapper for ~define-*~
+Use [[https://github.com/guicho271828/lisp-namespace]] (basically thin
+wrapper around ~hash-table~) and/or
+[[https://github.com/Shinmera/definitions]].  Also have a look at
+[[https://common-lisp.net/project/definer]] and
+[[https://github.com/phoe/in-nomine]].
+*** TODO consider replacing ppcre library
+With [[https://github.com/no-defun-allowed/one-more-re-nightmare]].
+*** TODO consider replacing xmls library
+E.g. with [[https://shinmera.github.io/plump]] or
+[[https://cxml.common-lisp.dev/sax.html]].
+Do a benchmark.
+*** TODO try damn-fast-priority-queue library
+https://github.com/phoe/damn-fast-priority-queue
+*** TODO tweak ~DEFUNL~, replacing ~CL:DEFUN~ with custom declaration
+Add some kind of custom declaim, see
+[[http://lispworks.com/documentation/lw51/CLHS/Body/d_declar.htm#declaration]].
+*** TODO consider using [[https://github.com/m2ym/trivial-types][trivial-types]]
+For some missing type specifications (e.g. plist)
+** Stuff to research
+*** TODO consider using Conventional Commits
+https://conventionalcommits.org/en/v1.0.0
+*** TODO consider using Break Versioning
+https://github.com/ptaoussanis/encore/blob/master/BREAK-VERSIONING.md
+*** TODO consider using nice reader library
+https://quickdocs.org/reader
+*** TODO unit tests
+See [[https://lisp-lang.org/learn/continuous-integration#gitlab-ci-and-docker]].
+See also [[https://lispcookbook.github.io/cl-cookbook/testing.html]].
+See also [[https://sabracrolleton.github.io/testing-framework]].
+
+Some testing libs:
+- https://github.com/fukamachi/rove
+- https://github.com/Shinmera/parachute
+- https://github.com/sionescu/fiveam
+- https://github.com/DalekBaldwin/check-it
+- https://github.com/fukamachi/cl-coveralls
+Also see [[https://github.com/40ants/cl-hamcrest]].
+Also test with different size of tile (see Kenney assets).
+*** TODO do changes according to Google CL style guide
+[[https://google.github.io/styleguide/lispguide.xml]]
+
+See also: a CL style tutorial from 1993,
+[[https://cs.umd.edu/~nau/cmsc421/norvig-lisp-style.pdf]].
+See also [[https://github.com/foxsae/The-One-True-Lisp-Style-Guide]].
+*** TODO add dungeon generation
+- https://tinyurl.com/contextl-whitepaper
+- Dungeon generation in Diablo 1: [[https://habr.com/ru/post/460038]],
+  [[https://boristhebrave.com/2019/07/14/dungeon-generation-in-diablo-1]]
+- Use seed to generate dungeon; see [[https://youtu.be/pbat3lpNWNA]]
+- https://github.com/mfiano/dungen
+- https://habr.com/ru/post/316126
+- https://github.com/SiENcE/astray
+- BSP-based algorithm [[https://habr.com/ru/post/418685]],
+  [[https://habr.com/ru/post/332832]]
+- Cellular automata-based algorithm: https://habr.com/ru/post/354826
+- Random walk-based algorithm (supposedly faster than cellular
+  automata): https://habr.com/ru/post/321210
+- Handcrafted algorithm: https://habr.com/ru/post/275727
+- Also handcrafted, with graphs: https://habr.com/ru/post/436198
+- In Binding of Isaac: https://habr.com/ru/post/519658
+- Look for [[https://tinyurl.com/habr-procedural-gen-p3][more]]
+- https://github.com/RedBreadcat/SpaghettiDungeonGenerator
+- http://pcg.wikidot.com/pcg-algorithm:dungeon-generation
+- http://roguebasin.roguelikedevelopment.org/index.php?title=Articles#Dungeons
+- https://waxproject.blogspot.com/2020/03/procedural-dungeon-generation.html
+- https://tinyurl.com/procedural-worldgen
+- Fork https://github.com/mxgmn/WaveFunctioCollapse ?
+- https://slsdo.github.io/procedural-dungeon
+- https://teletype.in/@gnykka/mazes
+- https://habr.com/ru/company/mailru/blog/497590
+- https://habr.com/ru/post/537630
+- https://reddit.com/r/gamedev/comments/dx95df
+- http://dungeonmaker.sourceforge.net/DM2_Manual/index.html
+- https://tinyurl.com/cellular-dungeon
+- Mr Llama on Diablo2 map generation: https://youtube.com/watch?v=eZ7nqNgzjTI
+*** TODO add network game
+Probably use player system's component to store some actual player-specfic
+data. At least, ~MOUSE-PRESSED-P~ and ~LAST-TARGET~ from system most probably
+should go into player component.
+- https://tinyurl.com/game-networking
+- https://gafferongames.com/post/networked_physics_2004
+- https://github.com/MFatihMAR/Game-Networking-Resources
+- CRDT??? https://t.me/nikitonsky_pub/381
+Implementations:
+- https://github.com/zpl-c/librg
+- https://github.com/lsalzman/enet (featured in Sauerbraten),
+  [[https://github.com/zpl-c/enet][fork by zpl]]
+- https://github.com/pond3r/ggpo (seems abandoned, not compiling on linux; a
+  shame, description looks promising)
+- https://github.com/networkprotocol/yojimbo ?
+- https://github.com/skywind3000/kcp
+  ([[https://github.com/skywind3000/kcp/blob/master/README.en.md]])
+- https://github.com/bkaradzic/bnet (C++ with no classes)
+- zeromq??? https://zeromq.org/socket-api/#client-server-pattern
+- https://github.com/ValveSoftware/GameNetworkingSockets (C++). reliability,
+  encryption
+*** TODO dialogue DSL
+[[https://ir.lib.uwo.ca/etd/1279/][paper]]: Representing Game Dialogue as
+Expressions in First-Order Logic
+
+See also [[https://eliterature.org/images/microtalespin.txt][microtalespin]]
+story generator. Also have a look towards Prolog-style stuff,
+e.g. [[https://common-lisp.net/project/cl-unification]]. Also have a look
+at [[https://github.com/lang-party/Summer2022]].
+*** TODO add illumination
+Noise + alpha blending? Lightrays from the sky?..
+- [[https://reddit.com/r/gamedev/comments/e71mao][lightning in aseprite]]
+  ([[https://github.com/securas/EdgeNormals]]).
+- http://roguebasin.com/index.php?title=Restrictive_Precise_Angle_Shadowcasting
+- [[https://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/]]
+*** TODO add AI DSL
+- https://en.wikipedia.org/wiki/Planning_Domain_Definition_Language
+- https://tinyurl.com/ai-strips
+- https://planning.wiki/ref/planners
+- http://alumni.media.mit.edu/~jorkin/goap.html
+- Flocking behaviour for mob packs! http://red3d.com/cwr/boids
+- http://lisa.sourceforge.net
+- Consider using https://github.com/recastnavigation/recastnavigation
+  for navigation mesh (featured in Kingdoms of Amalur)
+- http://cs.cmu.edu/~sef/scone/ ???
+- https://soar.eecs.umich.edu/ ???
+- Have a look at https://github.com/opencog/opencog
+- https://clipsrules.net !
+- https://slideshare.net/mobius.cn/influence-map
+- https://aiandgames.com/2020/05/06/ai-101-goap-fear
+Your units may have more than one goal. For example, you may have a general
+goal like “spying” but also a more immediate goal like “go to the enemy
+headquarters”. In addition, there may be temporary goals like “avoid that
+patrol guard”. Here are some ideas for goals:
+- Stop: Stay in the current location
+- Stay: Stay in one area
+- Flee: Move to a safe area
+- Retreat: Move to a safe area, while fighting off enemy units
+- Explore: Find and learn about areas for which little information is known
+- Wander: Move around aimlessly
+- Search: Look for a particular object
+- Spy: Go near an object or unit to learn more about it, without being seen
+- Patrol: Repeatedly walk through an area to make sure no enemy units go
+  through it
+- Defend: Stay near some object or unit to keep enemy units away
+- Guard: Stay near the entrance to some area to keep enemy units out
+- Attack: Move to some object or unit to capture or destroy it
+- Surround: With other units, try to surround an enemy unit or object
+- Shun: Move away from some object or unit
+- Avoid: Stay away from any other units
+- Follow: Stay near some unit as it moves around
+- Group: Seek and form groups of units
+- Work: Perform some task like mining, farming, or collecting
+For each unit you can have a flag indicating which behavior it is to
+perform. To have multiple levels, keep a behavior stack. The top of the stack
+will be the most immediate goal and the bottom of the stack will be the overall
+goal. When you need to do something new but later want to go back to what you
+were doing, push a new behavior on the stack. If you instead need to do
+something new but don’t want to go back to the old behavior, clear the
+stack. Once you are done with some goal, pop it from the stack and start
+performing the next behavior on the stack.
+*** TODO battle simulate macro or something
+For testing and simulating map regions afar from current player position.  Also
+maybe playtest macro starting =main= with specific set of systems, entities,
+random seed and other parameters.
+*** TODO main loop catching up
+Have a look at Shinmera's game loop re. delta-time and catching up restart:
+[[https://github.com/Shirakumo/trial/blob/94a0a9/render-loop.lisp#L53-L54]].
+
+Also from mfiano:
+#+begin_quote
+I handle this case specifically with a custom debugger hook that tracks how
+much time is spent in the debugger in order to subtract it from the running
+time of the game clock, so that the current and previous frame times don't
+throw physics out of whack.
+#+end_quote
+*** TODO data-driven build
+have =build.sh= script with parameter which is the name of the game (or rather
+the set of initial maps/entities to load). It should sink through asdf
+entrypoint into binary, which will just load the necessary assets. Plus maybe
+have debug option.
+
+Source of inspiration: [[https://en.wikipedia.org/wiki/Inform]].
+*** TODO also consider embedding resources into binary
+Perhaps in-memory =ALLEGRO_FILE= or something.
+
+Source of inspiration: build system in
+[[https://github.com/VitoVan/calm][this project]].
+*** TODO try out Clasp
+*** TODO consider using 40ants-critic in CI
+https://github.com/40ants/40ants-critic
+*** TODO add CLisp CI job
+#+begin_quote
+Clisp has a few very compelling features: it's written in very portable C and
+can produce small executables, the compiler is fast and the bytecode execution
+fast enough, and the compiler is strict and can detect portability issues
+better than the rest.
+#+end_quote
+*** TODO CI jobs for architectures other than x86
+E.g. ARM64/Raspberry Pi.
+[[https://docs.travis-ci.com/user/multi-cpu-architectures][Travis CI]]?
+CircleCI seems to support ARM as well.
+*** TODO make releases from CI builds for demo
+https://tinyurl.com/gitlab-release-cli
+*** TODO consider using tree-shaker before building
+[[https://gist.github.com/burtonsamograd/f08f561264ff94391300]]
+*** TODO limit FPS
+Perhaps it would improve performance a bit.
+Thanks to my friend Iliya for the tip.
+
+See [[https://allegro.cc/forums/thread/617475][this forum post]].
+Also maybe modify game loop to have fixed
+timestep or something, see
+[[https://gameprogrammingpatterns.com/game-loop.html]] and
+[[https://stackoverflow.com/a/1216423/1336774][this answer]].
+*** TODO consider using RNG from Dwarf Fortress
+https://github.com/svaarala/duktape/blob/master/misc/splitmix64.c
+*** TODO consider using trivial-with-current-source-form library
+For better macros.
+[[https://github.com/scymtym/trivial-with-current-source-form]]
+*** TODO consider using recompile library
+https://github.com/40ants/recompile
+*** TODO consider using polymorphic-functions library
+E.g. for systems? [[https://github.com/digikar99/polymorphic-functions]].
+*** TODO consider using easing library
+[[https://github.com/vydd/easing]]. Also see [[https://easings.net/en]]
+*** TODO consider using trivial-extensible-sequences library
+For custom datatypes (priority queue, sparse array).
+https://shinmera.github.io/trivial-extensible-sequences
+*** TODO try out SBCL block compilation
+*** TODO optimize GC
+By offloading big GC cycles to load screens and transitions. See Shinmera's
+[[https://filebox.tymoon.eu/file/TWpNM053PT0=][paper]].
+*** TODO optimize memory accesses
+Tools:
+- https://github.com/DataChi/memdb
+- https://bitbucket.org/oebeling/tracectory/wiki/Home
+*** TODO controller support
+*** TODO add color postprocessing
+Have a look at [[https://vas3k.ru/blog/computational_photography]].
+*** TODO try rendering profilers
+Test Renderdoc with ~ALLEGRO_OPENGL_CORE_PROFILE~.
+apitrace seems to work with liballegro.
+Also have a look at [[https://github.com/40ants/cl-flamegraph]].
+*** TODO think about launching in the browser
+Clasp -> LLVM bitcode -> Emscripten? Or ECL -> C -> Emscripten (see also
+[[https://common-lisp.net/project/ecl/posts/ECL-Quarterly-Volume-IV.html]])? Or
+JSCL?.. See also [[https://allegro.cc/forums/thread/617023]].
