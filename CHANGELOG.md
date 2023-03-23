@@ -37,6 +37,7 @@ and this project adheres to
   initialized" error when there was a condition in system
   initialization.
 - Minor performance improvement in loading of text resource files.
+- Fixed audio crash when using Pulseaudio by enforcing OpenAL allegro backend.
 
 ## [0.1.1] - 2021-08-07
 ### Added
@@ -181,3 +182,8 @@ and this project adheres to
 - Stateful movable sprites.
 - Simple ECS implementation.
 - Tiled format parser.
+
+[Unreleased]: https://gitlab.com/lockie/d2clone-kit/-/compare/0.1.1...develop
+[0.1.1]: https://gitlab.com/lockie/d2clone-kit/-/compare/0.1.0...0.1.1
+[0.1.0]: https://gitlab.com/lockie/d2clone-kit/-/compare/0.0.1...0.1.0
+[0.0.1]: https://gitlab.com/lockie/d2clone-kit/-/releases/0.0.1
