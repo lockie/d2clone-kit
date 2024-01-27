@@ -52,6 +52,11 @@ to -1, sometimes this happens when you move towards the mob and it seems stuck.
 Also there's a bug with the character collision map: characters now stuck in
 each other (?)
 
+see also
+https://gridsagegames.com/blog/2020/04/developing-multitile-creatures-roguelikes
+
+*** TODO create GUIX channel
+is that how the thing's called?..
 *** DONE implement A*
 #+begin_src
   OPEN = priority queue containing START
@@ -185,6 +190,7 @@ Useful links:
 - [[https://github.com/eduard-permyakov/permafrost-engine]] (GPL!)
 - [[https://cuddly-octo-palm-tree.com/posts/2021-12-26-graph-search]]
 - [[https://pragprog.com/titles/jbmaze/mazes-for-programmers/]]
+- http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html
 
 *** TODO add possibility to reload prefabs from disk
 Perhaps use ~continuable~ from livesupport?
@@ -254,6 +260,8 @@ Also add AppImage
 See [[https://lisp-lang.org/learn/writing-libraries]]; see also
 [[https://github.com/koto-bank/lbge/blob/master/src/lbge.asd]] as an
 example.
+*** TODO use let-plus+alexandria instead of serapeum!
+Or use metabang-bind, it is qbase64 dependency anyway.
 *** TODO think on using package local-nickname
 See [[https://github.com/phoe/trivial-package-local-nicknames]] and
 [[https://gist.github.com/phoe/2b63f33a2a4727a437403eceb7a6b4a3]].
@@ -313,6 +321,11 @@ Also test with different size of tile (see Kenney assets).
 See also: a CL style tutorial from 1993,
 [[https://cs.umd.edu/~nau/cmsc421/norvig-lisp-style.pdf]].
 See also [[https://github.com/foxsae/The-One-True-Lisp-Style-Guide]].
+*** TODO think about resource system
+have a look at one at Shinmera's trial
+also see https://github.com/Shirakumo/trial/pull/58
+*** TODO read about isometric map drawing
+https://habr.com/ru/articles/767892/
 *** TODO add dungeon generation
 - https://tinyurl.com/contextl-whitepaper
 - Dungeon generation in Diablo 1: [[https://habr.com/ru/post/460038]],
@@ -324,15 +337,18 @@ See also [[https://github.com/foxsae/The-One-True-Lisp-Style-Guide]].
 - BSP-based algorithm [[https://habr.com/ru/post/418685]],
   [[https://habr.com/ru/post/332832]]
 - Cellular automata-based algorithm: https://habr.com/ru/post/354826
+- More cellular automata: https://habr.com/ru/companies/timeweb/articles/745088
 - Random walk-based algorithm (supposedly faster than cellular
   automata): https://habr.com/ru/post/321210
 - Handcrafted algorithm: https://habr.com/ru/post/275727
 - Also handcrafted, with graphs: https://habr.com/ru/post/436198
 - In Binding of Isaac: https://habr.com/ru/post/519658
+- MarkovJunior https://habr.com/ru/post/721314/
 - Look for [[https://tinyurl.com/habr-procedural-gen-p3][more]]
 - https://github.com/RedBreadcat/SpaghettiDungeonGenerator
 - http://pcg.wikidot.com/pcg-algorithm:dungeon-generation
 - http://roguebasin.roguelikedevelopment.org/index.php?title=Articles#Dungeons
+- https://roguebasin.com/index.php/Basic_BSP_Dungeon_generation
 - https://waxproject.blogspot.com/2020/03/procedural-dungeon-generation.html
 - https://tinyurl.com/procedural-worldgen
 - Fork https://github.com/mxgmn/WaveFunctioCollapse ?
@@ -343,14 +359,17 @@ See also [[https://github.com/foxsae/The-One-True-Lisp-Style-Guide]].
 - https://reddit.com/r/gamedev/comments/dx95df
 - http://dungeonmaker.sourceforge.net/DM2_Manual/index.html
 - https://tinyurl.com/cellular-dungeon
+- https://www.redblobgames.com/x/2321-offgrid/
 - Mr Llama on Diablo2 map generation: https://youtube.com/watch?v=eZ7nqNgzjTI
 *** TODO add network game
 Probably use player system's component to store some actual player-specfic
 data. At least, ~MOUSE-PRESSED-P~ and ~LAST-TARGET~ from system most probably
 should go into player component.
+- https://github.com/nxrighthere/NetDynamics for ECS + networking
 - https://tinyurl.com/game-networking
 - https://gafferongames.com/post/networked_physics_2004
-- https://github.com/MFatihMAR/Game-Networking-Resources
+- https://github.com/ThusSpokeNomad/GameNetworkingResources
+- https://words.infil.net/w02-netcode.html
 - CRDT??? https://t.me/nikitonsky_pub/381
 Implementations:
 - https://github.com/zpl-c/librg
@@ -379,6 +398,8 @@ Noise + alpha blending? Lightrays from the sky?..
   ([[https://github.com/securas/EdgeNormals]]).
 - http://roguebasin.com/index.php?title=Restrictive_Precise_Angle_Shadowcasting
 - [[https://journal.stuffwithstuff.com/2015/09/07/what-the-hero-sees/]]
+- screenspace lightmaps https://github.com/paweljarosz/unfolding_simple_lighting
+  and https://www.youtube.com/watch?v=sLFHDihszfc
 *** TODO add AI DSL
 - https://en.wikipedia.org/wiki/Planning_Domain_Definition_Language
 - https://tinyurl.com/ai-strips
@@ -388,6 +409,7 @@ Noise + alpha blending? Lightrays from the sky?..
 - http://lisa.sourceforge.net
 - Consider using https://github.com/recastnavigation/recastnavigation
   for navigation mesh (featured in Kingdoms of Amalur)
+- Rapidly Exploring Random tree https://github.com/guicho271828/cl-rrt
 - http://cs.cmu.edu/~sef/scone/ ???
 - https://soar.eecs.umich.edu/ ???
 - Have a look at https://github.com/opencog/opencog
@@ -425,6 +447,9 @@ were doing, push a new behavior on the stack. If you instead need to do
 something new but don’t want to go back to the old behavior, clear the
 stack. Once you are done with some goal, pop it from the stack and start
 performing the next behavior on the stack.
+*** TODO read about GOAP
+- Artificial Intelligence: A New Synthesis
+- AI Game Programming Wisdom 2 (Game Development Series)
 *** TODO battle simulate macro or something
 For testing and simulating map regions afar from current player position.  Also
 maybe playtest macro starting =main= with specific set of systems, entities,
@@ -452,6 +477,7 @@ Perhaps in-memory =ALLEGRO_FILE= or something.
 
 Source of inspiration: build system in
 [[https://github.com/VitoVan/calm][this project]].
+*** TODO consider resource ZIP files signing (GPG?)
 *** TODO try out Clasp
 *** TODO consider using 40ants-critic in CI
 https://github.com/40ants/40ants-critic
@@ -493,6 +519,8 @@ E.g. for systems? [[https://github.com/digikar99/polymorphic-functions]].
 *** TODO consider using trivial-extensible-sequences library
 For custom datatypes (priority queue, sparse array).
 https://shinmera.github.io/trivial-extensible-sequences
+*** TODO learn some architectural lessons from ViralityEngine
+https://github.com/bufferswap/ViralityEngine
 *** TODO try out SBCL block compilation
 *** TODO optimize GC
 By offloading big GC cycles to load screens and transitions. See Shinmera's
